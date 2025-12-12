@@ -28,8 +28,8 @@ const Dashboard = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold">Your Schedule</h1>
-              <p className="text-muted-foreground mt-1">Manage your events and reminders</p>
+              <h1 className="text-3xl font-bold">Hey there! 👋</h1>
+              <p className="text-muted-foreground mt-1">Here's what's coming up — you've got this!</p>
             </div>
             <div className="flex gap-3">
               <Link to="/chat">
@@ -112,9 +112,9 @@ const Dashboard = () => {
 
               {/* AI Assistant Card */}
               <div className="gradient-primary rounded-xl p-6 text-primary-foreground">
-                <h3 className="font-semibold text-lg mb-2">Need Help?</h3>
+                <h3 className="font-semibold text-lg mb-2">I'm here to help! 🤖</h3>
                 <p className="text-primary-foreground/80 text-sm mb-4">
-                  Ask our AI assistant to schedule anything for you.
+                  Just tell me what you need scheduled — I'll take care of the rest!
                 </p>
                 <Link to="/chat">
                   <Button variant="glass" className="w-full bg-background/20 border-primary-foreground/20 hover:bg-background/30">
