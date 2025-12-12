@@ -54,8 +54,8 @@ const Login = () => {
                 <Calendar className="w-6 h-6 text-primary-foreground" />
               </div>
             </Link>
-            <h1 className="mt-4 text-2xl font-bold">Welcome back</h1>
-            <p className="mt-2 text-muted-foreground">Sign in to your account</p>
+            <h1 className="mt-4 text-2xl font-bold">Welcome back! 👋</h1>
+            <p className="mt-2 text-muted-foreground">We're glad to see you again</p>
           </div>
 
           {/* Form */}
