@@ -54,8 +54,11 @@ const AdminLogin = () => {
                 <Shield className="w-7 h-7 text-destructive-foreground" />
               </div>
             </div>
-            <h1 className="mt-4 text-2xl font-bold text-background">Admin Access</h1>
-            <p className="mt-2 text-muted-foreground">Authorized personnel only</p>
+            <h1 className="mt-4 text-2xl font-bold text-background">Admin Control Center</h1>
+            <p className="mt-2 text-muted-foreground">Secure access for Schedulr administrators</p>
+            <p className="mt-1 text-sm text-muted-foreground/70">
+              Manage users, view analytics, and configure system settings
+            </p>
           </div>
 
           {/* Form */}
