@@ -88,7 +88,8 @@ const BookingSettings = () => {
         end_hour: endHour,
         available_days: availableDays,
         is_active: isActive,
-        public_slug: slot?.public_slug || generateSlug()
+        public_slug: slot?.public_slug || generateSlug(),
+        host_email: user!.email
       };
 
       if (slot) {
