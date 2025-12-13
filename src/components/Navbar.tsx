@@ -68,6 +68,14 @@ const Navbar = () => {
               </>
             ) : (
               <>
+                <ShareLinkModal 
+                  trigger={
+                    <Button variant="outline" className="gap-2">
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </Button>
+                  }
+                />
                 <Link to="/login">
                   <Button variant="ghost">Log in</Button>
                 </Link>
