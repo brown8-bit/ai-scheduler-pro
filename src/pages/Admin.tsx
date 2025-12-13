@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Shield, 
@@ -10,10 +11,82 @@ import {
   AlertCircle,
   Settings,
   LogOut,
-  BarChart3
+  BarChart3,
+  Loader2
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const Admin = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkAdminAccess();
+  }, []);
+
+  const checkAdminAccess = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/admin-login");
+        return;
+      }
+
+      // Check if user has admin role
+      const { data: hasAdminRole, error } = await supabase.rpc("has_role", {
+        _user_id: session.user.id,
+        _role: "admin"
+      });
+
+      if (error) {
+        console.error("Error checking admin role:", error);
+        navigate("/admin-login");
+        return;
+      }
+
+      if (!hasAdminRole) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have admin privileges.",
+          variant: "destructive",
+        });
+        navigate("/admin-login");
+        return;
+      }
+
+      setIsAdmin(true);
+    } catch (error) {
+      console.error("Admin access check failed:", error);
+      navigate("/admin-login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been logged out of the admin panel.",
+    });
+    navigate("/admin-login");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
+
   const stats = [
     { label: "Total Users", value: "2,847", change: "+12%", icon: Users },
     { label: "Revenue (MTD)", value: "$82,534", change: "+8%", icon: DollarSign },
@@ -29,7 +102,7 @@ const Admin = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-foreground">
+    <div className="min-h-screen bg-secondary/30">
       {/* Admin Header */}
       <header className="bg-card border-b border-border px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -46,11 +119,15 @@ const Admin = () => {
             <Button variant="ghost" size="sm">
               <Settings className="w-4 h-4" />
             </Button>
-            <Link to="/">
-              <Button variant="ghost" size="sm" className="text-destructive">
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-destructive gap-2"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
           </div>
         </div>
       </header>
