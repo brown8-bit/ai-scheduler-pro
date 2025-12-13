@@ -14,6 +14,7 @@ import Chat from "./pages/Chat";
 import Pricing from "./pages/Pricing";
 import Admin from "./pages/Admin";
 import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
