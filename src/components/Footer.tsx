@@ -38,6 +38,11 @@ const Footer = () => {
                   Dashboard
                 </Link>
               </li>
+              <li>
+                <Link to="/install" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Get the App
+                </Link>
+              </li>
             </ul>
           </div>
 
