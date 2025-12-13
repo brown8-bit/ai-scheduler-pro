@@ -1,22 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Calendar, Mail, Lock, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { z } from "zod";
+
+const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
+const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
 const Login = () => {
   const navigate = useNavigate();
+  const { signIn, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
+        title: "Invalid Email",
+        description: emailResult.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const passwordResult = passwordSchema.safeParse(password);
+    if (!passwordResult.success) {
+      toast({
+        title: "Invalid Password",
+        description: passwordResult.error.errors[0].message,
         variant: "destructive",
       });
       return;
@@ -24,16 +47,35 @@ const Login = () => {
 
     setIsLoading(true);
     
-    // Simulate login
-    setTimeout(() => {
+    const { error } = await signIn(email, password);
+    
+    if (error) {
       toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
+        title: "Login Failed",
+        description: error.message === "Invalid login credentials" 
+          ? "Invalid email or password. Please try again."
+          : error.message,
+        variant: "destructive",
       });
-      navigate("/dashboard");
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
+
+    toast({
+      title: "Welcome back! 👋",
+      description: "You have successfully logged in.",
+    });
+    navigate("/dashboard");
+    setIsLoading(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-hero flex flex-col">

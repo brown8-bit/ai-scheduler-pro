@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Bot, User, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface Message {
-  role: "user" | "ai";
+  role: "user" | "assistant";
   content: string;
 }
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const AIChatBox = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { role: "ai", content: "Hi! I'm your AI scheduling assistant. What would you like to schedule today?" }
+    { role: "assistant", content: "Hi! I'm your AI scheduling assistant. 👋 What would you like to schedule today?" }
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -27,23 +30,120 @@ const AIChatBox = () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
-      const responses = [
-        `I've noted your request: "${input}". Would you like me to schedule this for a specific time?`,
-        `Great! I can help you with that. When would you like this scheduled?`,
-        `I understand. Let me check your calendar availability for this task.`,
-        `Perfect! I'll add this to your schedule. Would you like a reminder?`,
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      
-      setMessages((prev) => [...prev, { role: "ai", content: randomResponse }]);
+    let assistantContent = "";
+
+    try {
+      const response = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ 
+          messages: newMessages.map(m => ({ role: m.role, content: m.content }))
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 429) {
+          throw new Error(errorData.error || "Rate limit exceeded. Please wait a moment.");
+        }
+        if (response.status === 402) {
+          throw new Error(errorData.error || "AI credits exhausted.");
+        }
+        throw new Error(errorData.error || "Failed to get response");
+      }
+
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+
+      // Add empty assistant message to update progressively
+      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+                return updated;
+              });
+            }
+          } catch {
+            // Incomplete JSON, put back and wait
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Final flush
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split("\n")) {
+          if (!raw) continue;
+          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+          if (raw.startsWith(":") || raw.trim() === "") continue;
+          if (!raw.startsWith("data: ")) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+                return updated;
+              });
+            }
+          } catch { /* ignore */ }
+        }
+      }
+
+    } catch (error) {
+      console.error("Chat error:", error);
+      toast({
+        title: "Oops!",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      // Remove the empty assistant message if there was an error
+      if (!assistantContent) {
+        setMessages(prev => prev.slice(0, -1));
+      }
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -95,11 +195,11 @@ const AIChatBox = () => {
                   : "bg-secondary text-secondary-foreground rounded-bl-md"
               }`}
             >
-              <p className="text-sm leading-relaxed">{message.content}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
             </div>
           </div>
         ))}
-        {isLoading && (
+        {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex gap-3 animate-fade-in">
             <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center">
               <Bot className="w-4 h-4 text-primary-foreground" />

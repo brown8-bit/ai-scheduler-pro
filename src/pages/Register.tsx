@@ -1,32 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Calendar, Mail, Lock, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { z } from "zod";
+
+const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
+const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
 const Register = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const { signUp, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password) {
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
+        title: "Invalid Email",
+        description: emailResult.error.errors[0].message,
         variant: "destructive",
       });
       return;
     }
 
-    if (password.length < 6) {
+    const passwordResult = passwordSchema.safeParse(password);
+    if (!passwordResult.success) {
       toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
+        title: "Invalid Password",
+        description: passwordResult.error.errors[0].message,
         variant: "destructive",
       });
       return;
@@ -34,16 +47,37 @@ const Register = () => {
 
     setIsLoading(true);
     
-    // Simulate registration
-    setTimeout(() => {
+    const { error } = await signUp(email, password);
+    
+    if (error) {
+      let errorMessage = error.message;
+      if (error.message.includes("already registered")) {
+        errorMessage = "This email is already registered. Please sign in instead.";
+      }
       toast({
-        title: "Account created!",
-        description: "Welcome to Schedulr. Let's get started!",
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
       });
-      navigate("/dashboard");
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
+
+    toast({
+      title: "Account created! 🎉",
+      description: "Welcome to Schedulr. Let's get started!",
+    });
+    navigate("/dashboard");
+    setIsLoading(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-hero flex flex-col">
@@ -71,20 +105,6 @@ const Register = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="bg-card p-8 rounded-2xl shadow-card border border-border">
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  />
-                </div>
-              </div>
-
               <div>
                 <label className="text-sm font-medium mb-2 block">Email</label>
                 <div className="relative">
