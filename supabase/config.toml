@@ -2,3 +2,6 @@ project_id = "czgwgpzpiechyviqfird"
 
 [functions.chat]
 verify_jwt = false
+
+[functions.send-booking-notification]
+verify_jwt = false
