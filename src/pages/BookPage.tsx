@@ -95,19 +95,42 @@ const BookPage = () => {
 
     setSubmitting(true);
     try {
-      const [hours, minutes] = selectedTime.split(":").map(Number);
+      const formattedDate = format(selectedDate, "yyyy-MM-dd");
       
       const { error } = await supabase.from("bookings").insert({
         slot_id: slot.id,
         host_user_id: slot.user_id,
         guest_name: guestName,
         guest_email: guestEmail,
-        booking_date: format(selectedDate, "yyyy-MM-dd"),
+        booking_date: formattedDate,
         booking_time: selectedTime,
         notes: notes || null,
       });
 
       if (error) throw error;
+
+      // Send email notifications
+      try {
+        const { data: hostData } = await supabase.auth.admin.getUserById(slot.user_id);
+        const hostEmail = hostData?.user?.email;
+        
+        if (hostEmail) {
+          await supabase.functions.invoke("send-booking-notification", {
+            body: {
+              hostEmail,
+              guestName,
+              guestEmail,
+              bookingDate: formattedDate,
+              bookingTime: formatTime(selectedTime),
+              meetingTitle: slot.title,
+              notes: notes || undefined,
+            },
+          });
+        }
+      } catch (emailError) {
+        console.error("Failed to send email notification:", emailError);
+        // Don't fail the booking if email fails
+      }
 
       setStep("confirmed");
       toast({
