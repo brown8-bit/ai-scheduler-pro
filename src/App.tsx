@@ -16,6 +16,9 @@ import Admin from "./pages/Admin";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Install from "./pages/Install";
+import Analytics from "./pages/Analytics";
+import BookingSettings from "./pages/BookingSettings";
+import BookPage from "./pages/BookPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +43,9 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/install" element={<Install />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/booking-settings" element={<BookingSettings />} />
+              <Route path="/book/:slug" element={<BookPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
