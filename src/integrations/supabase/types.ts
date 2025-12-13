@@ -100,6 +100,72 @@ export type Database = {
           },
         ]
       }
+      event_templates: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          name: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          name: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          name?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      focus_blocks: {
+        Row: {
+          created_at: string
+          days_of_week: number[] | null
+          end_time: string
+          id: string
+          is_active: boolean | null
+          start_time: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_of_week?: number[] | null
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          start_time: string
+          title?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days_of_week?: number[] | null
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          start_time?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduled_events: {
         Row: {
           category: string | null
@@ -165,6 +231,39 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number | null
+          id: string
+          last_activity_date: string | null
+          longest_streak: number | null
+          total_events_completed: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          total_events_completed?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          total_events_completed?: number | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

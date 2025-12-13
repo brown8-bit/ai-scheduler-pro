@@ -12,8 +12,11 @@ const Navbar = () => {
   const navLinks = [
     { path: "/", label: "Home" },
     { path: "/chat", label: "AI Chat" },
-    { path: "/pricing", label: "Pricing" },
     { path: "/dashboard", label: "Dashboard" },
+    { path: "/calendar", label: "Calendar" },
+    { path: "/templates", label: "Templates" },
+    { path: "/focus", label: "Focus" },
+    { path: "/achievements", label: "Achievements" },
   ];
 
   return (
