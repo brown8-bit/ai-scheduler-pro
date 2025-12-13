@@ -19,6 +19,10 @@ import Install from "./pages/Install";
 import Analytics from "./pages/Analytics";
 import BookingSettings from "./pages/BookingSettings";
 import BookPage from "./pages/BookPage";
+import CalendarPage from "./pages/Calendar";
+import Templates from "./pages/Templates";
+import FocusBlocks from "./pages/FocusBlocks";
+import Gamification from "./pages/Gamification";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +50,10 @@ const App = () => (
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/booking-settings" element={<BookingSettings />} />
               <Route path="/book/:slug" element={<BookPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/templates" element={<Templates />} />
+              <Route path="/focus" element={<FocusBlocks />} />
+              <Route path="/achievements" element={<Gamification />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
