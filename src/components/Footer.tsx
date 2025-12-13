@@ -53,7 +53,9 @@ const Footer = () => {
                 <span className="text-muted-foreground">Privacy Policy</span>
               </li>
               <li>
-                <span className="text-muted-foreground">Terms of Service</span>
+                <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Terms of Service
+                </Link>
               </li>
             </ul>
           </div>
