@@ -1,14 +1,26 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Menu, X, Share2 } from "lucide-react";
+import { Calendar, Menu, X, Share2, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import ShareLinkModal from "@/components/ShareLinkModal";
+import { toast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed out",
+      description: "See you next time! 👋",
+    });
+    navigate("/");
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -65,6 +77,9 @@ const Navbar = () => {
                     Dashboard
                   </Button>
                 </Link>
+                <Button variant="ghost" size="icon" onClick={handleSignOut} title="Log out">
+                  <LogOut className="w-4 h-4" />
+                </Button>
               </>
             ) : (
               <>
@@ -131,6 +146,14 @@ const Navbar = () => {
                       Dashboard
                     </Button>
                   </Link>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start gap-2" 
+                    onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Log out
+                  </Button>
                 </>
               ) : (
                 <>
