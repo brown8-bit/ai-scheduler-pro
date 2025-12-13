@@ -15,6 +15,7 @@ interface BookingSlot {
   available_days: number[];
   start_hour: number;
   end_hour: number;
+  host_email: string | null;
 }
 
 const BookPage = () => {
@@ -110,14 +111,11 @@ const BookPage = () => {
       if (error) throw error;
 
       // Send email notifications
-      try {
-        const { data: hostData } = await supabase.auth.admin.getUserById(slot.user_id);
-        const hostEmail = hostData?.user?.email;
-        
-        if (hostEmail) {
+      if (slot.host_email) {
+        try {
           await supabase.functions.invoke("send-booking-notification", {
             body: {
-              hostEmail,
+              hostEmail: slot.host_email,
               guestName,
               guestEmail,
               bookingDate: formattedDate,
@@ -126,10 +124,10 @@ const BookPage = () => {
               notes: notes || undefined,
             },
           });
+        } catch (emailError) {
+          console.error("Failed to send email notification:", emailError);
+          // Don't fail the booking if email fails
         }
-      } catch (emailError) {
-        console.error("Failed to send email notification:", emailError);
-        // Don't fail the booking if email fails
       }
 
       setStep("confirmed");

@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           duration_minutes: number
           end_hour: number
+          host_email: string | null
           id: string
           is_active: boolean | null
           public_slug: string | null
@@ -32,6 +33,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number
           end_hour?: number
+          host_email?: string | null
           id?: string
           is_active?: boolean | null
           public_slug?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number
           end_hour?: number
+          host_email?: string | null
           id?: string
           is_active?: boolean | null
           public_slug?: string | null
