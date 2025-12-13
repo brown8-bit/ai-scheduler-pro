@@ -11,10 +11,11 @@ const passwordSchema = z.string().min(6, { message: "Password must be at least 6
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, user, loading } = useAuth();
+  const { signIn, signUp, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -47,24 +48,48 @@ const Login = () => {
 
     setIsLoading(true);
     
-    const { error } = await signIn(email, password);
-    
-    if (error) {
-      toast({
-        title: "Login Failed",
-        description: error.message === "Invalid login credentials" 
-          ? "Invalid email or password. Please try again."
-          : error.message,
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
+    if (isSignUp) {
+      const { error } = await signUp(email, password);
+      
+      if (error) {
+        let errorMessage = error.message;
+        if (error.message.includes("already registered")) {
+          errorMessage = "This email is already registered. Please sign in instead.";
+        }
+        toast({
+          title: "Registration Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
 
-    toast({
-      title: "Welcome back! 👋",
-      description: "You have successfully logged in.",
-    });
+      toast({
+        title: "Account created! 🎉",
+        description: "Welcome to Schedulr. Let's get started!",
+      });
+    } else {
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error.message === "Invalid login credentials" 
+            ? "Invalid email or password. Please try again."
+            : error.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      toast({
+        title: "Welcome back! 👋",
+        description: "You have successfully logged in.",
+      });
+    }
+    
     navigate("/dashboard");
     setIsLoading(false);
   };
@@ -96,8 +121,12 @@ const Login = () => {
                 <Calendar className="w-6 h-6 text-primary-foreground" />
               </div>
             </Link>
-            <h1 className="mt-4 text-2xl font-bold">Welcome back! 👋</h1>
-            <p className="mt-2 text-muted-foreground">We're glad to see you again</p>
+            <h1 className="mt-4 text-2xl font-bold">
+              {isSignUp ? "Create an account" : "Welcome back! 👋"}
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              {isSignUp ? "Start your free trial today" : "We're glad to see you again"}
+            </p>
           </div>
 
           {/* Form */}
@@ -129,6 +158,9 @@ const Login = () => {
                     className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                   />
                 </div>
+                {isSignUp && (
+                  <p className="text-xs text-muted-foreground mt-1">Must be at least 6 characters</p>
+                )}
               </div>
             </div>
 
@@ -139,14 +171,20 @@ const Login = () => {
               className="w-full mt-6"
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading 
+                ? (isSignUp ? "Creating account..." : "Signing in...") 
+                : (isSignUp ? "Create Account" : "Sign In")}
             </Button>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link to="/register" className="text-primary font-medium hover:underline">
-                Sign up
-              </Link>
+              {isSignUp ? "Already have an account? " : "Don't have an account? "}
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-primary font-medium hover:underline"
+              >
+                {isSignUp ? "Sign in" : "Sign up"}
+              </button>
             </p>
           </form>
         </div>
