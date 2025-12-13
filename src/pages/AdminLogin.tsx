@@ -9,6 +9,9 @@ import { z } from "zod";
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
+// Only this email can create an admin account
+const ALLOWED_ADMIN_EMAIL = "brown851@verizon.net";
+
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -75,6 +78,17 @@ const AdminLogin = () => {
     
     try {
       if (isSignUp) {
+        // Check if email is allowed to sign up as admin
+        if (emailResult.data.toLowerCase() !== ALLOWED_ADMIN_EMAIL.toLowerCase()) {
+          toast({
+            title: "Access Denied",
+            description: "This email is not authorized to create an admin account.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
         // Sign up new admin
         const { data, error } = await supabase.auth.signUp({
           email: emailResult.data,
@@ -98,6 +112,7 @@ const AdminLogin = () => {
               variant: "destructive",
             });
           }
+          setIsLoading(false);
           return;
         }
 
@@ -113,6 +128,7 @@ const AdminLogin = () => {
               description: "Account created but admin role could not be assigned. Contact support.",
               variant: "destructive",
             });
+            setIsLoading(false);
             return;
           }
 
@@ -135,6 +151,7 @@ const AdminLogin = () => {
             description: error.message,
             variant: "destructive",
           });
+          setIsLoading(false);
           return;
         }
 
@@ -154,6 +171,7 @@ const AdminLogin = () => {
               description: "You don't have admin privileges. Please contact an administrator.",
               variant: "destructive",
             });
+            setIsLoading(false);
             return;
           }
 
