@@ -14,32 +14,133 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_slots: {
+        Row: {
+          available_days: number[] | null
+          created_at: string
+          duration_minutes: number
+          end_hour: number
+          id: string
+          is_active: boolean | null
+          public_slug: string | null
+          start_hour: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          available_days?: number[] | null
+          created_at?: string
+          duration_minutes?: number
+          end_hour?: number
+          id?: string
+          is_active?: boolean | null
+          public_slug?: string | null
+          start_hour?: number
+          title?: string
+          user_id: string
+        }
+        Update: {
+          available_days?: number[] | null
+          created_at?: string
+          duration_minutes?: number
+          end_hour?: number
+          id?: string
+          is_active?: boolean | null
+          public_slug?: string | null
+          start_hour?: number
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bookings: {
+        Row: {
+          booking_date: string
+          booking_time: string
+          created_at: string
+          guest_email: string
+          guest_name: string
+          host_user_id: string
+          id: string
+          notes: string | null
+          slot_id: string | null
+          status: string | null
+        }
+        Insert: {
+          booking_date: string
+          booking_time: string
+          created_at?: string
+          guest_email: string
+          guest_name: string
+          host_user_id: string
+          id?: string
+          notes?: string | null
+          slot_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          booking_date?: string
+          booking_time?: string
+          created_at?: string
+          guest_email?: string
+          guest_name?: string
+          host_user_id?: string
+          id?: string
+          notes?: string | null
+          slot_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "booking_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_events: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           event_date: string
           id: string
+          is_completed: boolean | null
+          is_recurring: boolean | null
+          recurrence_end_date: string | null
+          recurrence_pattern: string | null
           reminder: boolean | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           event_date: string
           id?: string
+          is_completed?: boolean | null
+          is_recurring?: boolean | null
+          recurrence_end_date?: string | null
+          recurrence_pattern?: string | null
           reminder?: boolean | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           event_date?: string
           id?: string
+          is_completed?: boolean | null
+          is_recurring?: boolean | null
+          recurrence_end_date?: string | null
+          recurrence_pattern?: string | null
           reminder?: boolean | null
           title?: string
           updated_at?: string

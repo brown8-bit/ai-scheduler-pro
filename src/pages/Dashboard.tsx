@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import DashboardCard from "@/components/DashboardCard";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Bell, Clock, Plus, MessageSquare, TrendingUp, CheckCircle, LogOut } from "lucide-react";
+import { Calendar, Users, Bell, Clock, Plus, MessageSquare, TrendingUp, CheckCircle, LogOut, BarChart3, Link2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -15,6 +15,8 @@ interface ScheduledEvent {
   description: string | null;
   event_date: string;
   reminder: boolean;
+  category: string;
+  is_completed: boolean;
 }
 
 const Dashboard = () => {
@@ -22,6 +24,12 @@ const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
   const [events, setEvents] = useState<ScheduledEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    completed: 0,
+    thisWeek: 0,
+    categories: {} as Record<string, number>
+  });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -40,11 +48,40 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("scheduled_events")
         .select("*")
-        .order("event_date", { ascending: true })
-        .limit(10);
+        .order("event_date", { ascending: true });
 
       if (error) throw error;
-      setEvents(data || []);
+      
+      const allEvents = data || [];
+      const now = new Date();
+      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      
+      // Calculate stats
+      const completed = allEvents.filter(e => e.is_completed).length;
+      const thisWeek = allEvents.filter(e => {
+        const eventDate = new Date(e.event_date);
+        return eventDate >= now && eventDate <= weekFromNow;
+      }).length;
+      
+      const categories: Record<string, number> = {};
+      allEvents.forEach(e => {
+        const cat = e.category || 'general';
+        categories[cat] = (categories[cat] || 0) + 1;
+      });
+
+      setStats({
+        total: allEvents.length,
+        completed,
+        thisWeek,
+        categories
+      });
+
+      // Only show upcoming events (limit 10)
+      const upcomingEvents = allEvents
+        .filter(e => new Date(e.event_date) >= now && !e.is_completed)
+        .slice(0, 10);
+      
+      setEvents(upcomingEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
     } finally {
@@ -76,11 +113,22 @@ const Dashboard = () => {
     }
   };
 
-  const stats = [
-    { icon: Calendar, label: "Total Events", value: events.length.toString(), color: "primary" },
-    { icon: CheckCircle, label: "Completed", value: "0", color: "green" },
-    { icon: Clock, label: "Hours Saved", value: "0", color: "blue" },
-    { icon: TrendingUp, label: "Productivity", value: "+0%", color: "purple" },
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      work: "bg-blue-500",
+      personal: "bg-green-500",
+      health: "bg-red-500",
+      social: "bg-purple-500",
+      general: "bg-gray-500"
+    };
+    return colors[category] || colors.general;
+  };
+
+  const statCards = [
+    { icon: Calendar, label: "Total Events", value: stats.total.toString(), color: "primary" },
+    { icon: CheckCircle, label: "Completed", value: stats.completed.toString(), color: "green" },
+    { icon: Clock, label: "This Week", value: stats.thisWeek.toString(), color: "blue" },
+    { icon: TrendingUp, label: "Categories", value: Object.keys(stats.categories).length.toString(), color: "purple" },
   ];
 
   if (loading) {
@@ -105,11 +153,23 @@ const Dashboard = () => {
               <h1 className="text-3xl font-bold">Hey there! 👋</h1>
               <p className="text-muted-foreground mt-1">Here's what's coming up — you've got this!</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <Link to="/chat">
                 <Button variant="outline" className="gap-2">
                   <MessageSquare className="w-4 h-4" />
                   Ask AI
+                </Button>
+              </Link>
+              <Link to="/analytics">
+                <Button variant="outline" className="gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  Analytics
+                </Button>
+              </Link>
+              <Link to="/booking-settings">
+                <Button variant="outline" className="gap-2">
+                  <Link2 className="w-4 h-4" />
+                  Booking Page
                 </Button>
               </Link>
               <Button variant="hero" className="gap-2" onClick={() => navigate("/chat")}>
@@ -124,7 +184,7 @@ const Dashboard = () => {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {stats.map((stat) => (
+            {statCards.map((stat) => (
               <div key={stat.label} className="bg-card rounded-xl border border-border p-5 shadow-card">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
@@ -165,14 +225,21 @@ const Dashboard = () => {
                 ) : (
                   <div className="space-y-4">
                     {events.map((event) => (
-                      <DashboardCard
-                        key={event.id}
-                        title={event.title}
-                        description={event.description || ""}
-                        time={formatEventTime(event.event_date)}
-                        icon={Clock}
-                        variant={event.reminder ? "highlight" : "default"}
-                      />
+                      <div key={event.id} className="flex items-start gap-3 p-4 rounded-lg bg-secondary/50 border border-border">
+                        <div className={`w-3 h-3 rounded-full mt-1.5 ${getCategoryColor(event.category)}`} />
+                        <div className="flex-1">
+                          <h3 className="font-medium">{event.title}</h3>
+                          {event.description && (
+                            <p className="text-sm text-muted-foreground">{event.description}</p>
+                          )}
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {formatEventTime(event.event_date)}
+                          </p>
+                        </div>
+                        <span className="text-xs px-2 py-1 bg-secondary rounded-full capitalize">
+                          {event.category}
+                        </span>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -196,9 +263,9 @@ const Dashboard = () => {
                     <Bell className="w-4 h-4" />
                     Set Reminder
                   </Button>
-                  <Button variant="outline" className="w-full justify-start gap-2">
-                    <Users className="w-4 h-4" />
-                    Invite Team Member
+                  <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate("/booking-settings")}>
+                    <Link2 className="w-4 h-4" />
+                    Share Booking Link
                   </Button>
                 </div>
               </div>

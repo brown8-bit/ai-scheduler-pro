@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Message {
   role: "user" | "assistant";
@@ -10,7 +11,12 @@ interface Message {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
-const AIChatBox = () => {
+interface AIChatBoxProps {
+  onEventCreated?: () => void;
+}
+
+const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
+  const { user } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "Hi! I'm your AI scheduling assistant. 👋 What would you like to schedule today?" }
@@ -35,8 +41,6 @@ const AIChatBox = () => {
     setInput("");
     setIsLoading(true);
 
-    let assistantContent = "";
-
     try {
       const response = await fetch(CHAT_URL, {
         method: "POST",
@@ -45,7 +49,8 @@ const AIChatBox = () => {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ 
-          messages: newMessages.map(m => ({ role: m.role, content: m.content }))
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          userId: user?.id || null
         }),
       });
 
@@ -60,74 +65,17 @@ const AIChatBox = () => {
         throw new Error(errorData.error || "Failed to get response");
       }
 
-      if (!response.body) throw new Error("No response body");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-
-      // Add empty assistant message to update progressively
-      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              assistantContent += content;
-              setMessages(prev => {
-                const updated = [...prev];
-                updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-                return updated;
-              });
-            }
-          } catch {
-            // Incomplete JSON, put back and wait
-            textBuffer = line + "\n" + textBuffer;
-            break;
-          }
-        }
-      }
-
-      // Final flush
-      if (textBuffer.trim()) {
-        for (let raw of textBuffer.split("\n")) {
-          if (!raw) continue;
-          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-          if (raw.startsWith(":") || raw.trim() === "") continue;
-          if (!raw.startsWith("data: ")) continue;
-          const jsonStr = raw.slice(6).trim();
-          if (jsonStr === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              assistantContent += content;
-              setMessages(prev => {
-                const updated = [...prev];
-                updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-                return updated;
-              });
-            }
-          } catch { /* ignore */ }
-        }
+      const data = await response.json();
+      
+      setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+      
+      // If an event was created, notify parent
+      if (data.event && onEventCreated) {
+        onEventCreated();
+        toast({
+          title: "Event Created! 🎉",
+          description: `"${data.event.title}" has been added to your calendar.`,
+        });
       }
 
     } catch (error) {
@@ -137,10 +85,6 @@ const AIChatBox = () => {
         description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
-      // Remove the empty assistant message if there was an error
-      if (!assistantContent) {
-        setMessages(prev => prev.slice(0, -1));
-      }
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +107,9 @@ const AIChatBox = () => {
           </div>
           <div>
             <h3 className="font-semibold">Schedulr AI</h3>
-            <p className="text-sm text-muted-foreground">Always ready to help</p>
+            <p className="text-sm text-muted-foreground">
+              {user ? "Ready to schedule for you" : "Sign in to save events"}
+            </p>
           </div>
         </div>
       </div>
@@ -199,7 +145,7 @@ const AIChatBox = () => {
             </div>
           </div>
         ))}
-        {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+        {isLoading && (
           <div className="flex gap-3 animate-fade-in">
             <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center">
               <Bot className="w-4 h-4 text-primary-foreground" />
@@ -219,7 +165,7 @@ const AIChatBox = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="What should I schedule?"
+            placeholder={user ? "Schedule a meeting with Alex tomorrow at 3pm..." : "Sign in to save events..."}
             className="flex-1 bg-secondary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-muted-foreground"
             disabled={isLoading}
           />
