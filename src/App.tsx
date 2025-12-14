@@ -26,6 +26,7 @@ import FocusBlocks from "./pages/FocusBlocks";
 import Gamification from "./pages/Gamification";
 import AdminSettings from "./pages/AdminSettings";
 import UserSettings from "./pages/UserSettings";
+import Timer from "./pages/Timer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/achievements" element={<Gamification />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="/settings" element={<UserSettings />} />
+              <Route path="/timer" element={<Timer />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

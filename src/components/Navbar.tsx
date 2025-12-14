@@ -67,7 +67,7 @@ const Navbar = () => {
     { path: "/chat", label: "AI Chat" },
     { path: "/dashboard", label: "Dashboard" },
     { path: "/calendar", label: "Calendar" },
-    { path: "/templates", label: "Templates" },
+    { path: "/timer", label: "Timer" },
     { path: "/focus", label: "Focus" },
     { path: "/achievements", label: "Achievements" },
   ];
