@@ -116,7 +116,7 @@ const Admin = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/settings")}>
               <Settings className="w-4 h-4" />
             </Button>
             <Button 
@@ -191,7 +191,7 @@ const Admin = () => {
                     <DollarSign className="w-4 h-4" />
                     View Revenue
                   </Button>
-                  <Button variant="outline" className="w-full justify-start gap-2">
+                  <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate("/admin/settings")}>
                     <Settings className="w-4 h-4" />
                     System Settings
                   </Button>
