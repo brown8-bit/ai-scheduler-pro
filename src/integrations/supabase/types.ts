@@ -169,6 +169,48 @@ export type Database = {
         }
         Relationships: []
       }
+      limited_offers: {
+        Row: {
+          badge: string
+          created_at: string
+          description: string
+          display_order: number | null
+          expires_at: string | null
+          gradient: string
+          icon: string
+          id: string
+          is_active: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          badge: string
+          created_at?: string
+          description: string
+          display_order?: number | null
+          expires_at?: string | null
+          gradient?: string
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          badge?: string
+          created_at?: string
+          description?: string
+          display_order?: number | null
+          expires_at?: string | null
+          gradient?: string
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

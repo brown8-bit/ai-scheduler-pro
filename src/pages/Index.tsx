@@ -1,10 +1,52 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown } from "lucide-react";
+import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Offer {
+  id: string;
+  title: string;
+  description: string;
+  badge: string;
+  icon: string;
+  gradient: string;
+}
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Gift,
+  Crown,
+  Star,
+  Zap,
+  Flame,
+  Trophy,
+  Timer,
+};
 
 const Index = () => {
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loadingOffers, setLoadingOffers] = useState(true);
+
+  useEffect(() => {
+    fetchOffers();
+  }, []);
+
+  const fetchOffers = async () => {
+    const { data, error } = await supabase
+      .from("limited_offers")
+      .select("id, title, description, badge, icon, gradient")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true })
+      .limit(3);
+
+    if (!error && data) {
+      setOffers(data);
+    }
+    setLoadingOffers(false);
+  };
+
   const features = [
     {
       icon: MessageSquare,
@@ -25,30 +67,6 @@ const Index = () => {
       icon: Shield,
       title: "Privacy First",
       description: "Your data is encrypted and never shared with third parties."
-    }
-  ];
-
-  const limitedOffers = [
-    {
-      icon: Gift,
-      title: "Holiday Special",
-      description: "Get 50% off your first 3 months",
-      badge: "Ends Dec 25",
-      gradient: "from-red-500 to-orange-500"
-    },
-    {
-      icon: Crown,
-      title: "Early Bird Pro",
-      description: "Unlock all premium features for $19/mo",
-      badge: "Limited Spots",
-      gradient: "from-amber-500 to-yellow-500"
-    },
-    {
-      icon: Star,
-      title: "Refer & Earn",
-      description: "Get 1 month free for every friend who joins",
-      badge: "New",
-      gradient: "from-purple-500 to-pink-500"
     }
   ];
 
@@ -132,29 +150,40 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {limitedOffers.map((offer, index) => (
-              <div
-                key={offer.title}
-                className="relative p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-xl bg-gradient-to-r ${offer.gradient} text-white text-xs font-semibold`}>
-                  {offer.badge}
-                </div>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${offer.gradient} flex items-center justify-center`}>
-                  <offer.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="mt-4 font-semibold text-lg">{offer.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{offer.description}</p>
-                <Link to="/register" className="mt-4 inline-block">
-                  <Button variant="outline" size="sm" className="text-xs">
-                    Claim Offer →
-                  </Button>
-                </Link>
-              </div>
-            ))}
-          </div>
+          {loadingOffers ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : offers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+              {offers.map((offer, index) => {
+                const IconComponent = iconMap[offer.icon] || Gift;
+                return (
+                  <div
+                    key={offer.id}
+                    className="relative p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-slide-up"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-xl bg-gradient-to-r ${offer.gradient} text-white text-xs font-semibold`}>
+                      {offer.badge}
+                    </div>
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${offer.gradient} flex items-center justify-center`}>
+                      <IconComponent className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="mt-4 font-semibold text-lg">{offer.title}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{offer.description}</p>
+                    <Link to="/register" className="mt-4 inline-block">
+                      <Button variant="outline" size="sm" className="text-xs">
+                        Claim Offer →
+                      </Button>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">No offers available right now. Check back soon!</p>
+          )}
         </div>
       </section>
 
