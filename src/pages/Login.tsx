@@ -161,6 +161,13 @@ const Login = () => {
                 {isSignUp && (
                   <p className="text-xs text-muted-foreground mt-1">Must be at least 6 characters</p>
                 )}
+                {!isSignUp && (
+                  <div className="mt-2 text-right">
+                    <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
 
