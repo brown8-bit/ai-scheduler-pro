@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { Calendar } from "lucide-react";
+import { forwardRef } from "react";
 
-const Footer = () => {
+const Footer = forwardRef<HTMLElement>((_, ref) => {
   return (
-    <footer className="bg-secondary/50 border-t border-border">
+    <footer ref={ref} className="bg-secondary/50 border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           {/* Brand */}
@@ -74,6 +75,8 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = "Footer";
 
 export default Footer;
