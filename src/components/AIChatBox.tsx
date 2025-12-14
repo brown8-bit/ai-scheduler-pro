@@ -20,7 +20,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const { user } = useAuth();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi! I'm Lawrence, your AI scheduling assistant. 👋 What would you like to schedule today? You can also attach photos to your events!" }
+    { role: "assistant", content: "Hi! I'm Scheddy, your AI scheduling assistant. 👋 What would you like to schedule today? You can also attach photos to your events!" }
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
@@ -158,7 +158,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-semibold text-sm sm:text-base">Lawrence</h3>
+            <h3 className="font-semibold text-sm sm:text-base">Scheddy</h3>
             <p className="text-xs sm:text-sm text-muted-foreground truncate">
               {user ? "Ready to schedule for you" : "Sign in to save events"}
             </p>

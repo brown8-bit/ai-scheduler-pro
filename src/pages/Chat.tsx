@@ -15,9 +15,9 @@ const Chat = () => {
               <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
               AI-Powered Assistant
             </div>
-            <h1 className="text-2xl sm:text-4xl font-bold">Your AI Scheduler</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold">Chat with Scheddy</h1>
             <p className="text-sm sm:text-lg text-muted-foreground mt-2">
-              Just tell me what you need to schedule. I'll handle the rest.
+              Just tell Scheddy what you need to schedule. He'll handle the rest.
             </p>
           </div>
 
