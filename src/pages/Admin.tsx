@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import ManageOffers from "@/components/admin/ManageOffers";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -155,7 +156,7 @@ const Admin = () => {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Activity Feed */}
             <div className="lg:col-span-2 bg-card rounded-xl border border-border p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -210,8 +211,11 @@ const Admin = () => {
                 <Button variant="outline" size="sm" className="mt-4 border-destructive/30 text-destructive hover:bg-destructive/10">
                   Review Now
                 </Button>
-              </div>
-            </div>
+          </div>
+
+          {/* Manage Offers Section */}
+          <ManageOffers />
+        </div>
           </div>
         </div>
       </main>
