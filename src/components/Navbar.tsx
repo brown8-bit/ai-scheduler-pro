@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Menu, X, Share2, LogOut } from "lucide-react";
+import { Calendar, Menu, X, Share2, LogOut, Settings } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -77,6 +77,11 @@ const Navbar = () => {
                     Dashboard
                   </Button>
                 </Link>
+                <Link to="/settings">
+                  <Button variant="ghost" size="icon" title="Settings">
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </Link>
                 <Button variant="ghost" size="icon" onClick={handleSignOut} title="Log out">
                   <LogOut className="w-4 h-4" />
                 </Button>
@@ -144,6 +149,12 @@ const Navbar = () => {
                   <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="hero" className="w-full">
                       Dashboard
+                    </Button>
+                  </Link>
+                  <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                      <Settings className="w-4 h-4" />
+                      Settings
                     </Button>
                   </Link>
                   <Button 
