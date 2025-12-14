@@ -7,6 +7,7 @@ import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, S
 import { supabase } from "@/integrations/supabase/client";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
+import scheddyAvatar from "@/assets/scheddy-avatar.png";
 interface Offer {
   id: string;
   title: string;
@@ -164,9 +165,18 @@ const Index = () => {
             </>
           ) : (
             <>
+              {/* Scheddy Mascot */}
+              <div className="mb-6 animate-fade-in">
+                <img 
+                  src={scheddyAvatar} 
+                  alt="Scheddy - Your AI Assistant" 
+                  className="w-24 h-24 sm:w-32 sm:h-32 mx-auto drop-shadow-lg animate-bounce-slow"
+                />
+              </div>
+              
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
                 <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                👋 Welcome to Schedulr
+                Meet Scheddy, your AI buddy!
               </div>
               
               <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight animate-fade-in delay-100">
@@ -176,8 +186,8 @@ const Index = () => {
               </h1>
 
               <p className="mt-4 sm:mt-6 text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200 px-2">
-                Say goodbye to scheduling stress! Our friendly AI handles all your meetings, reminders, and plans — 
-                just chat naturally and let us do the rest. ✨
+                Say goodbye to scheduling stress! Scheddy handles all your meetings, reminders, and plans — 
+                just chat naturally and let him do the rest. ✨
               </p>
             </>
           )}
