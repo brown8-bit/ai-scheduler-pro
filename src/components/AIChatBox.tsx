@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Bot, User, Loader2, Camera, ImageIcon, X } from "lucide-react";
+import { Send, User, Loader2, Camera, ImageIcon, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import scheddyAvatar from "@/assets/scheddy-avatar.png";
 
 interface Message {
   role: "user" | "assistant";
@@ -12,6 +13,23 @@ interface Message {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
+// Scheddy's personality phrases
+const SCHEDDY_GREETINGS = [
+  "Hey there! I'm Scheddy, your friendly scheduling buddy. 👋 What can I help you organize today?",
+  "Hi! Scheddy here, ready to make your schedule sparkle! ✨ What are we planning?",
+  "Hello friend! I'm Scheddy, and I absolutely LOVE helping with schedules. What's on your mind?",
+  "Hey! It's me, Scheddy! 🗓️ Let's turn that chaos into a beautiful calendar. What do you need?",
+  "Greetings! Scheddy at your service! I'm practically buzzing with excitement to help you schedule something. What'll it be?"
+];
+
+const SCHEDDY_STATUS_PHRASES = [
+  "Excited to help you!",
+  "Let's get organized!",
+  "Ready when you are!",
+  "At your service!",
+  "Here to help!"
+];
+
 interface AIChatBoxProps {
   onEventCreated?: () => void;
 }
@@ -19,8 +37,11 @@ interface AIChatBoxProps {
 const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const { user } = useAuth();
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi! I'm Scheddy, your AI scheduling assistant. 👋 What would you like to schedule today? You can also attach photos to your events!" }
+  const [statusPhrase] = useState(() => 
+    SCHEDDY_STATUS_PHRASES[Math.floor(Math.random() * SCHEDDY_STATUS_PHRASES.length)]
+  );
+  const [messages, setMessages] = useState<Message[]>(() => [
+    { role: "assistant", content: SCHEDDY_GREETINGS[Math.floor(Math.random() * SCHEDDY_GREETINGS.length)] }
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
@@ -154,13 +175,13 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
       {/* Chat Header */}
       <div className="p-3 sm:p-4 border-b border-border bg-secondary/30">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
-            <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary/20">
+            <img src={scheddyAvatar} alt="Scheddy" className="w-full h-full object-cover" />
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-sm sm:text-base">Scheddy</h3>
             <p className="text-xs sm:text-sm text-muted-foreground truncate">
-              {user ? "Ready to schedule for you" : "Sign in to save events"}
+              {user ? statusPhrase : "Sign in to save events"}
             </p>
           </div>
         </div>
@@ -176,14 +197,14 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             }`}
           >
             <div
-              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                message.role === "user" ? "bg-primary" : "gradient-primary"
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${
+                message.role === "user" ? "bg-primary" : "border-2 border-primary/20"
               }`}
             >
               {message.role === "user" ? (
                 <User className="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground" />
               ) : (
-                <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground" />
+                <img src={scheddyAvatar} alt="Scheddy" className="w-full h-full object-cover" />
               )}
             </div>
             <div
@@ -206,8 +227,8 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
         ))}
         {isLoading && (
           <div className="flex gap-2 sm:gap-3 animate-fade-in">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full gradient-primary flex items-center justify-center">
-              <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-primary/20">
+              <img src={scheddyAvatar} alt="Scheddy" className="w-full h-full object-cover" />
             </div>
             <div className="bg-secondary p-2.5 sm:p-3 rounded-2xl rounded-bl-md">
               <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-muted-foreground" />
