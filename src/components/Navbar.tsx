@@ -1,9 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Menu, X, Share2, LogOut, Settings } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import ShareLinkModal from "@/components/ShareLinkModal";
 import { toast } from "@/hooks/use-toast";
 
@@ -12,6 +14,34 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    } else {
+      setAvatarUrl(null);
+      setDisplayName("");
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("avatar_url, display_name")
+      .eq("user_id", user.id)
+      .single();
+    
+    if (data) {
+      setAvatarUrl(data.avatar_url);
+      setDisplayName(data.display_name || user.email?.split("@")[0] || "");
+    } else {
+      setDisplayName(user.email?.split("@")[0] || "");
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -33,6 +63,8 @@ const Navbar = () => {
     { path: "/focus", label: "Focus" },
     { path: "/achievements", label: "Achievements" },
   ];
+
+  const userInitial = displayName.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -78,9 +110,12 @@ const Navbar = () => {
                   </Button>
                 </Link>
                 <Link to="/settings">
-                  <Button variant="ghost" size="icon" title="Settings">
-                    <Settings className="w-4 h-4" />
-                  </Button>
+                  <Avatar className="w-8 h-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                    <AvatarImage src={avatarUrl || undefined} alt={displayName} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                      {userInitial}
+                    </AvatarFallback>
+                  </Avatar>
                 </Link>
                 <Button variant="ghost" size="icon" onClick={handleSignOut} title="Log out">
                   <LogOut className="w-4 h-4" />
@@ -138,6 +173,22 @@ const Navbar = () => {
               <hr className="my-2 border-border" />
               {user ? (
                 <>
+                  {/* Mobile Profile Section */}
+                  <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={avatarUrl || undefined} alt={displayName} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {userInitial}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{displayName || "User"}</p>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                      </div>
+                      <Settings className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </Link>
                   <ShareLinkModal 
                     trigger={
                       <Button variant="outline" className="w-full gap-2">
@@ -149,12 +200,6 @@ const Navbar = () => {
                   <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="hero" className="w-full">
                       Dashboard
-                    </Button>
-                  </Link>
-                  <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start gap-2">
-                      <Settings className="w-4 h-4" />
-                      Settings
                     </Button>
                   </Link>
                   <Button 
