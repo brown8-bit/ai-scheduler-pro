@@ -25,25 +25,183 @@ serve(async (req) => {
 
     const currentDate = new Date().toISOString().split('T')[0];
     const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const today = new Date();
+    const weekFromNow = new Date(today);
+    weekFromNow.setDate(weekFromNow.getDate() + 7);
 
-    const systemPrompt = `You are Schedulr AI, a friendly and helpful scheduling assistant. Your job is to help users schedule meetings, appointments, reminders, and manage their time.
+    // Build user context if logged in
+    let userContext = "";
+    
+    if (userId) {
+      console.log("Fetching user context for:", userId);
+      
+      // Fetch user profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+      
+      // Fetch user's upcoming events (next 7 days)
+      const { data: upcomingEvents } = await supabase
+        .from("scheduled_events")
+        .select("title, event_date, category, is_completed, is_recurring, recurrence_pattern")
+        .eq("user_id", userId)
+        .gte("event_date", today.toISOString())
+        .lte("event_date", weekFromNow.toISOString())
+        .order("event_date", { ascending: true })
+        .limit(10);
+
+      // Fetch today's events
+      const todayStart = new Date(today);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(today);
+      todayEnd.setHours(23, 59, 59, 999);
+      
+      const { data: todayEvents } = await supabase
+        .from("scheduled_events")
+        .select("title, event_date, category, is_completed")
+        .eq("user_id", userId)
+        .gte("event_date", todayStart.toISOString())
+        .lte("event_date", todayEnd.toISOString())
+        .order("event_date", { ascending: true });
+
+      // Fetch user's streak data
+      const { data: streakData } = await supabase
+        .from("user_streaks")
+        .select("current_streak, longest_streak, total_events_completed, last_activity_date")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      // Fetch user's focus blocks
+      const { data: focusBlocks } = await supabase
+        .from("focus_blocks")
+        .select("title, start_time, end_time, days_of_week, is_active")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .limit(5);
+
+      // Fetch recent bookings (people who booked time with the user)
+      const { data: recentBookings } = await supabase
+        .from("bookings")
+        .select("guest_name, booking_date, booking_time, status")
+        .eq("host_user_id", userId)
+        .gte("booking_date", currentDate)
+        .order("booking_date", { ascending: true })
+        .limit(5);
+
+      // Fetch event templates
+      const { data: templates } = await supabase
+        .from("event_templates")
+        .select("name, title, duration_minutes, category")
+        .eq("user_id", userId)
+        .limit(5);
+
+      // Fetch stats
+      const { data: allEvents } = await supabase
+        .from("scheduled_events")
+        .select("is_completed, event_date")
+        .eq("user_id", userId);
+
+      const totalEvents = allEvents?.length || 0;
+      const completedEvents = allEvents?.filter(e => e.is_completed).length || 0;
+      const pendingEvents = totalEvents - completedEvents;
+
+      // Build the context string
+      const userName = profile?.display_name || "User";
+      
+      userContext = `
+=== USER CONTEXT ===
+User Name: ${userName}
+
+📊 STATS & ACHIEVEMENTS:
+- Current Streak: ${streakData?.current_streak || 0} days
+- Longest Streak: ${streakData?.longest_streak || 0} days  
+- Total Events Completed: ${streakData?.total_events_completed || 0}
+- Last Activity: ${streakData?.last_activity_date || "None yet"}
+- Pending Events: ${pendingEvents}
+- Completion Rate: ${totalEvents > 0 ? Math.round((completedEvents / totalEvents) * 100) : 0}%
+
+📅 TODAY'S SCHEDULE (${currentDate}):
+${todayEvents && todayEvents.length > 0 
+  ? todayEvents.map(e => {
+      const time = new Date(e.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const status = e.is_completed ? "✅" : "⏳";
+      return `- ${status} ${time}: ${e.title} (${e.category})`;
+    }).join("\n")
+  : "No events scheduled for today."}
+
+📆 UPCOMING EVENTS (Next 7 Days):
+${upcomingEvents && upcomingEvents.length > 0
+  ? upcomingEvents.map(e => {
+      const date = new Date(e.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const time = new Date(e.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const recurring = e.is_recurring ? ` (${e.recurrence_pattern})` : "";
+      return `- ${date} ${time}: ${e.title}${recurring}`;
+    }).join("\n")
+  : "No upcoming events in the next 7 days."}
+
+⏰ FOCUS TIME BLOCKS:
+${focusBlocks && focusBlocks.length > 0
+  ? focusBlocks.map(fb => {
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const activeDays = fb.days_of_week?.map((d: number) => days[d]).join(", ") || "Weekdays";
+      return `- ${fb.title}: ${fb.start_time} - ${fb.end_time} (${activeDays})`;
+    }).join("\n")
+  : "No focus blocks configured."}
+
+👥 UPCOMING BOOKINGS (People meeting with you):
+${recentBookings && recentBookings.length > 0
+  ? recentBookings.map(b => `- ${b.guest_name}: ${b.booking_date} at ${b.booking_time} (${b.status})`).join("\n")
+  : "No upcoming bookings."}
+
+📋 EVENT TEMPLATES:
+${templates && templates.length > 0
+  ? templates.map(t => `- ${t.name}: ${t.duration_minutes}min ${t.category} event`).join("\n")
+  : "No templates saved."}
+
+===================
+`;
+
+      console.log("User context built successfully");
+    }
+
+    const systemPrompt = `You are Schedulr AI, a smart, friendly, and proactive scheduling assistant. You have FULL CONTEXT about the user's schedule, goals, streaks, and productivity data.
 
 Current date: ${currentDate}
 Current time: ${currentTime}
 
-IMPORTANT: When a user wants to schedule something, you MUST extract the information and call the create_event function. Always try to parse:
+${userContext}
+
+YOUR CAPABILITIES:
+1. **Schedule Events**: Parse requests like "meeting tomorrow at 3pm" and create events
+2. **Provide Insights**: Analyze their schedule and offer productivity tips
+3. **Track Progress**: Reference their streak data and encourage them
+4. **Smart Suggestions**: Suggest optimal times based on their existing schedule
+5. **Goal Tracking**: Help them stay on track with their events and goals
+
+PERSONALITY:
+- Warm, encouraging, and helpful
+- Reference their actual data (e.g., "I see you have 3 events today!" or "Great job on your ${userContext.includes("current_streak") ? "streak" : "progress"}!")
+- Celebrate their wins and streaks
+- Gently remind them about busy days or conflicts
+- Use emojis sparingly but effectively
+
+SCHEDULING RULES:
+When a user wants to schedule something, ALWAYS use the create_event function. Parse:
 - Title: What they want to schedule
-- Date and time: Parse relative dates like "tomorrow", "next Monday", "in 2 hours"
-- Description: Any additional notes
+- Date/Time: Parse "tomorrow", "next Monday", "in 2 hours", etc.
 - Category: work, personal, health, social, or general
-- Is recurring: If they mention "every day", "weekly", etc.
-- Recurrence pattern: daily, weekly, or monthly
+- Is recurring: "every day", "weekly", "monthly"
 
-After successfully creating an event, confirm with a friendly message including the details.
+SMART BEHAVIORS:
+- If they're scheduling during an existing event, warn about conflicts
+- If they have a busy day, acknowledge it
+- Reference their streak to motivate them
+- If they ask about their schedule, summarize it helpfully
+- Suggest breaks if they have many consecutive events
 
-If you need more information to schedule (like a specific time), ask for it politely.
-
-Be warm, conversational, and use emojis sparingly to keep things friendly.`;
+Be conversational and personal - you KNOW this user!`;
 
     const tools = [
       {
@@ -67,6 +225,8 @@ Be warm, conversational, and use emojis sparingly to keep things friendly.`;
         }
       }
     ];
+
+    console.log("Sending request to AI with user context");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
