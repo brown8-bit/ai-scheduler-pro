@@ -245,27 +245,27 @@ const Dashboard = () => {
     <div className="min-h-screen bg-secondary/30">
       <Navbar />
       
-      <main className="pt-24 pb-12 px-4">
+      <main className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
             <div>
-              <h1 className="text-3xl font-bold">Welcome back! 👋</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-2xl sm:text-3xl font-bold">Welcome back! 👋</h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">
                 {stats.todayCount > 0 
                   ? `You have ${stats.todayCount} event${stats.todayCount > 1 ? 's' : ''} today. Let's crush it!`
                   : "Your schedule is clear today. Time to plan ahead!"
                 }
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/calendar">
-                <Button variant="outline" className="gap-2">
+            <div className="flex gap-2 sm:gap-3">
+              <Link to="/calendar" className="flex-1 sm:flex-none">
+                <Button variant="outline" className="gap-2 w-full sm:w-auto text-xs sm:text-sm">
                   <CalendarCheck className="w-4 h-4" />
-                  Calendar
+                  <span className="hidden sm:inline">Calendar</span>
                 </Button>
               </Link>
-              <Button variant="hero" className="gap-2" onClick={() => navigate("/chat")}>
+              <Button variant="hero" className="gap-2 flex-1 sm:flex-none text-xs sm:text-sm" onClick={() => navigate("/chat")}>
                 <Plus className="w-4 h-4" />
                 New Event
               </Button>
@@ -273,67 +273,67 @@ const Dashboard = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-card rounded-xl border border-border p-5 shadow-card hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-primary-foreground" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-sm text-muted-foreground">Total Events</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-5 shadow-card hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.completed}</p>
-                  <p className="text-sm text-muted-foreground">Completed</p>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.total}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Total Events</p>
                 </div>
               </div>
             </div>
-            <div className="bg-card rounded-xl border border-border p-5 shadow-card hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-white" />
+            <div className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.thisWeek}</p>
-                  <p className="text-sm text-muted-foreground">This Week</p>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.completed}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Completed</p>
                 </div>
               </div>
             </div>
-            <div className="bg-card rounded-xl border border-border p-5 shadow-card hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center">
-                  <Flame className="w-5 h-5 text-white" />
+            <div className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{streak?.current_streak || 0}</p>
-                  <p className="text-sm text-muted-foreground">Day Streak</p>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.thisWeek}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">This Week</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
+                  <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold">{streak?.current_streak || 0}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Day Streak</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - Events */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {/* Upcoming Events */}
-              <div className="bg-card rounded-xl border border-border p-6 shadow-card">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-primary" />
+              <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-card">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h2 className="text-base sm:text-xl font-semibold flex items-center gap-2">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                     Upcoming Events
                   </h2>
                   <Link to="/calendar">
-                    <Button variant="ghost" size="sm" className="gap-1">
-                      View all <ChevronRight className="w-4 h-4" />
+                    <Button variant="ghost" size="sm" className="gap-1 text-xs sm:text-sm">
+                      View all <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   </Link>
                 </div>

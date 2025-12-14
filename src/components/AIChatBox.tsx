@@ -100,14 +100,14 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   return (
     <div className="w-full max-w-3xl bg-card rounded-2xl shadow-card border border-border overflow-hidden">
       {/* Chat Header */}
-      <div className="p-4 border-b border-border bg-secondary/30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center">
-            <Bot className="w-5 h-5 text-primary-foreground" />
+      <div className="p-3 sm:p-4 border-b border-border bg-secondary/30">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+            <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
           </div>
-          <div>
-            <h3 className="font-semibold">Schedulr AI</h3>
-            <p className="text-sm text-muted-foreground">
+          <div className="min-w-0">
+            <h3 className="font-semibold text-sm sm:text-base">Schedulr AI</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">
               {user ? "Ready to schedule for you" : "Sign in to save events"}
             </p>
           </div>
@@ -115,43 +115,43 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
       </div>
 
       {/* Messages */}
-      <div className="h-96 overflow-y-auto p-4 space-y-4">
+      <div className="h-[50vh] sm:h-96 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex gap-3 animate-fade-in ${
+            className={`flex gap-2 sm:gap-3 animate-fade-in ${
               message.role === "user" ? "flex-row-reverse" : ""
             }`}
           >
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                 message.role === "user" ? "bg-primary" : "gradient-primary"
               }`}
             >
               {message.role === "user" ? (
-                <User className="w-4 h-4 text-primary-foreground" />
+                <User className="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground" />
               ) : (
-                <Bot className="w-4 h-4 text-primary-foreground" />
+                <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground" />
               )}
             </div>
             <div
-              className={`max-w-[80%] p-3 rounded-2xl ${
+              className={`max-w-[85%] sm:max-w-[80%] p-2.5 sm:p-3 rounded-2xl ${
                 message.role === "user"
                   ? "bg-primary text-primary-foreground rounded-br-md"
                   : "bg-secondary text-secondary-foreground rounded-bl-md"
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+              <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
             </div>
           </div>
         ))}
         {isLoading && (
-          <div className="flex gap-3 animate-fade-in">
-            <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center">
-              <Bot className="w-4 h-4 text-primary-foreground" />
+          <div className="flex gap-2 sm:gap-3 animate-fade-in">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full gradient-primary flex items-center justify-center">
+              <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground" />
             </div>
-            <div className="bg-secondary p-3 rounded-2xl rounded-bl-md">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            <div className="bg-secondary p-2.5 sm:p-3 rounded-2xl rounded-bl-md">
+              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-muted-foreground" />
             </div>
           </div>
         )}
@@ -159,14 +159,14 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-border bg-background">
-        <div className="flex gap-3">
+      <div className="p-3 sm:p-4 border-t border-border bg-background">
+        <div className="flex gap-2 sm:gap-3">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={user ? "Schedule a meeting with Alex tomorrow at 3pm..." : "Sign in to save events..."}
-            className="flex-1 bg-secondary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-muted-foreground"
+            placeholder={user ? "What do you want to schedule?" : "Sign in to save events..."}
+            className="flex-1 bg-secondary rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-muted-foreground"
             disabled={isLoading}
           />
           <Button
@@ -174,7 +174,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             disabled={!input.trim() || isLoading}
             variant="hero"
             size="default"
-            className="px-6"
+            className="px-4 sm:px-6"
           >
             <Send className="w-4 h-4" />
           </Button>
