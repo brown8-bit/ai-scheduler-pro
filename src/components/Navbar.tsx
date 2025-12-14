@@ -1,7 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Menu, X, Share2, LogOut, Settings } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Calendar, Menu, X, Share2, LogOut, Settings, LayoutDashboard, User, Trophy, CalendarDays } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -109,17 +117,51 @@ const Navbar = () => {
                     Dashboard
                   </Button>
                 </Link>
-                <Link to="/settings">
-                  <Avatar className="w-8 h-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-                    <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                      {userInitial}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
-                <Button variant="ghost" size="icon" onClick={handleSignOut} title="Log out">
-                  <LogOut className="w-4 h-4" />
-                </Button>
+                
+                {/* Avatar Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full">
+                      <Avatar className="w-9 h-9 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                        <AvatarImage src={avatarUrl || undefined} alt={displayName} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                          {userInitial}
+                        </AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium">{displayName || "User"}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/calendar")} className="cursor-pointer">
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      Calendar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/achievements")} className="cursor-pointer">
+                      <Trophy className="mr-2 h-4 w-4" />
+                      Achievements
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>
