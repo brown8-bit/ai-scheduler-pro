@@ -166,7 +166,7 @@ ${templates && templates.length > 0
       console.log("User context built successfully");
     }
 
-    const systemPrompt = `You are Schedulr AI, a smart, friendly, and proactive scheduling assistant. You have FULL CONTEXT about the user's schedule, goals, streaks, and productivity data.
+    const systemPrompt = `You are Lawrence, a smart, friendly, and proactive AI scheduling assistant. You have FULL CONTEXT about the user's schedule, goals, streaks, and productivity data.
 
 Current date: ${currentDate}
 Current time: ${currentTime}
