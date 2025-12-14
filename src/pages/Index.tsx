@@ -31,10 +31,43 @@ const Index = () => {
   const { user } = useAuth();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loadingOffers, setLoadingOffers] = useState(true);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [currentStreak, setCurrentStreak] = useState<number>(0);
 
   useEffect(() => {
     fetchOffers();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+    
+    // Fetch profile and streak in parallel
+    const [profileRes, streakRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .single(),
+      supabase
+        .from("user_streaks")
+        .select("current_streak")
+        .eq("user_id", user.id)
+        .single()
+    ]);
+
+    if (profileRes.data) {
+      setDisplayName(profileRes.data.display_name);
+    }
+    if (streakRes.data) {
+      setCurrentStreak(streakRes.data.current_streak || 0);
+    }
+  };
 
   const fetchOffers = async () => {
     const { data, error } = await supabase
@@ -104,38 +137,86 @@ const Index = () => {
       {/* Hero Section */}
       <section className="pt-24 sm:pt-32 pb-12 sm:pb-20 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
-            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-            👋 Welcome to Schedulr
-          </div>
-          
-          <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight animate-fade-in delay-100">
-            Your Friendly AI
-            <br />
-            <span className="text-gradient">Scheduling Assistant</span>
-          </h1>
+          {user ? (
+            <>
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
+                👋 Welcome back{displayName ? `, ${displayName}` : ''}!
+              </div>
+              
+              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight animate-fade-in delay-100">
+                Ready to be
+                <br />
+                <span className="text-gradient">Productive Today?</span>
+              </h1>
 
-          <p className="mt-4 sm:mt-6 text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200 px-2">
-            Say goodbye to scheduling stress! Our friendly AI handles all your meetings, reminders, and plans — 
-            just chat naturally and let us do the rest. ✨
-          </p>
+              {currentStreak > 0 && (
+                <div className="mt-4 sm:mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/20 text-accent animate-fade-in delay-150">
+                  <Flame className="w-5 h-5" />
+                  <span className="font-semibold">{currentStreak} day streak!</span>
+                  <span className="text-muted-foreground">Keep it going!</span>
+                </div>
+              )}
+
+              <p className="mt-4 sm:mt-6 text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200 px-2">
+                Your AI assistant is ready to help you stay organized. What would you like to schedule today? ✨
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
+                👋 Welcome to Schedulr
+              </div>
+              
+              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight animate-fade-in delay-100">
+                Your Friendly AI
+                <br />
+                <span className="text-gradient">Scheduling Assistant</span>
+              </h1>
+
+              <p className="mt-4 sm:mt-6 text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200 px-2">
+                Say goodbye to scheduling stress! Our friendly AI handles all your meetings, reminders, and plans — 
+                just chat naturally and let us do the rest. ✨
+              </p>
+            </>
+          )}
 
           <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in delay-300 px-4">
-            <Link to="/chat" className="w-full sm:w-auto">
-              <Button variant="hero" size="xl" className="w-full sm:w-auto">
-                🚀 Get Started Free
-              </Button>
-            </Link>
-            <Link to="/pricing" className="w-full sm:w-auto">
-              <Button variant="outline" size="xl" className="w-full sm:w-auto">
-                See Plans
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to="/chat" className="w-full sm:w-auto">
+                  <Button variant="hero" size="xl" className="w-full sm:w-auto">
+                    💬 Open Chat
+                  </Button>
+                </Link>
+                <Link to="/dashboard" className="w-full sm:w-auto">
+                  <Button variant="outline" size="xl" className="w-full sm:w-auto">
+                    View Dashboard
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/chat" className="w-full sm:w-auto">
+                  <Button variant="hero" size="xl" className="w-full sm:w-auto">
+                    🚀 Get Started Free
+                  </Button>
+                </Link>
+                <Link to="/pricing" className="w-full sm:w-auto">
+                  <Button variant="outline" size="xl" className="w-full sm:w-auto">
+                    See Plans
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
-          <p className="mt-4 text-sm sm:text-base text-muted-foreground animate-fade-in delay-400">
-            ❤️ Loved by thousands • <span className="font-semibold text-foreground">$29/month</span> after your free trial
-          </p>
+          {!user && (
+            <p className="mt-4 text-sm sm:text-base text-muted-foreground animate-fade-in delay-400">
+              ❤️ Loved by thousands • <span className="font-semibold text-foreground">$29/month</span> after your free trial
+            </p>
+          )}
         </div>
       </section>
 
