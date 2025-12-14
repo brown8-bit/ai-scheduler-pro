@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import CountdownTimer from "@/components/CountdownTimer";
 
 interface Offer {
   id: string;
@@ -13,6 +14,7 @@ interface Offer {
   badge: string;
   icon: string;
   gradient: string;
+  expires_at: string | null;
 }
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -36,7 +38,7 @@ const Index = () => {
   const fetchOffers = async () => {
     const { data, error } = await supabase
       .from("limited_offers")
-      .select("id, title, description, badge, icon, gradient")
+      .select("id, title, description, badge, icon, gradient, expires_at")
       .eq("is_active", true)
       .order("display_order", { ascending: true })
       .limit(3);
@@ -172,6 +174,15 @@ const Index = () => {
                     </div>
                     <h3 className="mt-4 font-semibold text-lg">{offer.title}</h3>
                     <p className="mt-2 text-sm text-muted-foreground">{offer.description}</p>
+                    
+                    {/* Countdown Timer */}
+                    {offer.expires_at && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <Timer className="w-4 h-4 text-destructive" />
+                        <CountdownTimer expiresAt={offer.expires_at} />
+                      </div>
+                    )}
+                    
                     <Link to="/register" className="mt-4 inline-block">
                       <Button variant="outline" size="sm" className="text-xs">
                         Claim Offer →
