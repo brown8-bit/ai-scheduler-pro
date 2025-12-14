@@ -45,18 +45,19 @@ const Gamification = () => {
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/login");
+        return;
+      }
       setUser(user);
     };
     checkUser();
-    // Always fetch leaderboard for everyone
-    fetchLeaderboard();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (user) {
       fetchStreakData();
-    } else {
-      setLoading(false);
+      fetchLeaderboard();
     }
   }, [user]);
 
@@ -273,7 +274,7 @@ const Gamification = () => {
           </p>
         </div>
 
-        <Tabs defaultValue={user ? "achievements" : "leaderboard"} className="w-full">
+        <Tabs defaultValue="achievements" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="achievements" className="gap-2">
               <Award className="w-4 h-4" />
@@ -287,24 +288,6 @@ const Gamification = () => {
           </TabsList>
 
           <TabsContent value="achievements" className="space-y-6">
-            {!user ? (
-              <Card className="py-12">
-                <CardContent className="text-center">
-                  <Award className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Sign in to track your achievements</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Create an account to start earning badges and climbing the leaderboard!
-                  </p>
-                  <button
-                    onClick={() => navigate("/register")}
-                    className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
-                  >
-                    Get Started
-                  </button>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
@@ -430,8 +413,6 @@ const Gamification = () => {
                 </div>
               </CardContent>
             </Card>
-              </>
-            )}
           </TabsContent>
 
           <TabsContent value="leaderboard" className="space-y-6">
