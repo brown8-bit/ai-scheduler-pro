@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Calendar } from "lucide-react";
 import { forwardRef } from "react";
+import scheddyAvatar from "@/assets/scheddy-avatar.png";
 
 const Footer = forwardRef<HTMLElement>((_, ref) => {
   return (
@@ -10,13 +10,13 @@ const Footer = forwardRef<HTMLElement>((_, ref) => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-3 sm:mb-4">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg gradient-primary flex items-center justify-center">
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2 border-primary/20">
+                <img src={scheddyAvatar} alt="Scheddy" className="w-full h-full object-cover" />
               </div>
               <span className="font-bold text-lg sm:text-xl">Schedulr</span>
             </Link>
             <p className="text-sm sm:text-base text-muted-foreground max-w-md">
-              AI-powered scheduling that understands you. Book meetings, set reminders, and manage your time effortlessly.
+              Meet Scheddy, your AI-powered scheduling assistant. Book meetings, set reminders, and manage your time effortlessly.
             </p>
           </div>
 
