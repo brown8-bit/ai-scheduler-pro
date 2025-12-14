@@ -157,12 +157,12 @@ const Timer = () => {
     <div className="min-h-screen bg-secondary/30">
       <Navbar />
       
-      <main className="pt-24 pb-12 px-4">
+      <main className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
-              <TimerIcon className="w-8 h-8 text-primary" />
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center justify-center gap-2">
+              <TimerIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               Focus Timer
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -171,58 +171,58 @@ const Timer = () => {
           </div>
 
           {/* Timer Display */}
-          <Card className="mb-8 overflow-hidden">
+          <Card className="mb-6 sm:mb-8 overflow-hidden">
             <div className={`h-2 bg-gradient-to-r ${getModeColor()}`} style={{ width: `${progress}%`, transition: "width 1s linear" }} />
-            <CardContent className="p-8">
+            <CardContent className="p-4 sm:p-8">
               <div className="text-center">
                 {/* Mode Label */}
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6 ${
+                <div className={`inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium mb-4 sm:mb-6 ${
                   mode === "focus" ? "bg-primary/10 text-primary" : 
                   mode === "break" ? "bg-green-500/10 text-green-600" : 
                   "bg-purple-500/10 text-purple-600"
                 }`}>
-                  {mode === "focus" && <Brain className="w-4 h-4" />}
-                  {mode === "break" && <Coffee className="w-4 h-4" />}
-                  {mode === "custom" && <TimerIcon className="w-4 h-4" />}
+                  {mode === "focus" && <Brain className="w-3 h-3 sm:w-4 sm:h-4" />}
+                  {mode === "break" && <Coffee className="w-3 h-3 sm:w-4 sm:h-4" />}
+                  {mode === "custom" && <TimerIcon className="w-3 h-3 sm:w-4 sm:h-4" />}
                   {mode === "focus" ? "Focus Mode" : mode === "break" ? "Break Time" : "Custom Timer"}
                 </div>
 
                 {/* Time Display */}
-                <div className={`text-8xl font-bold tracking-tight bg-gradient-to-r ${getModeColor()} bg-clip-text text-transparent mb-8`}>
+                <div className={`text-5xl sm:text-7xl md:text-8xl font-bold tracking-tight bg-gradient-to-r ${getModeColor()} bg-clip-text text-transparent mb-6 sm:mb-8`}>
                   {formatTime(timeLeft)}
                 </div>
 
                 {/* Controls */}
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center justify-center gap-3 sm:gap-4">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="w-14 h-14 rounded-full"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full"
                     onClick={resetTimer}
                   >
-                    <RotateCcw className="w-6 h-6" />
+                    <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6" />
                   </Button>
                   <Button
                     size="icon"
-                    className={`w-20 h-20 rounded-full bg-gradient-to-r ${getModeColor()} hover:opacity-90 transition-opacity`}
+                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r ${getModeColor()} hover:opacity-90 transition-opacity`}
                     onClick={toggleTimer}
                   >
                     {isRunning ? (
-                      <Pause className="w-8 h-8 text-white" />
+                      <Pause className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                     ) : (
-                      <Play className="w-8 h-8 text-white ml-1" />
+                      <Play className="w-6 h-6 sm:w-8 sm:h-8 text-white ml-1" />
                     )}
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="w-14 h-14 rounded-full"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full"
                     onClick={() => setSoundEnabled(!soundEnabled)}
                   >
                     {soundEnabled ? (
-                      <Volume2 className="w-6 h-6" />
+                      <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : (
-                      <VolumeX className="w-6 h-6" />
+                      <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" />
                     )}
                   </Button>
                 </div>
@@ -231,29 +231,30 @@ const Timer = () => {
           </Card>
 
           {/* Presets */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
             {presets.map((preset) => (
               <Button
                 key={preset.label}
                 variant={mode === preset.mode && timeLeft === preset.minutes * 60 ? "default" : "outline"}
-                className="h-auto py-4 flex flex-col gap-2"
+                className="h-auto py-3 sm:py-4 flex flex-col gap-1 sm:gap-2"
                 onClick={() => handlePresetSelect(preset)}
               >
-                <preset.icon className="w-5 h-5" />
-                <span className="font-medium">{preset.label}</span>
+                <preset.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="font-medium text-xs sm:text-sm">{preset.label}</span>
                 <span className="text-xs opacity-70">{preset.minutes} min</span>
               </Button>
             ))}
           </div>
 
           {/* Custom Timer */}
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <Label className="text-sm font-medium mb-4 block">Custom Duration</Label>
-              <div className="flex items-center justify-center gap-4">
+          <Card className="mb-6 sm:mb-8">
+            <CardContent className="p-4 sm:p-6">
+              <Label className="text-sm font-medium mb-3 sm:mb-4 block">Custom Duration</Label>
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
                 <Button
                   variant="outline"
                   size="icon"
+                  className="w-10 h-10"
                   onClick={() => adjustCustomMinutes(-5)}
                   disabled={customMinutes <= 5}
                 >
@@ -267,21 +268,22 @@ const Timer = () => {
                       const val = parseInt(e.target.value) || 1;
                       setCustomMinutes(Math.max(1, Math.min(120, val)));
                     }}
-                    className="w-20 text-center text-lg font-bold"
+                    className="w-16 sm:w-20 text-center text-base sm:text-lg font-bold"
                     min={1}
                     max={120}
                   />
-                  <span className="text-muted-foreground">minutes</span>
+                  <span className="text-sm sm:text-base text-muted-foreground">min</span>
                 </div>
                 <Button
                   variant="outline"
                   size="icon"
+                  className="w-10 h-10"
                   onClick={() => adjustCustomMinutes(5)}
                   disabled={customMinutes >= 120}
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
-                <Button onClick={handleCustomTime} className="ml-4">
+                <Button onClick={handleCustomTime} className="w-full sm:w-auto mt-2 sm:mt-0 sm:ml-2">
                   Set Timer
                 </Button>
               </div>
