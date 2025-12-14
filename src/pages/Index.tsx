@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import CountdownTimer from "@/components/CountdownTimer";
-
+import { useAuth } from "@/hooks/useAuth";
 interface Offer {
   id: string;
   title: string;
@@ -28,6 +28,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const Index = () => {
+  const { user } = useAuth();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loadingOffers, setLoadingOffers] = useState(true);
 
@@ -198,62 +199,64 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Achievements */}
-      <section className="py-12 sm:py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/20 text-accent-foreground text-xs sm:text-sm font-semibold mb-4">
-              <Trophy className="w-4 h-4 text-accent" />
-              Earn Rewards
-            </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">🏆 Featured Achievements</h2>
-            <p className="mt-3 text-sm sm:text-lg text-muted-foreground">
-              Complete challenges and climb the leaderboard!
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {featuredAchievements.map((achievement, index) => (
-              <div
-                key={achievement.title}
-                className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-                    <achievement.icon className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <span className="px-2 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold">
-                    {achievement.reward}
-                  </span>
-                </div>
-                <h3 className="mt-4 font-semibold text-lg">{achievement.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{achievement.description}</p>
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-semibold">{achievement.progress}%</span>
-                  </div>
-                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                    <div 
-                      className="h-full gradient-primary rounded-full transition-all duration-500"
-                      style={{ width: `${achievement.progress}%` }}
-                    />
-                  </div>
-                </div>
+      {/* Featured Achievements - Only show for logged in users */}
+      {user && (
+        <section className="py-12 sm:py-16 px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-8 sm:mb-12">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/20 text-accent-foreground text-xs sm:text-sm font-semibold mb-4">
+                <Trophy className="w-4 h-4 text-accent" />
+                Earn Rewards
               </div>
-            ))}
-          </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">🏆 Featured Achievements</h2>
+              <p className="mt-3 text-sm sm:text-lg text-muted-foreground">
+                Complete challenges and climb the leaderboard!
+              </p>
+            </div>
 
-          <div className="text-center mt-8">
-            <Link to="/gamification">
-              <Button variant="outline" size="lg">
-                View All Achievements →
-              </Button>
-            </Link>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+              {featuredAchievements.map((achievement, index) => (
+                <div
+                  key={achievement.title}
+                  className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-slide-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+                      <achievement.icon className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <span className="px-2 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold">
+                      {achievement.reward}
+                    </span>
+                  </div>
+                  <h3 className="mt-4 font-semibold text-lg">{achievement.title}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{achievement.description}</p>
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="font-semibold">{achievement.progress}%</span>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div 
+                        className="h-full gradient-primary rounded-full transition-all duration-500"
+                        style={{ width: `${achievement.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-8">
+              <Link to="/gamification">
+                <Button variant="outline" size="lg">
+                  View All Achievements →
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* How It Works */}
       <section className="py-12 sm:py-20 px-4 bg-secondary/30">
