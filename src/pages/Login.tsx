@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Lock, ArrowLeft } from "lucide-react";
+import { Calendar, Mail, Lock, ArrowLeft, Sparkles, CheckCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
@@ -11,17 +11,50 @@ const passwordSchema = z.string().min(6, { message: "Password must be at least 6
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, user, loading } = useAuth();
+  const { signIn, signUp, signInWithMagicLink, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [useMagicLink, setUseMagicLink] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
       navigate("/dashboard");
     }
   }, [user, loading, navigate]);
+
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      toast({
+        title: "Invalid Email",
+        description: emailResult.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    const { error } = await signInWithMagicLink(email);
+    
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    setMagicLinkSent(true);
+    setIsLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,70 +163,161 @@ const Login = () => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-card p-8 rounded-2xl shadow-card border border-border">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  />
-                </div>
-                {isSignUp && (
-                  <p className="text-xs text-muted-foreground mt-1">Must be at least 6 characters</p>
-                )}
-                {!isSignUp && (
-                  <div className="mt-2 text-right">
-                    <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                      Forgot password?
-                    </Link>
+          <div className="bg-card p-8 rounded-2xl shadow-card border border-border">
+            {useMagicLink ? (
+              magicLinkSent ? (
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
                   </div>
+                  <h2 className="text-lg font-semibold mb-2">Check your email</h2>
+                  <p className="text-muted-foreground mb-6">
+                    We've sent a magic link to <strong>{email}</strong>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Click the link in your email to sign in instantly.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setMagicLinkSent(false);
+                      setEmail("");
+                    }}
+                    className="mt-4 text-primary text-sm font-medium hover:underline"
+                  >
+                    Use a different email
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleMagicLink}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Email</label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="hero"
+                    size="lg"
+                    className="w-full mt-6"
+                    disabled={isLoading}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {isLoading ? "Sending..." : "Send Magic Link"}
+                  </Button>
+
+                  <div className="mt-6 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setUseMagicLink(false)}
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      Use password instead
+                    </button>
+                  </div>
+                </form>
+              )
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
+                    </div>
+                    {isSignUp && (
+                      <p className="text-xs text-muted-foreground mt-1">Must be at least 6 characters</p>
+                    )}
+                    {!isSignUp && (
+                      <div className="mt-2 text-right">
+                        <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                          Forgot password?
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="hero"
+                  size="lg"
+                  className="w-full mt-6"
+                  disabled={isLoading}
+                >
+                  {isLoading 
+                    ? (isSignUp ? "Creating account..." : "Signing in...") 
+                    : (isSignUp ? "Create Account" : "Sign In")}
+                </Button>
+
+                {!isSignUp && (
+                  <>
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-border"></div>
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">or</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => setUseMagicLink(true)}
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Sign in with Magic Link
+                    </Button>
+                  </>
                 )}
-              </div>
-            </div>
 
-            <Button
-              type="submit"
-              variant="hero"
-              size="lg"
-              className="w-full mt-6"
-              disabled={isLoading}
-            >
-              {isLoading 
-                ? (isSignUp ? "Creating account..." : "Signing in...") 
-                : (isSignUp ? "Create Account" : "Sign In")}
-            </Button>
-
-            <p className="mt-6 text-center text-sm text-muted-foreground">
-              {isSignUp ? "Already have an account? " : "Don't have an account? "}
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-primary font-medium hover:underline"
-              >
-                {isSignUp ? "Sign in" : "Sign up"}
-              </button>
-            </p>
-          </form>
+                <p className="mt-6 text-center text-sm text-muted-foreground">
+                  {isSignUp ? "Already have an account? " : "Don't have an account? "}
+                  <button
+                    type="button"
+                    onClick={() => setIsSignUp(!isSignUp)}
+                    className="text-primary font-medium hover:underline"
+                  >
+                    {isSignUp ? "Sign in" : "Sign up"}
+                  </button>
+                </p>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>
