@@ -143,6 +143,19 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         if (response.status === 429) {
+          // Check if it's a usage limit error
+          if (errorData.limit_reached) {
+            toast({
+              title: "Monthly Limit Reached",
+              description: errorData.error || "Upgrade to Pro for more AI requests!",
+              variant: "destructive",
+            });
+            setMessages(prev => [...prev, { 
+              role: "assistant", 
+              content: `I'd love to help, but you've used all ${errorData.limit} AI requests for this month! 😅 Upgrade to Pro for 100 requests/month, or go Lifetime for unlimited access. 🚀` 
+            }]);
+            return;
+          }
           throw new Error(errorData.error || "Rate limit exceeded. Please wait a moment.");
         }
         if (response.status === 402) {
