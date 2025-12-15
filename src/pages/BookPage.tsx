@@ -32,7 +32,6 @@ interface BookingSlot {
   available_days: number[];
   start_hour: number;
   end_hour: number;
-  host_email: string | null;
 }
 
 const BookPage = () => {
@@ -56,9 +55,10 @@ const BookPage = () => {
 
   const fetchBookingSlot = async () => {
     try {
+      // Only fetch non-sensitive fields - host_email is excluded for security
       const { data, error } = await supabase
         .from("booking_slots")
-        .select("*")
+        .select("id, user_id, title, duration_minutes, available_days, start_hour, end_hour")
         .eq("public_slug", slug)
         .eq("is_active", true)
         .maybeSingle();
@@ -155,17 +155,17 @@ const BookPage = () => {
         throw new Error(data.details?.join(", ") || data.error);
       }
 
-      // Send email notifications
-      if (data?.slot?.host_email) {
+      // Send email notifications - edge function handles host_email securely
+      if (data?.hostEmail) {
         try {
           await supabase.functions.invoke("send-booking-notification", {
             body: {
-              hostEmail: data.slot.host_email,
+              hostEmail: data.hostEmail,
               guestName: guestName.trim(),
               guestEmail: guestEmail.trim().toLowerCase(),
               bookingDate: formattedDate,
               bookingTime: formatTime(selectedTime),
-              meetingTitle: data.slot.title || slot.title,
+              meetingTitle: data.slot?.title || slot.title,
               notes: notes?.trim() || undefined,
             },
           });
