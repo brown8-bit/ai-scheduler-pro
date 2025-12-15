@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays } from "lucide-react";
-import { LogoIcon } from "@/components/LogoIcon";
+import { Logo3D } from "@/components/Logo3D";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -81,7 +81,9 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <LogoIcon className="w-9 h-9 rounded-lg shadow-elegant group-hover:shadow-lg group-hover:scale-105 transition-all" />
+            <div className="w-10 h-10 rounded-lg shadow-elegant group-hover:shadow-lg group-hover:scale-105 transition-all overflow-hidden">
+              <Logo3D className="w-full h-full" />
+            </div>
             <span className="font-bold text-xl text-foreground">Schedulr</span>
           </Link>
 
