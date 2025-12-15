@@ -5,7 +5,7 @@ interface LogoIconProps {
   className?: string;
 }
 
-// Schedulr logo: white border, orange square, 4 numbers, single hand at 12, smile
+// Simple Schedulr logo: orange rounded square, 4 numbers, single hand at 12, smile
 export const LogoIcon: FC<LogoIconProps> = ({ className }) => {
   return (
     <svg
@@ -14,87 +14,29 @@ export const LogoIcon: FC<LogoIconProps> = ({ className }) => {
       aria-label="Schedulr logo"
       className={cn("shrink-0", className)}
     >
-      {/* White-ish outer background / border */}
-      <rect
-        x="2"
-        y="2"
-        width="60"
-        height="60"
-        rx="18"
-        fill="hsl(var(--background))"
-      />
+      {/* White border */}
+      <rect x="2" y="2" width="60" height="60" rx="14" fill="white" />
+      
+      {/* Orange square */}
+      <rect x="6" y="6" width="52" height="52" rx="12" fill="#f97316" />
 
-      {/* Orange inner square */}
-      <rect
-        x="6"
-        y="6"
-        width="52"
-        height="52"
-        rx="16"
-        fill="hsl(var(--primary))"
-      />
+      {/* 12 */}
+      <text x="32" y="18" textAnchor="middle" fontSize="9" fontWeight="bold" fill="white" fontFamily="system-ui, sans-serif">12</text>
+      
+      {/* 3 */}
+      <text x="48" y="35" textAnchor="middle" fontSize="9" fontWeight="bold" fill="white" fontFamily="system-ui, sans-serif">3</text>
+      
+      {/* 6 */}
+      <text x="32" y="52" textAnchor="middle" fontSize="9" fontWeight="bold" fill="white" fontFamily="system-ui, sans-serif">6</text>
+      
+      {/* 9 */}
+      <text x="16" y="35" textAnchor="middle" fontSize="9" fontWeight="bold" fill="white" fontFamily="system-ui, sans-serif">9</text>
 
-      {/* Numbers 12, 3, 6, 9 */}
-      <text
-        x="32"
-        y="18"
-        textAnchor="middle"
-        fontSize="10"
-        fill="hsl(var(--primary-foreground))"
-        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
-      >
-        12
-      </text>
-      <text
-        x="46"
-        y="34"
-        textAnchor="middle"
-        fontSize="10"
-        fill="hsl(var(--primary-foreground))"
-        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
-      >
-        3
-      </text>
-      <text
-        x="32"
-        y="50"
-        textAnchor="middle"
-        fontSize="10"
-        fill="hsl(var(--primary-foreground))"
-        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
-      >
-        6
-      </text>
-      <text
-        x="18"
-        y="34"
-        textAnchor="middle"
-        fontSize="10"
-        fill="hsl(var(--primary-foreground))"
-        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif"
-      >
-        9
-      </text>
+      {/* Single clock hand pointing at 12 */}
+      <line x1="32" y1="32" x2="32" y2="20" stroke="white" strokeWidth="3" strokeLinecap="round" />
 
-      {/* Single clock hand pointing straight at 12 */}
-      <line
-        x1="32"
-        y1="30"
-        x2="32"
-        y2="18"
-        stroke="hsl(var(--primary-foreground))"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-
-      {/* Smile under the hand */}
-      <path
-        d="M22 40 Q32 48 42 40"
-        fill="none"
-        stroke="hsl(var(--primary-foreground))"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+      {/* Smile */}
+      <path d="M24 42 Q32 48 40 42" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
     </svg>
   );
 };
