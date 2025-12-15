@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays } from "lucide-react";
-import schedulrLogo from "@/assets/schedulr-logo-new.png";
+import schedulrLogo from "@/assets/schedulr-logo-v2.png";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
