@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays } from "lucide-react";
-import schedulrLogo from "@/assets/schedulr-logo.png";
+import schedulrLogoClassic from "@/assets/schedulr-logo-classic.png";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,7 +82,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <img 
-              src={schedulrLogo} 
+              src={schedulrLogoClassic} 
               alt="Schedulr" 
               className="w-9 h-9 rounded-lg shadow-elegant group-hover:shadow-lg group-hover:scale-105 transition-all"
             />
