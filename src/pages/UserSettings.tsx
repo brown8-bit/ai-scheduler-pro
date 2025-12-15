@@ -15,7 +15,10 @@ import {
   Save,
   Loader2,
   ArrowLeft,
-  Camera
+  Camera,
+  CreditCard,
+  Crown,
+  ExternalLink
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +33,13 @@ const UserSettings = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Subscription State
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [subscribed, setSubscribed] = useState(false);
+  const [productId, setProductId] = useState<string | null>(null);
+  const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   // User Settings State
   const [displayName, setDisplayName] = useState("");
@@ -48,8 +58,48 @@ const UserSettings = () => {
     if (user) {
       setDisplayName(user.email?.split("@")[0] || "");
       fetchProfile();
+      checkSubscription();
     }
   }, [user, authLoading, navigate]);
+
+  const checkSubscription = async () => {
+    setSubscriptionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-subscription");
+      
+      if (error) throw error;
+      
+      setSubscribed(data?.subscribed || false);
+      setProductId(data?.product_id || null);
+      setSubscriptionEnd(data?.subscription_end || null);
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error: any) {
+      console.error("Portal error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to open subscription portal.",
+        variant: "destructive",
+      });
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -64,6 +114,15 @@ const UserSettings = () => {
       setDisplayName(data.display_name || user.email?.split("@")[0] || "");
       setAvatarUrl(data.avatar_url);
     }
+  };
+
+  const getSubscriptionTier = () => {
+    if (!subscribed) return "Free";
+    // Check if it's the Pro subscription product
+    if (productId === "prod_TbgdfMvDLuAaXY") return "Pro";
+    // Check if it's the Lifetime product
+    if (productId === "prod_TbgdjToKIvSQ9T") return "Lifetime";
+    return "Pro";
   };
 
   const handleAvatarClick = () => {
@@ -270,6 +329,73 @@ const UserSettings = () => {
                   <p className="text-xs text-muted-foreground">Email cannot be changed</p>
                 </div>
               </div>
+            </div>
+
+            {/* Subscription Management */}
+            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-primary" />
+                Subscription
+              </h2>
+              
+              {subscriptionLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        subscribed ? "gradient-primary" : "bg-muted"
+                      }`}>
+                        <Crown className={`w-5 h-5 ${subscribed ? "text-primary-foreground" : "text-muted-foreground"}`} />
+                      </div>
+                      <div>
+                        <p className="font-semibold">{getSubscriptionTier()} Plan</p>
+                        <p className="text-sm text-muted-foreground">
+                          {subscribed 
+                            ? subscriptionEnd 
+                              ? `Renews on ${new Date(subscriptionEnd).toLocaleDateString()}`
+                              : "Active subscription"
+                            : "Limited features"
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    {subscribed && (
+                      <div className="px-3 py-1 rounded-full bg-green-500/10 text-green-600 text-xs font-medium">
+                        Active
+                      </div>
+                    )}
+                  </div>
+
+                  {subscribed ? (
+                    <Button 
+                      variant="outline" 
+                      className="w-full gap-2"
+                      onClick={handleManageSubscription}
+                      disabled={portalLoading}
+                    >
+                      {portalLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ExternalLink className="w-4 h-4" />
+                      )}
+                      Manage Subscription
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="hero" 
+                      className="w-full gap-2"
+                      onClick={() => navigate("/pricing")}
+                    >
+                      <Crown className="w-4 h-4" />
+                      Upgrade to Pro
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Notification Settings */}
