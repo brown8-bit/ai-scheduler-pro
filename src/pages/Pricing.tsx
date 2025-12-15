@@ -20,25 +20,36 @@ const Pricing = () => {
   }, []);
 
   const freeFeatures = [
-    { name: "5 AI scheduling requests/month", included: true },
+    { name: "5 AI requests/month", included: true },
     { name: "Basic calendar view", included: true },
     { name: "1 event template", included: true },
     { name: "Calendar sync", included: false },
     { name: "Team collaboration", included: false },
     { name: "Priority support", included: false },
-    { name: "Advanced analytics", included: false },
+    { name: "Analytics", included: false },
     { name: "API access", included: false },
   ];
 
   const proFeatures = [
-    "Unlimited AI scheduling",
-    "Calendar sync (Google, Outlook, Apple)",
-    "Smart reminders",
-    "Team collaboration",
-    "Priority support",
-    "Advanced analytics",
-    "Custom integrations",
-    "API access"
+    { name: "100 AI requests/month", included: true },
+    { name: "Full calendar view", included: true },
+    { name: "10 event templates", included: true },
+    { name: "Calendar sync", included: true },
+    { name: "Team collaboration (5 members)", included: true },
+    { name: "Email support", included: true },
+    { name: "Basic analytics", included: true },
+    { name: "API access", included: false },
+  ];
+
+  const lifetimeFeatures = [
+    { name: "Unlimited AI requests", included: true },
+    { name: "Full calendar view", included: true },
+    { name: "Unlimited templates", included: true },
+    { name: "Calendar sync", included: true },
+    { name: "Unlimited team members", included: true },
+    { name: "Priority support", included: true },
+    { name: "Advanced analytics", included: true },
+    { name: "Full API access", included: true },
   ];
 
   const handleSubscribe = async () => {
@@ -202,11 +213,19 @@ const Pricing = () => {
 
                 <div className="mt-6 space-y-3">
                   {proFeatures.map((feature) => (
-                    <div key={feature} className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3 h-3 text-primary-foreground" />
-                      </div>
-                      <span className="text-foreground text-sm">{feature}</span>
+                    <div key={feature.name} className="flex items-center gap-3">
+                      {feature.included ? (
+                        <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+                          <Check className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                          <X className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                      )}
+                      <span className={feature.included ? "text-foreground text-sm" : "text-muted-foreground text-sm line-through"}>
+                        {feature.name}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -256,12 +275,12 @@ const Pricing = () => {
                 </Button>
 
                 <div className="mt-6 space-y-3">
-                  {proFeatures.map((feature) => (
-                    <div key={feature} className="flex items-center gap-3">
+                  {lifetimeFeatures.map((feature) => (
+                    <div key={feature.name} className="flex items-center gap-3">
                       <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
                         <Check className="w-3 h-3 text-primary-foreground" />
                       </div>
-                      <span className="text-foreground text-sm">{feature}</span>
+                      <span className="text-foreground text-sm">{feature.name}</span>
                     </div>
                   ))}
                 </div>
