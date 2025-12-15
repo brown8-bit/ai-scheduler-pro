@@ -7,6 +7,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// In-memory rate limiting (per IP and per email)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_IP = 5; // 5 bookings per minute per IP
+const MAX_REQUESTS_PER_EMAIL = 3; // 3 bookings per minute per email
+
+const checkRateLimit = (key: string, maxRequests: number): { allowed: boolean; remaining: number } => {
+  const now = Date.now();
+  const record = rateLimitMap.get(key);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: maxRequests - 1 };
+  }
+  
+  if (record.count >= maxRequests) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  record.count++;
+  return { allowed: true, remaining: maxRequests - record.count };
+};
+
 // Simple validation helpers
 const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -96,6 +119,28 @@ serve(async (req) => {
   }
 
   try {
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     req.headers.get('cf-connecting-ip') || 
+                     'unknown';
+    
+    // Check IP-based rate limit first
+    const ipRateLimit = checkRateLimit(`ip:${clientIP}`, MAX_REQUESTS_PER_IP);
+    if (!ipRateLimit.allowed) {
+      console.log('Rate limit exceeded for IP:', clientIP);
+      return new Response(
+        JSON.stringify({ error: 'Too many booking requests. Please try again later.' }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': '60'
+          } 
+        }
+      );
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -107,7 +152,8 @@ serve(async (req) => {
       booking_time: body.booking_time,
       guest_name_length: body.guest_name?.length,
       guest_email_domain: body.guest_email?.split('@')[1],
-      notes_length: body.notes?.length
+      notes_length: body.notes?.length,
+      client_ip: clientIP
     }));
 
     // Validate and sanitize input
@@ -126,6 +172,23 @@ serve(async (req) => {
 
     const sanitized = validation.sanitized!;
 
+    // Check email-based rate limit
+    const emailRateLimit = checkRateLimit(`email:${sanitized.guest_email}`, MAX_REQUESTS_PER_EMAIL);
+    if (!emailRateLimit.allowed) {
+      console.log('Rate limit exceeded for email:', sanitized.guest_email);
+      return new Response(
+        JSON.stringify({ error: 'Too many booking requests from this email. Please try again later.' }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': '60'
+          } 
+        }
+      );
+    }
+
     // Fetch the booking slot to get host_user_id
     const { data: slotData, error: slotError } = await supabase
       .from('booking_slots')
@@ -140,6 +203,26 @@ serve(async (req) => {
         JSON.stringify({ error: 'Invalid or inactive booking slot' }),
         { 
           status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Check for duplicate bookings (same slot, date, time)
+    const { data: existingBooking } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('slot_id', sanitized.slot_id)
+      .eq('booking_date', sanitized.booking_date)
+      .eq('booking_time', sanitized.booking_time)
+      .maybeSingle();
+
+    if (existingBooking) {
+      console.log('Duplicate booking attempt for slot/date/time');
+      return new Response(
+        JSON.stringify({ error: 'This time slot is already booked. Please choose another time.' }),
+        { 
+          status: 409, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
