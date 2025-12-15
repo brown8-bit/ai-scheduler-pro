@@ -349,6 +349,16 @@ export type Database = {
         Args: { slot_id_param: string }
         Returns: string
       }
+      get_leaderboard_data: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar_url: string
+          current_streak: number
+          display_name: string
+          rank_position: number
+          total_events_completed: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
