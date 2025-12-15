@@ -14,7 +14,17 @@ export const LogoIcon: FC<LogoIconProps> = ({ className }) => {
       aria-label="Schedulr logo"
       className={cn("shrink-0", className)}
     >
-      {/* Background */}
+      {/* White background/border */}
+      <rect
+        x="2"
+        y="2"
+        width="60"
+        height="60"
+        rx="18"
+        fill="white"
+      />
+      
+      {/* Orange background */}
       <rect
         x="4"
         y="4"
