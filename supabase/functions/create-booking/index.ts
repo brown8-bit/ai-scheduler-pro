@@ -177,8 +177,9 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         booking: bookingData,
+        // Return host_email at top level for notification, not exposed in public API
+        hostEmail: slotData.host_email,
         slot: {
-          host_email: slotData.host_email,
           title: slotData.title
         }
       }),

@@ -345,6 +345,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_booking_slot_host_email: {
+        Args: { slot_id_param: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
