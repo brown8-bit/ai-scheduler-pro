@@ -84,7 +84,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
             <img 
               src={schedulrLogo} 
               alt="Schedulr" 
-              className="w-9 h-9 rounded-lg shadow-elegant group-hover:shadow-lg group-hover:scale-105 transition-all hue-rotate-[330deg] saturate-150"
+              className="w-9 h-9 rounded-lg shadow-elegant group-hover:shadow-lg group-hover:scale-105 transition-all"
             />
             <span className="font-bold text-xl text-foreground">Schedulr</span>
           </Link>
