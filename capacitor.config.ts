@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.738027434fa34844b555b1ddf35e4baf',
+  appId: 'com.schedulr.app',
   appName: 'Schedulr',
   webDir: 'dist',
   server: {
