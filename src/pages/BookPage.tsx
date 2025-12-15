@@ -26,12 +26,13 @@ const bookingSchema = z.object({
 
 interface BookingSlot {
   id: string;
-  user_id: string;
   title: string;
   duration_minutes: number;
   available_days: number[];
   start_hour: number;
   end_hour: number;
+  is_active: boolean;
+  public_slug: string;
 }
 
 const BookPage = () => {
@@ -55,12 +56,9 @@ const BookPage = () => {
 
   const fetchBookingSlot = async () => {
     try {
-      // Only fetch non-sensitive fields - host_email is excluded for security
+      // Use secure RPC function that doesn't expose user_id
       const { data, error } = await supabase
-        .from("booking_slots")
-        .select("id, user_id, title, duration_minutes, available_days, start_hour, end_hour")
-        .eq("public_slug", slug)
-        .eq("is_active", true)
+        .rpc("get_public_booking_slot", { slug_param: slug })
         .maybeSingle();
 
       if (error) throw error;

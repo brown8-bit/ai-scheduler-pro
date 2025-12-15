@@ -359,6 +359,19 @@ export type Database = {
           total_events_completed: number
         }[]
       }
+      get_public_booking_slot: {
+        Args: { slug_param: string }
+        Returns: {
+          available_days: number[]
+          duration_minutes: number
+          end_hour: number
+          id: string
+          is_active: boolean
+          public_slug: string
+          start_hour: number
+          title: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
