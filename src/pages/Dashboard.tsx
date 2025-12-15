@@ -493,12 +493,12 @@ const Dashboard = () => {
               </div>
 
               {/* Productivity Tip */}
-              <div className="bg-accent/10 border border-accent/20 rounded-xl p-5">
-                <h3 className="font-semibold flex items-center gap-2 text-accent-foreground mb-2">
-                  <TrendingUp className="w-4 h-4" />
+              <div className="bg-primary/10 border border-primary/20 rounded-xl p-5">
+                <h3 className="font-semibold flex items-center gap-2 text-foreground mb-2">
+                  <TrendingUp className="w-4 h-4 text-primary" />
                   Productivity Tip
                 </h3>
-                <p className="text-sm text-muted-foreground">{randomTip}</p>
+                <p className="text-sm text-foreground/80">{randomTip}</p>
               </div>
 
               {/* AI Assistant Card */}
