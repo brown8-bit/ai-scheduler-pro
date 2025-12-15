@@ -5,7 +5,7 @@ interface LogoIconProps {
   className?: string;
 }
 
-// Schedulr logo: orange rounded square, 4 numbers, single hand at 12, smile
+// Schedulr logo: white border, orange square, 4 numbers, single hand at 12, smile
 export const LogoIcon: FC<LogoIconProps> = ({ className }) => {
   return (
     <svg
@@ -14,27 +14,27 @@ export const LogoIcon: FC<LogoIconProps> = ({ className }) => {
       aria-label="Schedulr logo"
       className={cn("shrink-0", className)}
     >
-      {/* White background/border */}
+      {/* White-ish outer background / border */}
       <rect
         x="2"
         y="2"
         width="60"
         height="60"
         rx="18"
-        fill="white"
+        fill="hsl(var(--background))"
       />
-      
-      {/* Orange background */}
+
+      {/* Orange inner square */}
       <rect
-        x="4"
-        y="4"
-        width="56"
-        height="56"
+        x="6"
+        y="6"
+        width="52"
+        height="52"
         rx="16"
         fill="hsl(var(--primary))"
       />
 
-      {/* Numbers */}
+      {/* Numbers 12, 3, 6, 9 */}
       <text
         x="32"
         y="18"
@@ -46,7 +46,7 @@ export const LogoIcon: FC<LogoIconProps> = ({ className }) => {
         12
       </text>
       <text
-        x="48"
+        x="46"
         y="34"
         textAnchor="middle"
         fontSize="10"
@@ -66,7 +66,7 @@ export const LogoIcon: FC<LogoIconProps> = ({ className }) => {
         6
       </text>
       <text
-        x="16"
+        x="18"
         y="34"
         textAnchor="middle"
         fontSize="10"
@@ -76,7 +76,7 @@ export const LogoIcon: FC<LogoIconProps> = ({ className }) => {
         9
       </text>
 
-      {/* Single clock hand pointing at 12 */}
+      {/* Single clock hand pointing straight at 12 */}
       <line
         x1="32"
         y1="30"
@@ -87,9 +87,9 @@ export const LogoIcon: FC<LogoIconProps> = ({ className }) => {
         strokeLinecap="round"
       />
 
-      {/* Smile */}
+      {/* Smile under the hand */}
       <path
-        d="M24 40 Q32 46 40 40"
+        d="M22 40 Q32 48 42 40"
         fill="none"
         stroke="hsl(var(--primary-foreground))"
         strokeWidth="3"
