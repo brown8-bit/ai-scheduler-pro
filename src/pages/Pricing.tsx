@@ -1,10 +1,23 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const Pricing = () => {
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+  }, []);
+
   const features = [
     "Unlimited AI scheduling",
     "Calendar sync (Google, Outlook, Apple)",
@@ -15,6 +28,33 @@ const Pricing = () => {
     "Custom integrations",
     "API access"
   ];
+
+  const handleSubscribe = async () => {
+    if (!user) {
+      navigate("/register");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout");
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error: any) {
+      console.error("Checkout error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start checkout. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen gradient-hero">
@@ -55,14 +95,27 @@ const Pricing = () => {
                   </p>
                 </div>
 
-                <Link to="/register">
-                  <Button variant="hero" size="xl" className="w-full">
-                    Start Free Trial
-                  </Button>
-                </Link>
+                <Button 
+                  variant="hero" 
+                  size="xl" 
+                  className="w-full"
+                  onClick={handleSubscribe}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : user ? (
+                    "Subscribe Now"
+                  ) : (
+                    "Start Free Trial"
+                  )}
+                </Button>
 
                 <p className="text-center text-sm text-muted-foreground mt-4">
-                  14-day free trial. No credit card required.
+                  {user ? "Secure checkout powered by Stripe" : "14-day free trial. No credit card required."}
                 </p>
 
                 {/* Features */}
