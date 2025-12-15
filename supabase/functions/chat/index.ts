@@ -166,7 +166,7 @@ ${templates && templates.length > 0
       console.log("User context built successfully");
     }
 
-    const systemPrompt = `You are Lawrence, a smart, friendly, and proactive AI scheduling assistant. You have FULL CONTEXT about the user's schedule, goals, streaks, and productivity data.
+    const systemPrompt = `You are Scheddy, a fun, friendly, and enthusiastic AI scheduling assistant! You have FULL CONTEXT about the user's schedule, goals, streaks, and productivity data.
 
 Current date: ${currentDate}
 Current time: ${currentTime}
@@ -181,11 +181,12 @@ YOUR CAPABILITIES:
 5. **Goal Tracking**: Help them stay on track with their events and goals
 
 PERSONALITY:
-- Warm, encouraging, and helpful
-- Reference their actual data (e.g., "I see you have 3 events today!" or "Great job on your ${userContext.includes("current_streak") ? "streak" : "progress"}!")
-- Celebrate their wins and streaks
+- You are Scheddy - warm, playful, and super enthusiastic about helping!
+- Use fun phrases and expressions naturally
+- Reference their actual data (e.g., "I see you have 3 events today!" or "Your streak is looking great!")
+- Celebrate their wins and streaks enthusiastically
 - Gently remind them about busy days or conflicts
-- Use emojis sparingly but effectively
+- Use emojis naturally to express excitement
 
 SCHEDULING RULES:
 When a user wants to schedule something, ALWAYS use the create_event function. Parse:
@@ -201,7 +202,7 @@ SMART BEHAVIORS:
 - If they ask about their schedule, summarize it helpfully
 - Suggest breaks if they have many consecutive events
 
-Be conversational and personal - you KNOW this user!`;
+Be conversational, playful and personal - you KNOW this user and you're excited to help them!`;
 
     const tools = [
       {
@@ -304,6 +305,22 @@ Be conversational and personal - you KNOW this user!`;
             });
           }
 
+          // Fun confirmation phrases Scheddy uses
+          const confirmationPhrases = [
+            "Boom! Done! 💥",
+            "Consider it scheduled! ✨",
+            "You got it, friend! 🎯",
+            "On it! And... done! ⚡",
+            "Locked in! 🔒",
+            "Easy peasy! 🌟",
+            "Ta-da! All set! 🎉",
+            "And just like that... scheduled! ✅",
+            "Say no more! It's done! 🚀",
+            "Your wish is my command! ✨"
+          ];
+          
+          const randomPhrase = confirmationPhrases[Math.floor(Math.random() * confirmationPhrases.length)];
+
           // Format a nice confirmation message
           const eventDate = new Date(args.event_date);
           const formattedDate = eventDate.toLocaleDateString('en-US', { 
@@ -316,15 +333,17 @@ Be conversational and personal - you KNOW this user!`;
             minute: '2-digit' 
           });
 
-          let confirmationMessage = `Done! I've scheduled "${args.title}" for ${formattedDate} at ${formattedTime}. 📅`;
+          let confirmationMessage = `${randomPhrase} I've scheduled "${args.title}" for ${formattedDate} at ${formattedTime}. 📅`;
           
           if (args.is_recurring && args.recurrence_pattern) {
-            confirmationMessage += ` This will repeat ${args.recurrence_pattern}.`;
+            confirmationMessage += ` This will repeat ${args.recurrence_pattern} - I love consistency!`;
           }
           
           if (args.reminder) {
-            confirmationMessage += " I'll remind you beforehand! 🔔";
+            confirmationMessage += " I'll give you a heads up beforehand! 🔔";
           }
+          
+          confirmationMessage += " Anything else I can help you schedule?";
 
           return new Response(JSON.stringify({
             reply: confirmationMessage,

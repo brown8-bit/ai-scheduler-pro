@@ -27,7 +27,20 @@ const SCHEDDY_STATUS_PHRASES = [
   "Let's get organized!",
   "Ready when you are!",
   "At your service!",
-  "Here to help!"
+  "Here to help!",
+  "Feeling productive!",
+  "Let's do this!"
+];
+
+const EVENT_CREATED_PHRASES = [
+  "Boom! Done! 💥",
+  "Consider it scheduled! ✨",
+  "You got it! 🎯",
+  "Locked in! 🔒",
+  "Easy peasy! 🌟",
+  "Ta-da! 🎉",
+  "All set! ✅",
+  "Nailed it! 🚀"
 ];
 
 interface AIChatBoxProps {
@@ -145,8 +158,9 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
       // If an event was created, notify parent
       if (data.event && onEventCreated) {
         onEventCreated();
+        const randomPhrase = EVENT_CREATED_PHRASES[Math.floor(Math.random() * EVENT_CREATED_PHRASES.length)];
         toast({
-          title: "Event Created! 🎉",
+          title: randomPhrase,
           description: `"${data.event.title}" has been added to your calendar.`,
         });
       }
