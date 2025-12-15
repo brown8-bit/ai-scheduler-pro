@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays } from "lucide-react";
-import schedulrLogo from "@/assets/schedulr-logo-s.png";
+import schedulrLogo from "@/assets/schedulr-logo.png";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -84,7 +84,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
             <img 
               src={schedulrLogo} 
               alt="Schedulr" 
-              className="w-10 h-10 group-hover:scale-105 transition-all"
+              className="w-9 h-9 rounded-lg shadow-elegant group-hover:shadow-lg group-hover:scale-105 transition-all"
             />
             <span className="font-bold text-xl text-foreground">Schedulr</span>
           </Link>
