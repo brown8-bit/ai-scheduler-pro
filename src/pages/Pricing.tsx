@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Loader2, Crown } from "lucide-react";
+import { Check, Sparkles, Loader2, Crown, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -19,7 +19,18 @@ const Pricing = () => {
     });
   }, []);
 
-  const features = [
+  const freeFeatures = [
+    { name: "5 AI scheduling requests/month", included: true },
+    { name: "Basic calendar view", included: true },
+    { name: "1 event template", included: true },
+    { name: "Calendar sync", included: false },
+    { name: "Team collaboration", included: false },
+    { name: "Priority support", included: false },
+    { name: "Advanced analytics", included: false },
+    { name: "API access", included: false },
+  ];
+
+  const proFeatures = [
     "Unlimited AI scheduling",
     "Calendar sync (Google, Outlook, Apple)",
     "Smart reminders",
@@ -103,15 +114,62 @@ const Pricing = () => {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto animate-slide-up delay-100">
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-slide-up delay-100">
+            {/* Free Plan */}
+            <div className="bg-card rounded-3xl shadow-card border border-border p-6 relative overflow-hidden">
+              <div className="relative">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold">Free</h2>
+                  <p className="text-muted-foreground mt-2 text-sm">Get started with basics</p>
+                  
+                  <div className="mt-6">
+                    <span className="text-5xl font-bold">$0</span>
+                    <span className="text-xl text-muted-foreground">/month</span>
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Limited features
+                  </p>
+                </div>
+
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="w-full"
+                  onClick={() => navigate(user ? "/dashboard" : "/register")}
+                >
+                  {user ? "Current Plan" : "Get Started"}
+                </Button>
+
+                <div className="mt-6 space-y-3">
+                  {freeFeatures.map((feature) => (
+                    <div key={feature.name} className="flex items-center gap-3">
+                      {feature.included ? (
+                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <Check className="w-3 h-3 text-primary" />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                          <X className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                      )}
+                      <span className={feature.included ? "text-foreground text-sm" : "text-muted-foreground text-sm line-through"}>
+                        {feature.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Monthly Plan */}
-            <div className="bg-card rounded-3xl shadow-card border border-border p-8 relative overflow-hidden">
+            <div className="bg-card rounded-3xl shadow-card border border-border p-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 gradient-primary opacity-10 rounded-full blur-3xl" />
               
               <div className="relative">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold">Pro Plan</h2>
-                  <p className="text-muted-foreground mt-2">Full access to all features</p>
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold">Pro</h2>
+                  <p className="text-muted-foreground mt-2 text-sm">Full access to all features</p>
                   
                   <div className="mt-6">
                     <span className="text-5xl font-bold">$29</span>
@@ -119,13 +177,13 @@ const Pricing = () => {
                   </div>
                   
                   <p className="text-sm text-muted-foreground mt-2">
-                    Billed monthly. Cancel anytime.
+                    Cancel anytime
                   </p>
                 </div>
 
                 <Button 
                   variant="hero" 
-                  size="xl" 
+                  size="lg" 
                   className="w-full"
                   onClick={handleSubscribe}
                   disabled={loadingMonthly}
@@ -142,14 +200,21 @@ const Pricing = () => {
                   )}
                 </Button>
 
-                <p className="text-center text-sm text-muted-foreground mt-4">
-                  {user ? "Secure checkout powered by Stripe" : "14-day free trial. No credit card required."}
-                </p>
+                <div className="mt-6 space-y-3">
+                  {proFeatures.map((feature) => (
+                    <div key={feature} className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-primary-foreground" />
+                      </div>
+                      <span className="text-foreground text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Lifetime Plan */}
-            <div className="bg-card rounded-3xl shadow-card border-2 border-primary p-8 relative overflow-hidden">
+            <div className="bg-card rounded-3xl shadow-card border-2 border-primary p-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 gradient-primary opacity-20 rounded-full blur-3xl" />
               <div className="absolute top-4 right-4">
                 <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
@@ -159,23 +224,23 @@ const Pricing = () => {
               </div>
               
               <div className="relative">
-                <div className="text-center mb-8">
+                <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold">Lifetime</h2>
-                  <p className="text-muted-foreground mt-2">One-time payment, forever access</p>
+                  <p className="text-muted-foreground mt-2 text-sm">One-time payment, forever</p>
                   
                   <div className="mt-6">
                     <span className="text-5xl font-bold">$299</span>
-                    <span className="text-xl text-muted-foreground"> one-time</span>
+                    <span className="text-xl text-muted-foreground"> once</span>
                   </div>
                   
                   <p className="text-sm text-muted-foreground mt-2">
-                    Pay once, use forever. No recurring fees.
+                    No recurring fees
                   </p>
                 </div>
 
                 <Button 
                   variant="hero" 
-                  size="xl" 
+                  size="lg" 
                   className="w-full"
                   onClick={handleLifetimePurchase}
                   disabled={loadingLifetime}
@@ -185,32 +250,22 @@ const Pricing = () => {
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Loading...
                     </>
-                  ) : user ? (
-                    "Get Lifetime Access"
                   ) : (
                     "Get Lifetime Access"
                   )}
                 </Button>
 
-                <p className="text-center text-sm text-muted-foreground mt-4">
-                  Secure checkout powered by Stripe
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Features */}
-          <div className="mt-12 max-w-2xl mx-auto animate-fade-in delay-200">
-            <h3 className="font-semibold mb-6 text-center text-lg">Everything included in both plans:</h3>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {features.map((feature) => (
-                <div key={feature} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
-                    <Check className="w-3 h-3 text-primary-foreground" />
-                  </div>
-                  <span className="text-muted-foreground">{feature}</span>
+                <div className="mt-6 space-y-3">
+                  {proFeatures.map((feature) => (
+                    <div key={feature} className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-primary-foreground" />
+                      </div>
+                      <span className="text-foreground text-sm">{feature}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
 
