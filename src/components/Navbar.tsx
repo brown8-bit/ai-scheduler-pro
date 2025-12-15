@@ -71,6 +71,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     { path: "/timer", label: "Timer" },
     { path: "/focus", label: "Focus" },
     { path: "/achievements", label: "Achievements" },
+    { path: "/pricing", label: "Pricing" },
   ];
 
   const userInitial = displayName.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U";
