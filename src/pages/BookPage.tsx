@@ -6,6 +6,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet-async";
 import { format, addDays, startOfDay, isSameDay } from "date-fns";
+import { z } from "zod";
+
+// Zod schema for client-side validation
+const bookingSchema = z.object({
+  guest_name: z.string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be less than 100 characters"),
+  guest_email: z.string()
+    .trim()
+    .email("Please enter a valid email address")
+    .max(255, "Email must be less than 255 characters"),
+  notes: z.string()
+    .max(1000, "Notes must be less than 1000 characters")
+    .optional()
+    .or(z.literal("")),
+});
 
 interface BookingSlot {
   id: string;
@@ -31,6 +48,7 @@ const BookPage = () => {
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchBookingSlot();
@@ -92,36 +110,63 @@ const BookPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!slot || !selectedDate || !selectedTime || !guestName || !guestEmail) return;
+    if (!slot || !selectedDate || !selectedTime) return;
+
+    // Clear previous errors
+    setFormErrors({});
+
+    // Client-side validation with Zod
+    const validationResult = bookingSchema.safeParse({
+      guest_name: guestName,
+      guest_email: guestEmail,
+      notes: notes || undefined,
+    });
+
+    if (!validationResult.success) {
+      const errors: Record<string, string> = {};
+      validationResult.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          errors[err.path[0] as string] = err.message;
+        }
+      });
+      setFormErrors(errors);
+      return;
+    }
 
     setSubmitting(true);
     try {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
       
-      const { error } = await supabase.from("bookings").insert({
-        slot_id: slot.id,
-        host_user_id: slot.user_id,
-        guest_name: guestName,
-        guest_email: guestEmail,
-        booking_date: formattedDate,
-        booking_time: selectedTime,
-        notes: notes || null,
+      // Use secure edge function for server-side validation
+      const { data, error } = await supabase.functions.invoke("create-booking", {
+        body: {
+          slot_id: slot.id,
+          guest_name: guestName.trim(),
+          guest_email: guestEmail.trim().toLowerCase(),
+          booking_date: formattedDate,
+          booking_time: selectedTime,
+          notes: notes?.trim() || null,
+        },
       });
 
       if (error) throw error;
+      
+      if (data?.error) {
+        throw new Error(data.details?.join(", ") || data.error);
+      }
 
       // Send email notifications
-      if (slot.host_email) {
+      if (data?.slot?.host_email) {
         try {
           await supabase.functions.invoke("send-booking-notification", {
             body: {
-              hostEmail: slot.host_email,
-              guestName,
-              guestEmail,
+              hostEmail: data.slot.host_email,
+              guestName: guestName.trim(),
+              guestEmail: guestEmail.trim().toLowerCase(),
               bookingDate: formattedDate,
               bookingTime: formatTime(selectedTime),
-              meetingTitle: slot.title,
-              notes: notes || undefined,
+              meetingTitle: data.slot.title || slot.title,
+              notes: notes?.trim() || undefined,
             },
           });
         } catch (emailError) {
@@ -135,11 +180,11 @@ const BookPage = () => {
         title: "Booking confirmed! 🎉",
         description: "You'll receive a confirmation email shortly.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating booking:", error);
       toast({
         title: "Booking failed",
-        description: "Please try again later.",
+        description: error.message || "Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -269,11 +314,22 @@ const BookPage = () => {
                       <input
                         type="text"
                         value={guestName}
-                        onChange={(e) => setGuestName(e.target.value)}
+                        onChange={(e) => {
+                          setGuestName(e.target.value);
+                          if (formErrors.guest_name) {
+                            setFormErrors(prev => ({ ...prev, guest_name: "" }));
+                          }
+                        }}
                         placeholder="John Doe"
-                        className="w-full pl-10 pr-4 py-3 rounded-lg bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        maxLength={100}
+                        className={`w-full pl-10 pr-4 py-3 rounded-lg bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                          formErrors.guest_name ? "ring-2 ring-destructive" : ""
+                        }`}
                       />
                     </div>
+                    {formErrors.guest_name && (
+                      <p className="text-sm text-destructive mt-1">{formErrors.guest_name}</p>
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-2 block">Email *</label>
@@ -282,11 +338,22 @@ const BookPage = () => {
                       <input
                         type="email"
                         value={guestEmail}
-                        onChange={(e) => setGuestEmail(e.target.value)}
+                        onChange={(e) => {
+                          setGuestEmail(e.target.value);
+                          if (formErrors.guest_email) {
+                            setFormErrors(prev => ({ ...prev, guest_email: "" }));
+                          }
+                        }}
                         placeholder="john@example.com"
-                        className="w-full pl-10 pr-4 py-3 rounded-lg bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        maxLength={255}
+                        className={`w-full pl-10 pr-4 py-3 rounded-lg bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                          formErrors.guest_email ? "ring-2 ring-destructive" : ""
+                        }`}
                       />
                     </div>
+                    {formErrors.guest_email && (
+                      <p className="text-sm text-destructive mt-1">{formErrors.guest_email}</p>
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-2 block">Notes (optional)</label>
@@ -294,19 +361,31 @@ const BookPage = () => {
                       <MessageSquare className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
                       <textarea
                         value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
+                        onChange={(e) => {
+                          setNotes(e.target.value);
+                          if (formErrors.notes) {
+                            setFormErrors(prev => ({ ...prev, notes: "" }));
+                          }
+                        }}
                         placeholder="Anything you'd like to discuss?"
                         rows={3}
-                        className="w-full pl-10 pr-4 py-3 rounded-lg bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                        maxLength={1000}
+                        className={`w-full pl-10 pr-4 py-3 rounded-lg bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none ${
+                          formErrors.notes ? "ring-2 ring-destructive" : ""
+                        }`}
                       />
                     </div>
+                    {formErrors.notes && (
+                      <p className="text-sm text-destructive mt-1">{formErrors.notes}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">{notes.length}/1000</p>
                   </div>
                   <Button
                     onClick={handleSubmit}
                     variant="hero"
                     size="lg"
                     className="w-full"
-                    disabled={!guestName || !guestEmail || submitting}
+                    disabled={!guestName.trim() || !guestEmail.trim() || submitting}
                   >
                     {submitting ? "Booking..." : "Confirm Booking"}
                   </Button>
