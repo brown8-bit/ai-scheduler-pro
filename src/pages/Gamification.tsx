@@ -16,11 +16,10 @@ interface UserStreak {
 }
 
 interface LeaderboardUser {
-  user_id: string;
+  rank_position: number;
   current_streak: number;
-  longest_streak: number;
   total_events_completed: number;
-  display_name: string | null;
+  display_name: string;
   avatar_url: string | null;
 }
 
@@ -85,33 +84,17 @@ const Gamification = () => {
   };
 
   const fetchLeaderboard = async () => {
-    // Fetch user streaks
-    const { data: streaksData, error: streaksError } = await supabase
-      .from("user_streaks")
-      .select("user_id, current_streak, longest_streak, total_events_completed")
-      .order("total_events_completed", { ascending: false })
-      .limit(10);
-
-    if (streaksError || !streaksData) return;
-
-    // Fetch profiles for the users
-    const userIds = streaksData.map(s => s.user_id);
-    const { data: profilesData } = await supabase
-      .from("profiles")
-      .select("user_id, display_name, avatar_url")
-      .in("user_id", userIds);
-
-    // Merge the data
-    const merged = streaksData.map(streak => {
-      const profile = profilesData?.find(p => p.user_id === streak.user_id);
-      return {
-        ...streak,
-        display_name: profile?.display_name || "Anonymous User",
-        avatar_url: profile?.avatar_url || null,
-      };
+    // Use secure RPC function that returns anonymized leaderboard data
+    const { data, error } = await supabase.rpc('get_leaderboard_data', {
+      limit_count: 10
     });
 
-    setLeaderboard(merged);
+    if (error) {
+      console.error('Error fetching leaderboard:', error);
+      return;
+    }
+
+    setLeaderboard(data || []);
   };
 
   const getAchievements = (): Achievement[] => {
@@ -258,7 +241,8 @@ const Gamification = () => {
 
   const achievements = getAchievements();
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
-  const userRank = leaderboard.findIndex(u => u.user_id === user?.id) + 1;
+  // User rank is now based on their position relative to their total_events_completed
+  const userRank = leaderboard.findIndex(u => u.total_events_completed <= (streakData?.total_events_completed || 0)) + 1 || leaderboard.length + 1;
 
   return (
     <div className="min-h-screen bg-background">
@@ -459,16 +443,12 @@ const Gamification = () => {
                   </div>
                 ) : (
                   <div className="space-y-2 sm:space-y-3">
-                    {leaderboard.map((entry, index) => (
+                    {leaderboard.map((entry) => (
                       <div
-                        key={entry.user_id}
-                        className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border transition-all ${
-                          entry.user_id === user?.id
-                            ? "bg-primary/10 border-primary/30"
-                            : "bg-card border-border hover:bg-muted/50"
-                        } ${index === 0 ? "ring-2 ring-yellow-500/30" : ""}`}
+                        key={entry.rank_position}
+                        className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border transition-all bg-card border-border hover:bg-muted/50 ${entry.rank_position === 1 ? "ring-2 ring-yellow-500/30" : ""}`}
                       >
-                        {getLeaderboardBadge(index)}
+                        {getLeaderboardBadge(entry.rank_position - 1)}
                         <Avatar className="w-8 h-8 sm:w-10 sm:h-10">
                           <AvatarImage src={entry.avatar_url || undefined} />
                           <AvatarFallback className="bg-primary/10 text-primary text-xs sm:text-sm">
@@ -480,10 +460,7 @@ const Gamification = () => {
                             <p className="font-medium text-sm sm:text-base truncate">
                               {entry.display_name || "Anonymous User"}
                             </p>
-                            {entry.user_id === user?.id && (
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary">You</span>
-                            )}
-                            {index === 0 && (
+                            {entry.rank_position === 1 && (
                               <Crown className="w-4 h-4 text-yellow-500 flex-shrink-0" />
                             )}
                           </div>
