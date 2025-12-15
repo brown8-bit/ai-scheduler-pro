@@ -340,6 +340,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_usage: {
+        Row: {
+          ai_requests_count: number
+          created_at: string
+          id: string
+          month_year: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_requests_count?: number
+          created_at?: string
+          id?: string
+          month_year: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_requests_count?: number
+          created_at?: string
+          id?: string
+          month_year?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -372,12 +399,17 @@ export type Database = {
           title: string
         }[]
       }
+      get_user_usage: { Args: { p_user_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_ai_usage: {
+        Args: { p_limit: number; p_user_id: string }
+        Returns: Json
       }
     }
     Enums: {

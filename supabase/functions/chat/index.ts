@@ -1,10 +1,66 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Usage limits by tier
+const USAGE_LIMITS = {
+  free: { ai_requests: 5, templates: 1 },
+  pro: { ai_requests: 100, templates: 10 },
+  lifetime: { ai_requests: 0, templates: 0 }, // 0 means unlimited
+};
+
+async function getSubscriptionTier(supabase: any, userId: string, userEmail: string): Promise<string> {
+  try {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) return "free";
+    
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+    
+    if (customers.data.length === 0) return "free";
+    
+    const customerId = customers.data[0].id;
+    
+    // Check for active subscription (Pro)
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "active",
+      limit: 1,
+    });
+    
+    if (subscriptions.data.length > 0) {
+      const productId = subscriptions.data[0].items.data[0].price.product;
+      // Lifetime product ID
+      if (productId === "prod_TbgdjToKIvSQ9T") return "lifetime";
+      return "pro";
+    }
+    
+    // Check for lifetime purchase (one-time payment)
+    const charges = await stripe.charges.list({
+      customer: customerId,
+      limit: 100,
+    });
+    
+    for (const charge of charges.data) {
+      if (charge.paid && charge.status === "succeeded") {
+        // Check if this was a lifetime purchase by looking at the amount ($299 = 29900 cents)
+        if (charge.amount === 29900) {
+          return "lifetime";
+        }
+      }
+    }
+    
+    return "free";
+  } catch (error) {
+    console.error("Error checking subscription:", error);
+    return "free";
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -22,6 +78,39 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Check usage limits if user is logged in
+    if (userId) {
+      // Get user email for Stripe lookup
+      const { data: userData } = await supabase.auth.admin.getUserById(userId);
+      const userEmail = userData?.user?.email;
+      
+      if (userEmail) {
+        const tier = await getSubscriptionTier(supabase, userId, userEmail);
+        const limit = USAGE_LIMITS[tier as keyof typeof USAGE_LIMITS]?.ai_requests || 5;
+        
+        console.log(`User tier: ${tier}, AI limit: ${limit}`);
+        
+        // Check and increment usage
+        const { data: usageResult, error: usageError } = await supabase
+          .rpc('increment_ai_usage', { p_user_id: userId, p_limit: limit });
+        
+        if (usageError) {
+          console.error("Usage check error:", usageError);
+        } else if (usageResult && !usageResult.allowed) {
+          console.log("AI limit reached:", usageResult);
+          return new Response(JSON.stringify({ 
+            error: `You've reached your monthly limit of ${limit} AI requests. Upgrade to Pro for more!`,
+            limit_reached: true,
+            current_count: usageResult.current_count,
+            limit: usageResult.limit
+          }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
 
     const currentDate = new Date().toISOString().split('T')[0];
     const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });

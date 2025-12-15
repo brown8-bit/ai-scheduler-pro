@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Plus, Trash2, Clock, Tag } from "lucide-react";
+import { FileText, Plus, Trash2, Clock, Tag, Crown } from "lucide-react";
 
 interface Template {
   id: string;
@@ -21,6 +21,12 @@ interface Template {
   category: string | null;
 }
 
+interface UsageData {
+  tier: string;
+  limits: { ai_requests: number; templates: number };
+  usage: { ai_requests_this_month: number; templates_count: number };
+}
+
 const Templates = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -28,6 +34,7 @@ const Templates = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     title: "",
@@ -51,8 +58,20 @@ const Templates = () => {
   useEffect(() => {
     if (user) {
       fetchTemplates();
+      fetchUsage();
     }
   }, [user]);
+
+  const fetchUsage = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("get-usage");
+      if (!error && data) {
+        setUsageData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching usage:", error);
+    }
+  };
 
   const fetchTemplates = async () => {
     const { data, error } = await supabase
@@ -67,7 +86,31 @@ const Templates = () => {
     setLoading(false);
   };
 
+  const canCreateTemplate = () => {
+    if (!usageData) return true;
+    if (usageData.limits.templates === 0) return true; // Unlimited
+    return usageData.usage.templates_count < usageData.limits.templates;
+  };
+
+  const getTemplateUsageText = () => {
+    if (!usageData) return "";
+    if (usageData.limits.templates === 0) return "Unlimited templates";
+    return `${usageData.usage.templates_count}/${usageData.limits.templates} templates used`;
+  };
+
   const handleCreate = async () => {
+    // Check template limit before creating
+    if (!canCreateTemplate()) {
+      toast({
+        title: "Template Limit Reached",
+        description: `You've reached your limit of ${usageData?.limits.templates} templates. Upgrade to Pro for more!`,
+        variant: "destructive",
+      });
+      setDialogOpen(false);
+      navigate("/pricing");
+      return;
+    }
+
     const { error } = await supabase.from("event_templates").insert({
       user_id: user.id,
       ...formData,
@@ -87,6 +130,7 @@ const Templates = () => {
       setDialogOpen(false);
       setFormData({ name: "", title: "", description: "", duration_minutes: 30, category: "general" });
       fetchTemplates();
+      fetchUsage(); // Refresh usage data
     }
   };
 
@@ -134,11 +178,22 @@ const Templates = () => {
             <p className="text-muted-foreground mt-2">
               Create reusable templates for quick scheduling ⚡
             </p>
+            {usageData && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {getTemplateUsageText()}
+                {usageData.tier !== "lifetime" && usageData.limits.templates > 0 && !canCreateTemplate() && (
+                  <Button variant="link" className="px-2 h-auto text-primary" onClick={() => navigate("/pricing")}>
+                    <Crown className="w-3 h-3 mr-1" />
+                    Upgrade
+                  </Button>
+                )}
+              </p>
+            )}
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2" disabled={!canCreateTemplate()}>
                 <Plus className="h-4 w-4" />
                 New Template
               </Button>
