@@ -37,7 +37,6 @@ import {
   Repeat2,
   Bookmark,
   Share,
-  BarChart2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -75,7 +74,9 @@ interface Post {
   };
   likes_count: number;
   comments_count: number;
+  reposts_count: number;
   is_liked: boolean;
+  is_reposted: boolean;
 }
 
 interface Comment {
@@ -96,6 +97,22 @@ interface SuggestedUser {
   display_name: string | null;
   avatar_url: string | null;
   is_verified: boolean;
+}
+
+interface Repost {
+  id: string;
+  user_id: string;
+  original_post_id: string;
+  quote_text: string | null;
+  is_quote: boolean;
+  created_at: string;
+  profiles?: {
+    display_name: string | null;
+    avatar_url: string | null;
+    is_verified: boolean;
+    is_admin: boolean;
+  };
+  original_post?: Post;
 }
 
 const Community = () => {
@@ -122,6 +139,10 @@ const Community = () => {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [activeTab, setActiveTab] = useState("for-you");
   const [searchQuery, setSearchQuery] = useState("");
+  const [quotePostId, setQuotePostId] = useState<string | null>(null);
+  const [quoteText, setQuoteText] = useState("");
+  const [isReposting, setIsReposting] = useState(false);
+  const [reposts, setReposts] = useState<Repost[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
 
   // Extract hashtags from all posts for trending
@@ -258,11 +279,23 @@ const Community = () => {
       .from("post_comments")
       .select("post_id");
 
+    const { data: repostsData } = await supabase
+      .from("post_reposts")
+      .select("original_post_id");
+
+    const { data: userReposts } = await supabase
+      .from("post_reposts")
+      .select("original_post_id")
+      .eq("user_id", user.id)
+      .eq("is_quote", false);
+
     const enrichedPosts = postsData.map(post => {
       const profile = profiles?.find(p => p.user_id === post.user_id);
       const likesCount = likesData?.filter(l => l.post_id === post.id).length || 0;
       const commentsCount = commentsData?.filter(c => c.post_id === post.id).length || 0;
+      const repostsCount = repostsData?.filter(r => r.original_post_id === post.id).length || 0;
       const isLiked = userLikes?.some(l => l.post_id === post.id) || false;
+      const isReposted = userReposts?.some(r => r.original_post_id === post.id) || false;
 
       return {
         ...post,
@@ -274,11 +307,54 @@ const Community = () => {
         } : undefined,
         likes_count: likesCount,
         comments_count: commentsCount,
+        reposts_count: repostsCount,
         is_liked: isLiked,
+        is_reposted: isReposted,
       };
     });
 
     setPosts(enrichedPosts);
+
+    // Fetch quote posts to display in feed
+    const { data: quotePosts } = await supabase
+      .from("post_reposts")
+      .select("*")
+      .eq("is_quote", true)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (quotePosts && quotePosts.length > 0) {
+      const quoteUserIds = [...new Set(quotePosts.map(q => q.user_id))];
+      const { data: quoteProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, avatar_url, is_verified")
+        .in("user_id", quoteUserIds);
+
+      const { data: quoteAdminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin")
+        .in("user_id", quoteUserIds);
+
+      const quoteAdminUserIds = new Set(quoteAdminRoles?.map(r => r.user_id) || []);
+
+      const enrichedQuotes: Repost[] = quotePosts.map(quote => {
+        const profile = quoteProfiles?.find(p => p.user_id === quote.user_id);
+        const originalPost = enrichedPosts.find(p => p.id === quote.original_post_id);
+        return {
+          ...quote,
+          profiles: profile ? {
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url,
+            is_verified: profile.is_verified || false,
+            is_admin: quoteAdminUserIds.has(quote.user_id),
+          } : undefined,
+          original_post: originalPost,
+        };
+      });
+
+      setReposts(enrichedQuotes);
+    }
   };
 
   const fetchFollowing = async () => {
@@ -570,6 +646,73 @@ const Community = () => {
     
     setIsDeleting(false);
     setDeletePostId(null);
+  };
+
+  const handleRepost = async (postId: string, isReposted: boolean) => {
+    if (!user) return;
+
+    if (isReposted) {
+      // Undo repost
+      await supabase
+        .from("post_reposts")
+        .delete()
+        .eq("original_post_id", postId)
+        .eq("user_id", user.id)
+        .eq("is_quote", false);
+
+      setPosts(posts.map(p => {
+        if (p.id === postId) {
+          return { ...p, is_reposted: false, reposts_count: p.reposts_count - 1 };
+        }
+        return p;
+      }));
+      toast({ title: "Repost removed" });
+    } else {
+      // Create repost
+      const { error } = await supabase.from("post_reposts").insert({
+        user_id: user.id,
+        original_post_id: postId,
+        is_quote: false,
+      });
+
+      if (!error) {
+        setPosts(posts.map(p => {
+          if (p.id === postId) {
+            return { ...p, is_reposted: true, reposts_count: p.reposts_count + 1 };
+          }
+          return p;
+        }));
+        toast({ title: "Reposted! 🔄" });
+      }
+    }
+  };
+
+  const handleQuotePost = async () => {
+    if (!user || !quotePostId) return;
+
+    setIsReposting(true);
+    const { error } = await supabase.from("post_reposts").insert({
+      user_id: user.id,
+      original_post_id: quotePostId,
+      quote_text: quoteText.trim() || null,
+      is_quote: true,
+    });
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to quote post", variant: "destructive" });
+    } else {
+      setPosts(posts.map(p => {
+        if (p.id === quotePostId) {
+          return { ...p, reposts_count: p.reposts_count + 1 };
+        }
+        return p;
+      }));
+      fetchPosts();
+      toast({ title: "Quote posted! 💬" });
+      setQuotePostId(null);
+      setQuoteText("");
+    }
+    setIsReposting(false);
   };
 
   const handleHashtagClick = (hashtag: string) => {
@@ -948,13 +1091,28 @@ const Community = () => {
                           <Heart className={`w-4 h-4 ${post.is_liked ? "fill-current" : ""}`} />
                           <span>{post.likes_count}</span>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-primary hover:bg-primary/10"
-                        >
-                          <BarChart2 className="w-4 h-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`gap-2 ${post.is_reposted ? "text-green-500 hover:text-green-600" : "text-muted-foreground hover:text-green-500"}`}
+                            >
+                              <Repeat2 className="w-4 h-4" />
+                              <span>{post.reposts_count}</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="center" className="bg-popover">
+                            <DropdownMenuItem onClick={() => handleRepost(post.id, post.is_reposted)}>
+                              <Repeat2 className="w-4 h-4 mr-2" />
+                              {post.is_reposted ? "Undo Repost" : "Repost"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setQuotePostId(post.id)}>
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Quote
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1149,6 +1307,66 @@ const Community = () => {
             >
               {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Quote Post Dialog */}
+      <AlertDialog open={!!quotePostId} onOpenChange={(open) => { if (!open) { setQuotePostId(null); setQuoteText(""); } }}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Repeat2 className="w-5 h-5 text-primary" />
+              Quote Post
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Add your thoughts to this post
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Add a comment (optional)..."
+              value={quoteText}
+              onChange={(e) => setQuoteText(e.target.value)}
+              className="min-h-[100px] resize-none"
+            />
+            {quotePostId && (
+              <div className="border rounded-lg p-3 bg-muted/30">
+                {(() => {
+                  const originalPost = posts.find(p => p.id === quotePostId);
+                  if (!originalPost) return null;
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={originalPost.profiles?.avatar_url || ""} />
+                          <AvatarFallback className="text-xs">
+                            {originalPost.profiles?.display_name?.charAt(0) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium">
+                          {originalPost.profiles?.display_name || "Anonymous"}
+                        </span>
+                        {originalPost.profiles?.is_verified && <VerifiedBadge size="sm" />}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {originalPost.content}
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isReposting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleQuotePost}
+              disabled={isReposting}
+            >
+              {isReposting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Repeat2 className="w-4 h-4 mr-2" />}
+              Quote
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
