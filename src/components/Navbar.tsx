@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import ShareLinkModal from "@/components/ShareLinkModal";
+import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { toast } from "@/hooks/use-toast";
 
 const Navbar = forwardRef<HTMLElement>((_, ref) => {
@@ -165,6 +166,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                <NotificationsDropdown />
                 <ShareLinkModal 
                   trigger={
                     <Button variant="outline" className="gap-2">
