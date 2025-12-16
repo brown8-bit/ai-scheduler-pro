@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Loader2, Crown, X } from "lucide-react";
+import { Check, Sparkles, Loader2, Crown, X, Flame, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -11,13 +11,25 @@ const Pricing = () => {
   const [loadingMonthly, setLoadingMonthly] = useState(false);
   const [loadingLifetime, setLoadingLifetime] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [highlightLifetime, setHighlightLifetime] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const lifetimeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
     });
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("plan") === "lifetime") {
+      setHighlightLifetime(true);
+      setTimeout(() => {
+        lifetimeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    }
+  }, [searchParams]);
 
   const freeFeatures = [
     { name: "5 AI requests/month", included: true },
@@ -233,17 +245,33 @@ const Pricing = () => {
             </div>
 
             {/* Lifetime Plan */}
-            <div className="bg-card rounded-3xl shadow-card border-2 border-primary p-6 relative overflow-hidden">
+            <div 
+              ref={lifetimeRef}
+              className={`bg-card rounded-3xl shadow-card border-2 p-6 relative overflow-hidden transition-all duration-500 ${
+                highlightLifetime 
+                  ? "border-primary ring-4 ring-primary/30 scale-105 shadow-glow" 
+                  : "border-primary"
+              }`}
+            >
               <div className="absolute top-0 right-0 w-40 h-40 gradient-primary opacity-20 rounded-full blur-3xl" />
               <div className="absolute top-4 right-4">
-                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold animate-pulse-soft">
                   <Crown className="w-3 h-3" />
                   Best Value
                 </div>
               </div>
               
+              {highlightLifetime && (
+                <div className="absolute top-4 left-4">
+                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-destructive text-destructive-foreground text-xs font-bold animate-pulse">
+                    <Flame className="w-3 h-3" />
+                    LIMITED!
+                  </div>
+                </div>
+              )}
+              
               <div className="relative">
-                <div className="text-center mb-6">
+                <div className="text-center mb-6 pt-4">
                   <h2 className="text-2xl font-bold">Lifetime</h2>
                   <p className="text-muted-foreground mt-2 text-sm">One-time payment, forever</p>
                   
@@ -252,9 +280,16 @@ const Pricing = () => {
                     <span className="text-xl text-muted-foreground"> once</span>
                   </div>
                   
-                  <p className="text-sm text-muted-foreground mt-2">
-                    No recurring fees
-                  </p>
+                  {highlightLifetime ? (
+                    <p className="text-sm text-destructive font-semibold mt-2 flex items-center justify-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Offer ends soon!
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      No recurring fees
+                    </p>
+                  )}
                 </div>
 
                 <Button 
