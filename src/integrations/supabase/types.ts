@@ -545,6 +545,41 @@ export type Database = {
           },
         ]
       }
+      post_reposts: {
+        Row: {
+          created_at: string
+          id: string
+          is_quote: boolean
+          original_post_id: string
+          quote_text: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_quote?: boolean
+          original_post_id: string
+          quote_text?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_quote?: boolean
+          original_post_id?: string
+          quote_text?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reposts_original_post_id_fkey"
+            columns: ["original_post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
