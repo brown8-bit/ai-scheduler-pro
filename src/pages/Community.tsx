@@ -24,7 +24,27 @@ import {
   Sparkles,
   Image,
   X,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Check,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import AdminBadge from "@/components/AdminBadge";
 import { formatDistanceToNow } from "date-fns";
@@ -77,6 +97,11 @@ const Community = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -415,6 +440,62 @@ const Community = () => {
     }
   };
 
+  const handleStartEdit = (post: Post) => {
+    setEditingPostId(post.id);
+    setEditContent(post.content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPostId(null);
+    setEditContent("");
+  };
+
+  const handleSaveEdit = async (postId: string) => {
+    if (!editContent.trim()) return;
+    
+    setIsSavingEdit(true);
+    const { error } = await supabase
+      .from("social_posts")
+      .update({ content: editContent.trim() })
+      .eq("id", postId)
+      .eq("user_id", user?.id);
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to update post", variant: "destructive" });
+    } else {
+      setPosts(posts.map(p => p.id === postId ? { ...p, content: editContent.trim() } : p));
+      toast({ title: "Post updated! ✨" });
+      setEditingPostId(null);
+      setEditContent("");
+    }
+    setIsSavingEdit(false);
+  };
+
+  const handleDeletePost = async () => {
+    if (!deletePostId) return;
+    
+    setIsDeleting(true);
+    
+    await supabase.from("post_likes").delete().eq("post_id", deletePostId);
+    await supabase.from("post_comments").delete().eq("post_id", deletePostId);
+    
+    const { error } = await supabase
+      .from("social_posts")
+      .delete()
+      .eq("id", deletePostId)
+      .eq("user_id", user?.id);
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete post", variant: "destructive" });
+    } else {
+      setPosts(posts.filter(p => p.id !== deletePostId));
+      toast({ title: "Post deleted" });
+    }
+    
+    setIsDeleting(false);
+    setDeletePostId(null);
+  };
+
   const getPostIcon = (postType: string) => {
     switch (postType) {
       case "achievement": return <Trophy className="w-4 h-4 text-yellow-500" />;
@@ -584,7 +665,7 @@ const Community = () => {
                         </p>
                       </div>
                     </Link>
-                    {post.user_id !== user?.id && (
+                    {post.user_id !== user?.id ? (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -603,12 +684,68 @@ const Community = () => {
                           </>
                         )}
                       </Button>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-popover">
+                          <DropdownMenuItem onClick={() => handleStartEdit(post)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => setDeletePostId(post.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {post.content && (
-                    <p className="text-foreground mb-4 whitespace-pre-wrap">{post.content}</p>
+                  {/* Edit Mode */}
+                  {editingPostId === post.id ? (
+                    <div className="space-y-3 mb-4">
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        placeholder="What's on your mind?"
+                        className="min-h-[100px] resize-none"
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCancelEdit}
+                          disabled={isSavingEdit}
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveEdit(post.id)}
+                          disabled={!editContent.trim() || isSavingEdit}
+                        >
+                          {isSavingEdit ? (
+                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                          ) : (
+                            <Check className="w-4 h-4 mr-1" />
+                          )}
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    post.content && (
+                      <p className="text-foreground mb-4 whitespace-pre-wrap">{post.content}</p>
+                    )
                   )}
                   
                   {/* Post Image */}
@@ -706,6 +843,33 @@ const Community = () => {
           )}
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePost}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
