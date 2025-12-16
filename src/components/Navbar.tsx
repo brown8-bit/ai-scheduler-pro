@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target } from "lucide-react";
+import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp } from "lucide-react";
 import schedulrLogo from "@/assets/schedulr-logo.png";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -68,9 +68,9 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     { path: "/chat", label: "AI Chat" },
     { path: "/dashboard", label: "Dashboard" },
     { path: "/calendar", label: "Calendar" },
-    { path: "/habits", label: "Daily Habits" },
+    { path: "/habits", label: "Habits" },
+    { path: "/progress", label: "Progress" },
     { path: "/achievements", label: "Achievements" },
-    { path: "/pricing", label: "Pricing" },
   ];
 
   const userInitial = displayName.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U";
@@ -152,6 +152,10 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                     <DropdownMenuItem onClick={() => navigate("/habits")} className="cursor-pointer">
                       <Target className="mr-2 h-4 w-4" />
                       Daily Habits
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/progress")} className="cursor-pointer">
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      Progress
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/achievements")} className="cursor-pointer">
                       <Trophy className="mr-2 h-4 w-4" />
