@@ -19,8 +19,20 @@ import {
   Users,
   CalendarCheck,
   ChevronRight,
-  Check
+  Check,
+  ChevronDown,
+  Timer,
+  ListTodo,
+  Award,
+  Settings,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -260,12 +272,52 @@ const Dashboard = () => {
               </p>
             </div>
             <div className="flex gap-2 sm:gap-3">
-              <Link to="/calendar" className="flex-1 sm:flex-none">
-                <Button variant="outline" className="gap-2 w-full sm:w-auto text-xs sm:text-sm">
-                  <CalendarCheck className="w-4 h-4" />
-                  <span className="hidden sm:inline">Calendar</span>
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2 text-xs sm:text-sm">
+                    <Plus className="w-4 h-4" />
+                    Quick Actions
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-popover">
+                  <DropdownMenuItem onClick={() => navigate("/chat")}>
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Chat with Scheddy
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/calendar")}>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    View Calendar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/habits")}>
+                    <ListTodo className="w-4 h-4 mr-2" />
+                    Daily Habits
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/timer")}>
+                    <Timer className="w-4 h-4 mr-2" />
+                    Focus Timer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/focus-blocks")}>
+                    <Target className="w-4 h-4 mr-2" />
+                    Focus Blocks
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/gamification")}>
+                    <Award className="w-4 h-4 mr-2" />
+                    Achievements
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/analytics")}>
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Analytics
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="hero" className="gap-2 flex-1 sm:flex-none text-xs sm:text-sm" onClick={() => navigate("/chat")}>
                 <Plus className="w-4 h-4" />
                 New Event
