@@ -20,10 +20,10 @@ import {
   Lock,
   UserPlus,
   UserMinus,
-  BadgeCheck,
   Loader2,
   Sparkles,
 } from "lucide-react";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface Post {
@@ -443,7 +443,7 @@ const Community = () => {
                             {post.profiles?.display_name || "Anonymous"}
                           </span>
                           {post.profiles?.is_verified && (
-                            <BadgeCheck className="w-4 h-4 text-violet-500 fill-violet-500" />
+                            <VerifiedBadge size="md" />
                           )}
                           {getPostIcon(post.post_type)}
                         </div>
@@ -518,7 +518,7 @@ const Community = () => {
                                 {comment.profiles?.display_name || "Anonymous"}
                               </span>
                               {comment.profiles?.is_verified && (
-                                <BadgeCheck className="w-3.5 h-3.5 text-violet-500 fill-violet-500" />
+                                <VerifiedBadge size="sm" />
                               )}
                             </Link>
                             <p className="text-sm">{comment.content}</p>
