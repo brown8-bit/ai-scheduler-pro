@@ -28,9 +28,9 @@ interface Achievement {
   title: string;
   description: string;
   icon: React.ReactNode;
-  badge: "crown" | "star" | "medal" | null;
+  badge: "crown" | "star" | "medal" | "legendary" | null;
   threshold: number;
-  type: "streak" | "completed";
+  type: "streak" | "completed" | "level";
   unlocked: boolean;
 }
 
@@ -122,8 +122,10 @@ const Gamification = () => {
   const getAchievements = (): Achievement[] => {
     const currentStreak = streakData?.current_streak || 0;
     const totalCompleted = streakData?.total_events_completed || 0;
+    const currentLevel = userPoints?.current_level || 1;
 
     return [
+      // Completion achievements
       {
         id: "first_event",
         title: "First Step",
@@ -135,26 +137,6 @@ const Gamification = () => {
         unlocked: totalCompleted >= 1,
       },
       {
-        id: "streak_3",
-        title: "On Fire",
-        description: "Maintain a 3-day streak",
-        icon: <Flame className="h-6 w-6" />,
-        badge: "star",
-        threshold: 3,
-        type: "streak",
-        unlocked: currentStreak >= 3,
-      },
-      {
-        id: "streak_7",
-        title: "Week Warrior",
-        description: "Maintain a 7-day streak",
-        icon: <Zap className="h-6 w-6" />,
-        badge: "medal",
-        threshold: 7,
-        type: "streak",
-        unlocked: currentStreak >= 7,
-      },
-      {
         id: "completed_10",
         title: "Productivity Pro",
         description: "Complete 10 events",
@@ -163,16 +145,6 @@ const Gamification = () => {
         threshold: 10,
         type: "completed",
         unlocked: totalCompleted >= 10,
-      },
-      {
-        id: "streak_30",
-        title: "Month Master",
-        description: "Maintain a 30-day streak",
-        icon: <Trophy className="h-6 w-6" />,
-        badge: "crown",
-        threshold: 30,
-        type: "streak",
-        unlocked: currentStreak >= 30,
       },
       {
         id: "completed_50",
@@ -194,11 +166,95 @@ const Gamification = () => {
         type: "completed",
         unlocked: totalCompleted >= 100,
       },
+      // Streak achievements
+      {
+        id: "streak_3",
+        title: "On Fire",
+        description: "Maintain a 3-day streak",
+        icon: <Flame className="h-6 w-6" />,
+        badge: "star",
+        threshold: 3,
+        type: "streak",
+        unlocked: currentStreak >= 3,
+      },
+      {
+        id: "streak_7",
+        title: "Week Warrior",
+        description: "Maintain a 7-day streak",
+        icon: <Zap className="h-6 w-6" />,
+        badge: "medal",
+        threshold: 7,
+        type: "streak",
+        unlocked: currentStreak >= 7,
+      },
+      {
+        id: "streak_30",
+        title: "Month Master",
+        description: "Maintain a 30-day streak",
+        icon: <Trophy className="h-6 w-6" />,
+        badge: "crown",
+        threshold: 30,
+        type: "streak",
+        unlocked: currentStreak >= 30,
+      },
+      // Level achievements
+      {
+        id: "level_10",
+        title: "Rising Star",
+        description: "Reach level 10",
+        icon: <Star className="h-6 w-6" />,
+        badge: "star",
+        threshold: 10,
+        type: "level",
+        unlocked: currentLevel >= 10,
+      },
+      {
+        id: "level_50",
+        title: "Dedicated Learner",
+        description: "Reach level 50",
+        icon: <Zap className="h-6 w-6" />,
+        badge: "medal",
+        threshold: 50,
+        type: "level",
+        unlocked: currentLevel >= 50,
+      },
+      {
+        id: "level_100",
+        title: "Century Club",
+        description: "Reach level 100",
+        icon: <Award className="h-6 w-6" />,
+        badge: "crown",
+        threshold: 100,
+        type: "level",
+        unlocked: currentLevel >= 100,
+      },
+      {
+        id: "level_200",
+        title: "Elite Performer",
+        description: "Reach level 200",
+        icon: <Trophy className="h-6 w-6" />,
+        badge: "crown",
+        threshold: 200,
+        type: "level",
+        unlocked: currentLevel >= 200,
+      },
+      {
+        id: "level_350",
+        title: "Schedulr Legend",
+        description: "Reach MAX level 350",
+        icon: <Sparkles className="h-6 w-6" />,
+        badge: "legendary",
+        threshold: 350,
+        type: "level",
+        unlocked: currentLevel >= MAX_LEVEL,
+      },
     ];
   };
 
-  const getBadgeIcon = (badge: "crown" | "star" | "medal" | null) => {
+  const getBadgeIcon = (badge: "crown" | "star" | "medal" | "legendary" | null) => {
     switch (badge) {
+      case "legendary":
+        return <Sparkles className="w-4 h-4 text-purple-500 animate-pulse" />;
       case "crown":
         return <Crown className="w-4 h-4 text-yellow-500" />;
       case "star":
