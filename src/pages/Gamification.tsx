@@ -39,6 +39,8 @@ interface UserPoints {
   current_level: number;
 }
 
+const MAX_LEVEL = 350;
+
 const Gamification = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -285,7 +287,15 @@ const Gamification = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground">Level</p>
-                  <p className="text-3xl font-bold text-primary">{userPoints.current_level}</p>
+                  <p className="text-3xl font-bold text-primary">
+                    {userPoints.current_level}
+                    {userPoints.current_level >= MAX_LEVEL && (
+                      <Crown className="inline w-5 h-5 ml-1 text-yellow-500" />
+                    )}
+                  </p>
+                  {userPoints.current_level >= MAX_LEVEL && (
+                    <p className="text-xs text-yellow-500 font-semibold">MAX</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -301,7 +311,11 @@ const Gamification = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground">Next Level</p>
-                  <p className="text-3xl font-bold">{100 - (userPoints.total_xp % 100)} XP</p>
+                  {userPoints.current_level >= MAX_LEVEL ? (
+                    <p className="text-2xl font-bold text-yellow-500">MAX!</p>
+                  ) : (
+                    <p className="text-3xl font-bold">{100 - (userPoints.total_xp % 100)} XP</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
