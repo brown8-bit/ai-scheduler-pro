@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Focus, Plus, Trash2, Clock, Calendar } from "lucide-react";
+import { Focus, Plus, Trash2, Clock, Calendar, Sun, Moon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface FocusBlock {
@@ -31,6 +31,8 @@ const DAYS = [
   { value: 6, label: "Sat" },
 ];
 
+const TIMELINE_HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 6 AM to 10 PM
+
 const FocusBlocks = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -44,6 +46,10 @@ const FocusBlocks = () => {
     end_time: "11:00",
     days_of_week: [1, 2, 3, 4, 5],
   });
+
+  const today = new Date().getDay();
+  const currentHour = new Date().getHours();
+  const currentMinute = new Date().getMinutes();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -147,6 +153,38 @@ const FocusBlocks = () => {
     return days.map((d) => DAYS.find((day) => day.value === d)?.label).join(", ");
   };
 
+  const getTodayBlocks = () => {
+    return focusBlocks.filter(
+      (block) => block.is_active && block.days_of_week?.includes(today)
+    );
+  };
+
+  const getBlockPosition = (time: string) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    const totalMinutes = (hours - 6) * 60 + minutes;
+    const totalTimelineMinutes = 16 * 60; // 6 AM to 10 PM
+    return (totalMinutes / totalTimelineMinutes) * 100;
+  };
+
+  const getBlockWidth = (startTime: string, endTime: string) => {
+    const [startH, startM] = startTime.split(":").map(Number);
+    const [endH, endM] = endTime.split(":").map(Number);
+    const startMinutes = (startH - 6) * 60 + startM;
+    const endMinutes = (endH - 6) * 60 + endM;
+    const totalTimelineMinutes = 16 * 60;
+    return ((endMinutes - startMinutes) / totalTimelineMinutes) * 100;
+  };
+
+  const getCurrentTimePosition = () => {
+    if (currentHour < 6 || currentHour >= 22) return null;
+    const totalMinutes = (currentHour - 6) * 60 + currentMinute;
+    const totalTimelineMinutes = 16 * 60;
+    return (totalMinutes / totalTimelineMinutes) * 100;
+  };
+
+  const todayBlocks = getTodayBlocks();
+  const currentTimePosition = getCurrentTimePosition();
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -241,6 +279,114 @@ const FocusBlocks = () => {
           </Dialog>
         </div>
 
+        {/* Today's Timeline */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Sun className="h-5 w-5 text-amber-500" />
+              Today's Focus Schedule
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                ({DAYS[today].label})
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative">
+              {/* Timeline background */}
+              <div className="h-24 bg-muted/30 rounded-lg relative overflow-hidden border border-border">
+                {/* Hour markers */}
+                <div className="absolute inset-0 flex">
+                  {TIMELINE_HOURS.map((hour, index) => (
+                    <div
+                      key={hour}
+                      className="flex-1 border-l border-border/50 first:border-l-0 relative"
+                    >
+                      <span className="absolute -bottom-6 left-0 transform -translate-x-1/2 text-xs text-muted-foreground">
+                        {hour <= 12 ? `${hour}${hour < 12 ? 'a' : 'p'}` : `${hour - 12}p`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Focus blocks on timeline */}
+                {todayBlocks.map((block, index) => {
+                  const left = getBlockPosition(block.start_time);
+                  const width = getBlockWidth(block.start_time, block.end_time);
+                  const colors = [
+                    "bg-primary/80",
+                    "bg-accent/80",
+                    "bg-emerald-500/80",
+                    "bg-violet-500/80",
+                    "bg-rose-500/80",
+                  ];
+                  
+                  return (
+                    <div
+                      key={block.id}
+                      className={`absolute top-2 h-12 ${colors[index % colors.length]} rounded-md flex items-center justify-center px-2 shadow-md transition-all hover:scale-[1.02] cursor-default`}
+                      style={{
+                        left: `${Math.max(0, left)}%`,
+                        width: `${Math.min(width, 100 - left)}%`,
+                      }}
+                      title={`${block.title}: ${formatTime(block.start_time)} - ${formatTime(block.end_time)}`}
+                    >
+                      <span className="text-xs font-medium text-white truncate">
+                        {block.title}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {/* Current time indicator */}
+                {currentTimePosition !== null && (
+                  <div
+                    className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                    style={{ left: `${currentTimePosition}%` }}
+                  >
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                  </div>
+                )}
+
+                {/* Empty state */}
+                {todayBlocks.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-muted-foreground text-sm">No focus blocks scheduled for today</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Hour labels space */}
+              <div className="h-6" />
+            </div>
+
+            {/* Today's blocks summary */}
+            {todayBlocks.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {todayBlocks.map((block, index) => {
+                  const colors = [
+                    "bg-primary/20 text-primary border-primary/30",
+                    "bg-accent/20 text-accent-foreground border-accent/30",
+                    "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+                    "bg-violet-500/20 text-violet-700 dark:text-violet-400 border-violet-500/30",
+                    "bg-rose-500/20 text-rose-700 dark:text-rose-400 border-rose-500/30",
+                  ];
+                  return (
+                    <div
+                      key={block.id}
+                      className={`px-3 py-1.5 rounded-full border text-xs font-medium ${colors[index % colors.length]}`}
+                    >
+                      {block.title}: {formatTime(block.start_time)} - {formatTime(block.end_time)}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* All Focus Blocks */}
+        <h2 className="text-xl font-semibold mb-4 text-foreground">All Focus Blocks</h2>
+        
         {focusBlocks.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
