@@ -25,6 +25,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
+import NotificationToggle from "@/components/NotificationToggle";
 
 const UserSettings = () => {
   const navigate = useNavigate();
@@ -405,6 +406,15 @@ const UserSettings = () => {
                 Notifications
               </h2>
               <div className="space-y-4">
+                {/* Browser Push Notifications */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                  <div>
+                    <Label>Browser Push Notifications</Label>
+                    <p className="text-sm text-muted-foreground">Get reminders for events and deadlines</p>
+                  </div>
+                  <NotificationToggle />
+                </div>
+                
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Email Reminders</Label>

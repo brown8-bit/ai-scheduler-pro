@@ -64,12 +64,12 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const isActive = (path: string) => location.pathname === path;
 
   const navLinks = [
-    { path: "/", label: "Home" },
-    { path: "/chat", label: "AI Chat" },
-    { path: "/dashboard", label: "Dashboard" },
-    { path: "/calendar", label: "Calendar" },
-    { path: "/community", label: "Community" },
-    { path: "/pricing", label: "Pricing" },
+    { path: "/", label: "Home", icon: null },
+    { path: "/chat", label: "AI Chat", icon: null },
+    { path: "/dashboard", label: "Dashboard", icon: null },
+    { path: "/calendar", label: "Calendar", icon: CalendarDays },
+    { path: "/community", label: "Community", icon: Users },
+    { path: "/pricing", label: "Pricing", icon: null },
   ];
 
   const featureLinks = [
@@ -115,8 +115,9 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
               <Link key={link.path} to={link.path}>
                 <Button
                   variant="ghost"
-                  className={isActive(link.path) ? "bg-accent" : ""}
+                  className={`${isActive(link.path) ? "bg-accent" : ""} ${link.icon ? "gap-1.5" : ""}`}
                 >
+                  {link.icon && <link.icon className="w-4 h-4" />}
                   {link.label}
                 </Button>
               </Link>
@@ -278,8 +279,9 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                 >
                   <Button
                     variant="ghost"
-                    className={`w-full justify-start ${isActive(link.path) ? "bg-accent" : ""}`}
+                    className={`w-full justify-start ${link.icon ? "gap-2" : ""} ${isActive(link.path) ? "bg-accent" : ""}`}
                   >
+                    {link.icon && <link.icon className="w-4 h-4" />}
                     {link.label}
                   </Button>
                 </Link>
