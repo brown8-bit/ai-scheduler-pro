@@ -10,6 +10,7 @@ import { format, isSameDay } from "date-fns";
 import { CalendarDays, Clock, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import AddEventModal from "@/components/AddEventModal";
 import NotificationToggle from "@/components/NotificationToggle";
+import CalendarExport from "@/components/CalendarExport";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { toast } from "@/hooks/use-toast";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -131,6 +132,7 @@ const CalendarPage = () => {
           
           <div className="flex items-center gap-2">
             <NotificationToggle />
+            <CalendarExport events={events} />
             {user && (
               <AddEventModal 
                 userId={user.id} 
