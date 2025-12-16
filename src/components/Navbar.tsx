@@ -67,6 +67,8 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     { path: "/", label: "Home" },
     { path: "/chat", label: "AI Chat" },
     { path: "/dashboard", label: "Dashboard" },
+    { path: "/calendar", label: "Calendar" },
+    { path: "/community", label: "Community" },
     { path: "/pricing", label: "Pricing" },
   ];
 
