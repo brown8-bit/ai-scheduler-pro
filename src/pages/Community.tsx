@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -144,7 +144,10 @@ const Community = () => {
   const [isReposting, setIsReposting] = useState(false);
   const [reposts, setReposts] = useState<Repost[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
-
+  const [typingUsers, setTypingUsers] = useState<{ user_id: string; display_name: string; avatar_url: string }[]>([]);
+  const [livePostCounts, setLivePostCounts] = useState({ total: 0, following: 0, trending: 0 });
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const presenceChannelRef = useRef<any>(null);
   // Extract hashtags from all posts for trending with engagement metrics
   const trendingHashtags = useMemo(() => {
     const hashtagData: Record<string, { count: number; totalEngagement: number; recentPosts: number }> = {};
@@ -309,6 +312,75 @@ const Community = () => {
     }
     checkLifetimeAccess();
   }, [user, navigate]);
+
+  // Real-time presence for typing indicators
+  useEffect(() => {
+    if (!user || !isLifetime || !userProfile) return;
+
+    const channel = supabase.channel('community-presence', {
+      config: {
+        presence: {
+          key: user.id,
+        },
+      },
+    });
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const typing: { user_id: string; display_name: string; avatar_url: string }[] = [];
+        
+        Object.entries(state).forEach(([userId, presences]: [string, any]) => {
+          if (userId !== user.id && presences[0]?.is_typing) {
+            typing.push({
+              user_id: userId,
+              display_name: presences[0].display_name || 'Someone',
+              avatar_url: presences[0].avatar_url || '',
+            });
+          }
+        });
+        
+        setTypingUsers(typing);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: user.id,
+            display_name: userProfile?.display_name || 'User',
+            avatar_url: userProfile?.avatar_url || '',
+            is_typing: false,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    presenceChannelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [user, isLifetime, userProfile]);
+
+  // Update live post counts when posts change
+  useEffect(() => {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    const followingPosts = posts.filter(p => following.includes(p.user_id));
+    const trendingPosts = posts.filter(p => {
+      const hasEngagement = p.likes_count > 0 || p.comments_count > 0 || p.reposts_count > 0;
+      const isRecent = new Date(p.created_at) > oneDayAgo;
+      return hasEngagement || isRecent;
+    });
+
+    setLivePostCounts({
+      total: posts.length,
+      following: followingPosts.length,
+      trending: trendingPosts.length,
+    });
+  }, [posts, following]);
 
   // Realtime subscriptions for posts, reposts, and likes
   useEffect(() => {
@@ -991,6 +1063,42 @@ const Community = () => {
     setSearchParams({});
   };
 
+  // Handle typing presence
+  const handleTypingStart = async () => {
+    if (!presenceChannelRef.current || !userProfile) return;
+    
+    await presenceChannelRef.current.track({
+      user_id: user?.id,
+      display_name: userProfile?.display_name || 'User',
+      avatar_url: userProfile?.avatar_url || '',
+      is_typing: true,
+      online_at: new Date().toISOString(),
+    });
+    
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Stop typing after 3 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(async () => {
+      if (presenceChannelRef.current) {
+        await presenceChannelRef.current.track({
+          user_id: user?.id,
+          display_name: userProfile?.display_name || 'User',
+          avatar_url: userProfile?.avatar_url || '',
+          is_typing: false,
+          online_at: new Date().toISOString(),
+        });
+      }
+    }, 3000);
+  };
+
+  const handleNewPostChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewPost(e.target.value);
+    handleTypingStart();
+  };
+
   const getPostIcon = (postType: string) => {
     switch (postType) {
       case "achievement": return <Trophy className="w-4 h-4 text-yellow-500" />;
@@ -1119,7 +1227,7 @@ const Community = () => {
               </p>
             </div>
 
-            {/* Tabs - X-style with distinct behaviors */}
+            {/* Tabs - X-style with distinct behaviors and live counts */}
             <div className="border-b border-border mb-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="w-full h-auto p-0 bg-transparent gap-0 border-none">
@@ -1127,21 +1235,40 @@ const Community = () => {
                     value="for-you" 
                     className="flex-1 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent hover:bg-muted/30 transition-colors"
                   >
-                    <span className="font-semibold">For you</span>
+                    <span className="font-semibold flex items-center gap-2">
+                      For you
+                      {livePostCounts.total > 0 && (
+                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full animate-pulse">
+                          {livePostCounts.total}
+                        </span>
+                      )}
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="following" 
                     className="flex-1 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent hover:bg-muted/30 transition-colors"
                   >
-                    <span className="font-semibold">Following</span>
+                    <span className="font-semibold flex items-center gap-2">
+                      Following
+                      {livePostCounts.following > 0 && (
+                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                          {livePostCounts.following}
+                        </span>
+                      )}
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="trending" 
                     className="flex-1 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent hover:bg-muted/30 transition-colors"
                   >
-                    <span className="font-semibold flex items-center gap-1">
+                    <span className="font-semibold flex items-center gap-2">
                       <Flame className="w-4 h-4" />
                       Hot
+                      {livePostCounts.trending > 0 && (
+                        <span className="text-xs bg-orange-500/20 text-orange-600 px-1.5 py-0.5 rounded-full">
+                          {livePostCounts.trending}
+                        </span>
+                      )}
                     </span>
                   </TabsTrigger>
                 </TabsList>
@@ -1196,9 +1323,35 @@ const Community = () => {
                     <Textarea
                       placeholder="What's happening? Use #hashtags to join conversations..."
                       value={newPost}
-                      onChange={(e) => setNewPost(e.target.value)}
+                      onChange={handleNewPostChange}
                       className="min-h-[80px] resize-none border-none shadow-none focus-visible:ring-0 text-lg placeholder:text-muted-foreground/60"
                     />
+                    
+                    {/* Typing Indicator */}
+                    {typingUsers.length > 0 && (
+                      <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground animate-fade-in">
+                        <div className="flex -space-x-2">
+                          {typingUsers.slice(0, 3).map((typingUser) => (
+                            <Avatar key={typingUser.user_id} className="w-5 h-5 border-2 border-background">
+                              <AvatarImage src={typingUser.avatar_url} />
+                              <AvatarFallback className="text-[8px]">
+                                {typingUser.display_name?.charAt(0) || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        </div>
+                        <span className="flex items-center gap-1">
+                          {typingUsers.length === 1 
+                            ? `${typingUsers[0].display_name} is typing`
+                            : `${typingUsers.length} people are typing`}
+                          <span className="flex gap-0.5">
+                            <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </span>
+                        </span>
+                      </div>
+                    )}
                     
                     {imagePreview && (
                       <div className="relative mt-3 inline-block">
