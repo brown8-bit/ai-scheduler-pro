@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users, User, ChevronDown, MessageSquare, Timer, BarChart3, Sparkles, Clock, BookTemplate, Briefcase, Receipt, UserPlus, Mic, ListTodo, GraduationCap } from "lucide-react";
+import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users, User, ChevronDown, MessageSquare, Timer, BarChart3, Sparkles, Clock, BookTemplate, Briefcase, Receipt, UserPlus, Mic, ListTodo, GraduationCap, Mail } from "lucide-react";
 import schedulrLogo from "@/assets/schedulr-logo.png";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -166,6 +166,11 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                <Link to="/messages">
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Mail className="w-5 h-5" />
+                  </Button>
+                </Link>
                 <NotificationsDropdown />
                 <ShareLinkModal 
                   trigger={
