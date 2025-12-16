@@ -229,6 +229,108 @@ const Community = () => {
     checkLifetimeAccess();
   }, [user, navigate]);
 
+  // Realtime subscriptions for posts, reposts, and likes
+  useEffect(() => {
+    if (!user || !isLifetime) return;
+
+    const channel = supabase
+      .channel('community-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'social_posts' },
+        (payload) => {
+          console.log('Post change:', payload);
+          if (payload.eventType === 'INSERT') {
+            // Refetch to get enriched data with profiles
+            fetchPosts();
+          } else if (payload.eventType === 'DELETE') {
+            setPosts(prev => prev.filter(p => p.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            fetchPosts();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'post_likes' },
+        (payload) => {
+          console.log('Like change:', payload);
+          // Update likes count in real-time
+          if (payload.eventType === 'INSERT') {
+            const postId = payload.new.post_id;
+            setPosts(prev => prev.map(p => {
+              if (p.id === postId) {
+                return {
+                  ...p,
+                  likes_count: p.likes_count + 1,
+                  is_liked: payload.new.user_id === user.id ? true : p.is_liked,
+                };
+              }
+              return p;
+            }));
+          } else if (payload.eventType === 'DELETE') {
+            const postId = payload.old.post_id;
+            setPosts(prev => prev.map(p => {
+              if (p.id === postId) {
+                return {
+                  ...p,
+                  likes_count: Math.max(0, p.likes_count - 1),
+                  is_liked: payload.old.user_id === user.id ? false : p.is_liked,
+                };
+              }
+              return p;
+            }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'post_reposts' },
+        (payload) => {
+          console.log('Repost change:', payload);
+          if (payload.eventType === 'INSERT') {
+            // Update repost count
+            const postId = payload.new.original_post_id;
+            setPosts(prev => prev.map(p => {
+              if (p.id === postId) {
+                return {
+                  ...p,
+                  reposts_count: p.reposts_count + 1,
+                  is_reposted: payload.new.user_id === user.id && !payload.new.is_quote ? true : p.is_reposted,
+                };
+              }
+              return p;
+            }));
+            // Refetch to get new quote posts
+            if (payload.new.is_quote) {
+              fetchPosts();
+            }
+          } else if (payload.eventType === 'DELETE') {
+            const postId = payload.old.original_post_id;
+            setPosts(prev => prev.map(p => {
+              if (p.id === postId) {
+                return {
+                  ...p,
+                  reposts_count: Math.max(0, p.reposts_count - 1),
+                  is_reposted: payload.old.user_id === user.id && !payload.old.is_quote ? false : p.is_reposted,
+                };
+              }
+              return p;
+            }));
+            // Remove quote from reposts
+            if (payload.old.is_quote) {
+              setReposts(prev => prev.filter(r => r.id !== payload.old.id));
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, isLifetime]);
+
   const checkLifetimeAccess = async () => {
     if (!user) return;
 
