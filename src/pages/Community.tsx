@@ -430,7 +430,7 @@ const Community = () => {
               <Card key={post.id} className="overflow-hidden">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
+                    <Link to={`/profile/${post.user_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                       <Avatar className="w-10 h-10">
                         <AvatarImage src={post.profiles?.avatar_url || ""} />
                         <AvatarFallback className="bg-primary/10 text-primary">
@@ -451,7 +451,7 @@ const Community = () => {
                           {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                     {post.user_id !== user?.id && (
                       <Button
                         variant="ghost"
