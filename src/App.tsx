@@ -31,6 +31,7 @@ import FocusBlocks from "./pages/FocusBlocks";
 import Gamification from "./pages/Gamification";
 import DailyHabits from "./pages/DailyHabits";
 import Progress from "./pages/Progress";
+import Community from "./pages/Community";
 import AdminSettings from "./pages/AdminSettings";
 import UserSettings from "./pages/UserSettings";
 import Timer from "./pages/Timer";
@@ -80,6 +81,7 @@ const App = () => (
               <Route path="/achievements" element={<Gamification />} />
               <Route path="/habits" element={<DailyHabits />} />
               <Route path="/progress" element={<Progress />} />
+              <Route path="/community" element={<Community />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="/settings" element={<UserSettings />} />
               <Route path="/timer" element={<Timer />} />

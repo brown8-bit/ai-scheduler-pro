@@ -3,13 +3,14 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Loader2, Crown, X, Flame, Clock } from "lucide-react";
+import { Check, Sparkles, Loader2, Crown, X, Flame, Clock, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 const Pricing = () => {
   const [loadingMonthly, setLoadingMonthly] = useState(false);
   const [loadingLifetime, setLoadingLifetime] = useState(false);
+  const [loadingVerified, setLoadingVerified] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [highlightLifetime, setHighlightLifetime] = useState(false);
   const navigate = useNavigate();
@@ -53,6 +54,15 @@ const Pricing = () => {
     { name: "API access", included: false },
   ];
 
+  const verifiedFeatures = [
+    { name: "Purple verification badge", included: true },
+    { name: "Priority in leaderboards", included: true },
+    { name: "Exclusive profile flair", included: true },
+    { name: "Early access to features", included: true },
+    { name: "Verified community status", included: true },
+    { name: "Special support queue", included: true },
+  ];
+
   const lifetimeFeatures = [
     { name: "Unlimited AI requests", included: true },
     { name: "Full calendar view", included: true },
@@ -62,6 +72,7 @@ const Pricing = () => {
     { name: "Priority support", included: true },
     { name: "Advanced analytics", included: true },
     { name: "Full API access", included: true },
+    { name: "Community access", included: true },
   ];
 
   const handleSubscribe = async () => {
@@ -118,12 +129,39 @@ const Pricing = () => {
     }
   };
 
+  const handleVerifiedPurchase = async () => {
+    if (!user) {
+      navigate("/register");
+      return;
+    }
+
+    setLoadingVerified(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-verified-checkout");
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error: any) {
+      console.error("Verified checkout error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start checkout. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingVerified(false);
+    }
+  };
+
   return (
     <div className="min-h-screen gradient-hero">
       <Navbar />
       
       <main className="pt-32 pb-20 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
@@ -137,7 +175,7 @@ const Pricing = () => {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-slide-up delay-100">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto animate-slide-up delay-100">
             {/* Free Plan */}
             <div className="bg-card rounded-3xl shadow-card border border-border p-6 relative overflow-hidden">
               <div className="relative">
@@ -238,6 +276,66 @@ const Pricing = () => {
                       <span className={feature.included ? "text-foreground text-sm" : "text-muted-foreground text-sm line-through"}>
                         {feature.name}
                       </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Verified Plan */}
+            <div className="bg-card rounded-3xl shadow-card border-2 border-violet-500 p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-violet-500 opacity-10 rounded-full blur-3xl" />
+              <div className="absolute top-4 right-4">
+                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-500 text-white text-xs font-semibold">
+                  <BadgeCheck className="w-3 h-3" />
+                  Status
+                </div>
+              </div>
+              
+              <div className="relative">
+                <div className="text-center mb-6 pt-4">
+                  <h2 className="text-2xl font-bold flex items-center justify-center gap-2">
+                    Verified
+                    <BadgeCheck className="w-6 h-6 text-violet-500 fill-violet-500" />
+                  </h2>
+                  <p className="text-muted-foreground mt-2 text-sm">Stand out from the crowd</p>
+                  
+                  <div className="mt-6">
+                    <span className="text-5xl font-bold">$19</span>
+                    <span className="text-xl text-muted-foreground">/month</span>
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Cancel anytime
+                  </p>
+                </div>
+
+                <Button 
+                  size="lg" 
+                  className="w-full bg-violet-500 hover:bg-violet-600 text-white"
+                  onClick={handleVerifiedPurchase}
+                  disabled={loadingVerified}
+                >
+                  {loadingVerified ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <BadgeCheck className="w-4 h-4 mr-2" />
+                      Get Verified
+                    </>
+                  )}
+                </Button>
+
+                <div className="mt-6 space-y-3">
+                  {verifiedFeatures.map((feature) => (
+                    <div key={feature.name} className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-foreground text-sm">{feature.name}</span>
                     </div>
                   ))}
                 </div>

@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp } from "lucide-react";
+import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users } from "lucide-react";
 import schedulrLogo from "@/assets/schedulr-logo.png";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -71,6 +71,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     { path: "/habits", label: "Habits" },
     { path: "/progress", label: "Progress" },
     { path: "/achievements", label: "Achievements" },
+    { path: "/community", label: "Community" },
   ];
 
   const userInitial = displayName.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U";
