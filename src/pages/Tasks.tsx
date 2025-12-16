@@ -36,6 +36,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import NotificationToggle from "@/components/NotificationToggle";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface Task {
   id: string;
@@ -198,13 +200,15 @@ const Tasks = () => {
               </p>
             </div>
             
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Task
-                </Button>
-              </DialogTrigger>
+            <div className="flex items-center gap-2">
+              <NotificationToggle />
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Add Task
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Create New Task</DialogTitle>
@@ -259,6 +263,7 @@ const Tasks = () => {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           {/* Stats */}
