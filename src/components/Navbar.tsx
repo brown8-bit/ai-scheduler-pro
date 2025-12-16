@@ -67,6 +67,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     { path: "/", label: "Home" },
     { path: "/chat", label: "AI Chat" },
     { path: "/dashboard", label: "Dashboard" },
+    { path: "/pricing", label: "Pricing" },
   ];
 
   const featureLinks = [
