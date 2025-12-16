@@ -295,8 +295,8 @@ const Index = () => {
         <section className="py-12 sm:py-16 px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8 sm:mb-12">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/20 text-accent-foreground text-xs sm:text-sm font-semibold mb-4">
-                <Trophy className="w-4 h-4 text-accent" />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/20 dark:bg-amber-500/30 text-accent-foreground dark:text-amber-300 text-xs sm:text-sm font-semibold mb-4">
+                <Trophy className="w-4 h-4 text-accent dark:text-amber-400" />
                 Earn Rewards
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">🏆 Featured Achievements</h2>
