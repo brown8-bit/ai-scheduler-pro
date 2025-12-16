@@ -39,6 +39,7 @@ import Timer from "./pages/Timer";
 import Clients from "./pages/Clients";
 import Team from "./pages/Team";
 import Invoices from "./pages/Invoices";
+import VoiceNotes from "./pages/VoiceNotes";
 import NotFound from "./pages/NotFound";
 
 // Only lazy load Chat page to show Scheddy loader
@@ -94,6 +95,7 @@ const App = () => (
               <Route path="/clients" element={<Clients />} />
               <Route path="/team" element={<Team />} />
               <Route path="/invoices" element={<Invoices />} />
+              <Route path="/voice-notes" element={<VoiceNotes />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
