@@ -23,3 +23,12 @@ verify_jwt = true
 
 [functions.get-usage]
 verify_jwt = true
+
+[functions.create-earlybird-checkout]
+verify_jwt = true
+
+[functions.process-referral]
+verify_jwt = false
+
+[functions.create-verified-checkout]
+verify_jwt = true

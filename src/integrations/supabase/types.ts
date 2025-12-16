@@ -626,6 +626,7 @@ export type Database = {
           id: string
           is_lifetime: boolean | null
           is_verified: boolean | null
+          referral_code: string | null
           updated_at: string
           user_id: string
         }
@@ -636,6 +637,7 @@ export type Database = {
           id?: string
           is_lifetime?: boolean | null
           is_verified?: boolean | null
+          referral_code?: string | null
           updated_at?: string
           user_id: string
         }
@@ -646,8 +648,45 @@ export type Database = {
           id?: string
           is_lifetime?: boolean | null
           is_verified?: boolean | null
+          referral_code?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          coupon_code: string | null
+          created_at: string
+          id: string
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          reward_claimed: boolean | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          reward_claimed?: boolean | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_id?: string
+          referrer_id?: string
+          reward_claimed?: boolean | null
+          status?: string
         }
         Relationships: []
       }

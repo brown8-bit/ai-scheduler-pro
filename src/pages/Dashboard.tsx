@@ -38,6 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from "date-fns";
 import scheddyAvatar from "@/assets/scheddy-avatar.png";
+import { ReferralCard } from "@/components/ReferralCard";
 
 interface ScheduledEvent {
   id: string;
@@ -541,7 +542,10 @@ const Dashboard = () => {
                     <BarChart3 className="w-4 h-4" />
                     View Analytics
                   </Button>
-                </div>
+              </div>
+
+              {/* Referral Card */}
+              <ReferralCard />
               </div>
 
               {/* Productivity Tip */}

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Lock, ArrowLeft } from "lucide-react";
+import { Calendar, Mail, Lock, ArrowLeft, Gift } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
@@ -11,6 +12,8 @@ const passwordSchema = z.string().min(6, { message: "Password must be at least 6
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref");
   const { signUp, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -67,6 +70,24 @@ const Register = () => {
       title: "Account created! 🎉",
       description: "Welcome to Schedulr. Let's get started!",
     });
+
+    // Process referral if there's a referral code
+    if (referralCode) {
+      try {
+        const { data: { user: newUser } } = await supabase.auth.getUser();
+        if (newUser) {
+          await supabase.functions.invoke("process-referral", {
+            body: { 
+              referral_code: referralCode, 
+              referred_user_id: newUser.id 
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Error processing referral:", error);
+      }
+    }
+
     navigate("/dashboard");
     setIsLoading(false);
   };
@@ -101,6 +122,12 @@ const Register = () => {
             </Link>
             <h1 className="mt-4 text-2xl font-bold">Create an account</h1>
             <p className="mt-2 text-muted-foreground">Start your free trial today</p>
+            {referralCode && (
+              <div className="mt-3 inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm">
+                <Gift className="h-4 w-4" />
+                Referred by a friend!
+              </div>
+            )}
           </div>
 
           {/* Form */}
