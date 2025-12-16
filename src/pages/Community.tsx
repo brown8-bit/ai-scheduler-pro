@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import AdminBadge from "@/components/AdminBadge";
 import { formatDistanceToNow } from "date-fns";
 
 interface Post {
@@ -40,6 +41,7 @@ interface Post {
     display_name: string | null;
     avatar_url: string | null;
     is_verified: boolean;
+    is_admin: boolean;
   };
   likes_count: number;
   comments_count: number;
@@ -55,6 +57,7 @@ interface Comment {
     display_name: string | null;
     avatar_url: string | null;
     is_verified: boolean;
+    is_admin: boolean;
   };
 }
 
@@ -127,6 +130,15 @@ const Community = () => {
       .select("user_id, display_name, avatar_url, is_verified")
       .in("user_id", userIds);
 
+    // Fetch admin roles
+    const { data: adminRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin")
+      .in("user_id", userIds);
+
+    const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+
     // Fetch likes counts
     const { data: likesData } = await supabase
       .from("post_likes")
@@ -155,6 +167,7 @@ const Community = () => {
           display_name: profile.display_name,
           avatar_url: profile.avatar_url,
           is_verified: profile.is_verified || false,
+          is_admin: adminUserIds.has(post.user_id),
         } : undefined,
         likes_count: likesCount,
         comments_count: commentsCount,
@@ -307,12 +320,23 @@ const Community = () => {
             .select("user_id, display_name, avatar_url, is_verified")
             .in("user_id", userIds);
 
+          const { data: adminRoles } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin")
+            .in("user_id", userIds);
+
+          const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+
           const enrichedComments = data.map(comment => ({
             ...comment,
-            profiles: profiles?.find(p => p.user_id === comment.user_id),
+            profiles: profiles?.find(p => p.user_id === comment.user_id) ? {
+              ...profiles?.find(p => p.user_id === comment.user_id),
+              is_admin: adminUserIds.has(comment.user_id),
+            } : undefined,
           }));
 
-          setComments({ ...comments, [postId]: enrichedComments });
+          setComments({ ...comments, [postId]: enrichedComments as Comment[] });
         }
       }
     }
@@ -344,12 +368,23 @@ const Community = () => {
           .select("user_id, display_name, avatar_url, is_verified")
           .in("user_id", userIds);
 
+        const { data: adminRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin")
+          .in("user_id", userIds);
+
+        const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+
         const enrichedComments = data.map(comment => ({
           ...comment,
-          profiles: profiles?.find(p => p.user_id === comment.user_id),
+          profiles: profiles?.find(p => p.user_id === comment.user_id) ? {
+            ...profiles?.find(p => p.user_id === comment.user_id),
+            is_admin: adminUserIds.has(comment.user_id),
+          } : undefined,
         }));
 
-        setComments({ ...comments, [postId]: enrichedComments });
+        setComments({ ...comments, [postId]: enrichedComments as Comment[] });
       }
 
       setPosts(posts.map(p => {
@@ -536,6 +571,9 @@ const Community = () => {
                           <span className="font-semibold">
                             {post.profiles?.display_name || "Anonymous"}
                           </span>
+                          {post.profiles?.is_admin && (
+                            <AdminBadge size="md" />
+                          )}
                           {post.profiles?.is_verified && (
                             <VerifiedBadge size="md" />
                           )}
@@ -622,6 +660,9 @@ const Community = () => {
                               <span className="text-sm font-medium">
                                 {comment.profiles?.display_name || "Anonymous"}
                               </span>
+                              {comment.profiles?.is_admin && (
+                                <AdminBadge size="sm" />
+                              )}
                               {comment.profiles?.is_verified && (
                                 <VerifiedBadge size="sm" />
                               )}

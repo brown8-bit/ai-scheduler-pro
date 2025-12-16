@@ -25,6 +25,7 @@ import {
   Users,
 } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import AdminBadge from "@/components/AdminBadge";
 import { formatDistanceToNow } from "date-fns";
 
 interface ProfileData {
@@ -33,6 +34,7 @@ interface ProfileData {
   avatar_url: string | null;
   is_verified: boolean;
   is_lifetime: boolean;
+  is_admin: boolean;
 }
 
 interface Post {
@@ -51,6 +53,7 @@ interface FollowUser {
   display_name: string | null;
   avatar_url: string | null;
   is_verified: boolean;
+  is_admin: boolean;
 }
 
 const Profile = () => {
@@ -90,8 +93,16 @@ const Profile = () => {
       .eq("user_id", targetUserId)
       .maybeSingle();
 
+    // Check if user is admin
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("user_id", targetUserId)
+      .eq("role", "admin")
+      .maybeSingle();
+
     if (profileData) {
-      setProfile(profileData);
+      setProfile({ ...profileData, is_admin: !!adminRole });
     }
 
     // Fetch user's posts
@@ -137,7 +148,18 @@ const Profile = () => {
         .select("user_id, display_name, avatar_url, is_verified")
         .in("user_id", followerIds);
 
-      setFollowers(followerProfiles || []);
+      const { data: followerAdmins } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin")
+        .in("user_id", followerIds);
+
+      const adminIds = new Set(followerAdmins?.map(a => a.user_id) || []);
+      
+      setFollowers((followerProfiles || []).map(p => ({
+        ...p,
+        is_admin: adminIds.has(p.user_id),
+      })));
     } else {
       setFollowers([]);
     }
@@ -155,7 +177,18 @@ const Profile = () => {
         .select("user_id, display_name, avatar_url, is_verified")
         .in("user_id", followingIds);
 
-      setFollowing(followingProfiles || []);
+      const { data: followingAdmins } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin")
+        .in("user_id", followingIds);
+
+      const adminIds = new Set(followingAdmins?.map(a => a.user_id) || []);
+      
+      setFollowing((followingProfiles || []).map(p => ({
+        ...p,
+        is_admin: adminIds.has(p.user_id),
+      })));
     } else {
       setFollowing([]);
     }
@@ -199,8 +232,16 @@ const Profile = () => {
         .select("user_id, display_name, avatar_url, is_verified")
         .eq("user_id", user.id)
         .maybeSingle();
+      
+      const { data: myAdminRole } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+        
       if (myProfile) {
-        setFollowers([...followers, myProfile]);
+        setFollowers([...followers, { ...myProfile, is_admin: !!myAdminRole }]);
       }
       toast({ title: "Following! 🎉", description: "You're now following this user" });
     }
@@ -257,6 +298,9 @@ const Profile = () => {
                 <div className="flex flex-col sm:flex-row items-center gap-2 mb-2">
                   <h1 className="text-2xl font-bold flex items-center gap-2">
                     {profile.display_name || "Anonymous"}
+                    {profile.is_admin && (
+                      <AdminBadge size="lg" />
+                    )}
                     {profile.is_verified && (
                       <VerifiedBadge size="lg" />
                     )}
@@ -421,6 +465,9 @@ const Profile = () => {
                             <span className="font-medium">
                               {follower.display_name || "Anonymous"}
                             </span>
+                            {follower.is_admin && (
+                              <AdminBadge size="md" />
+                            )}
                             {follower.is_verified && (
                               <VerifiedBadge size="md" />
                             )}
@@ -465,6 +512,9 @@ const Profile = () => {
                             <span className="font-medium">
                               {followedUser.display_name || "Anonymous"}
                             </span>
+                            {followedUser.is_admin && (
+                              <AdminBadge size="md" />
+                            )}
                             {followedUser.is_verified && (
                               <VerifiedBadge size="md" />
                             )}
