@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -28,6 +30,14 @@ import {
   Pencil,
   Trash2,
   Check,
+  Search,
+  TrendingUp,
+  Hash,
+  Users,
+  Repeat2,
+  Bookmark,
+  Share,
+  BarChart2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -81,8 +91,16 @@ interface Comment {
   };
 }
 
+interface SuggestedUser {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  is_verified: boolean;
+}
+
 const Community = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +120,56 @@ const Community = () => {
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [activeTab, setActiveTab] = useState("for-you");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
+
+  // Extract hashtags from all posts for trending
+  const trendingHashtags = useMemo(() => {
+    const hashtagCounts: Record<string, number> = {};
+    posts.forEach(post => {
+      const hashtags = post.content.match(/#\w+/g) || [];
+      hashtags.forEach(tag => {
+        const normalized = tag.toLowerCase();
+        hashtagCounts[normalized] = (hashtagCounts[normalized] || 0) + 1;
+      });
+    });
+    return Object.entries(hashtagCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([tag, count]) => ({ tag, count }));
+  }, [posts]);
+
+  // Filter posts based on active tab and search
+  const filteredPosts = useMemo(() => {
+    let filtered = posts;
+    
+    // Filter by tab
+    if (activeTab === "following") {
+      filtered = filtered.filter(p => following.includes(p.user_id) || p.user_id === user?.id);
+    } else if (activeTab === "trending") {
+      // Sort by engagement (likes + comments)
+      filtered = [...filtered].sort((a, b) => 
+        (b.likes_count + b.comments_count) - (a.likes_count + a.comments_count)
+      );
+    }
+    
+    // Filter by search query or hashtag
+    const hashtagParam = searchParams.get("hashtag");
+    if (hashtagParam) {
+      filtered = filtered.filter(p => 
+        p.content.toLowerCase().includes(`#${hashtagParam.toLowerCase()}`)
+      );
+    } else if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.content.toLowerCase().includes(query) ||
+        p.profiles?.display_name?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [posts, activeTab, following, user?.id, searchQuery, searchParams]);
 
   useEffect(() => {
     if (!user) {
@@ -127,9 +195,24 @@ const Community = () => {
       if (profile.is_lifetime) {
         fetchPosts();
         fetchFollowing();
+        fetchSuggestedUsers();
       }
     }
     setLoading(false);
+  };
+
+  const fetchSuggestedUsers = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, display_name, avatar_url, is_verified")
+      .neq("user_id", user.id)
+      .limit(5);
+    
+    if (data) {
+      setSuggestedUsers(data);
+    }
   };
 
   const fetchPosts = async () => {
@@ -139,7 +222,7 @@ const Community = () => {
       .from("social_posts")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(100);
 
     if (error) {
       console.error("Error fetching posts:", error);
@@ -148,14 +231,12 @@ const Community = () => {
 
     if (!postsData) return;
 
-    // Fetch profiles for each post
     const userIds = [...new Set(postsData.map(p => p.user_id))];
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, display_name, avatar_url, is_verified")
       .in("user_id", userIds);
 
-    // Fetch admin roles
     const { data: adminRoles } = await supabase
       .from("user_roles")
       .select("user_id")
@@ -164,18 +245,15 @@ const Community = () => {
 
     const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
 
-    // Fetch likes counts
     const { data: likesData } = await supabase
       .from("post_likes")
       .select("post_id");
 
-    // Fetch user's likes
     const { data: userLikes } = await supabase
       .from("post_likes")
       .select("post_id")
       .eq("user_id", user.id);
 
-    // Fetch comments counts
     const { data: commentsData } = await supabase
       .from("post_comments")
       .select("post_id");
@@ -246,7 +324,6 @@ const Community = () => {
     setPosting(true);
     let imageUrl: string | null = null;
 
-    // Upload image if selected
     if (selectedImage) {
       const fileExt = selectedImage.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -379,7 +456,6 @@ const Community = () => {
     if (!error) {
       setNewComments({ ...newComments, [postId]: "" });
       
-      // Refresh comments
       const { data } = await supabase
         .from("post_comments")
         .select("*")
@@ -496,14 +572,43 @@ const Community = () => {
     setDeletePostId(null);
   };
 
+  const handleHashtagClick = (hashtag: string) => {
+    const tag = hashtag.replace('#', '');
+    setSearchParams({ hashtag: tag });
+    setSearchQuery("");
+  };
+
+  const clearHashtagFilter = () => {
+    setSearchParams({});
+  };
+
   const getPostIcon = (postType: string) => {
     switch (postType) {
       case "achievement": return <Trophy className="w-4 h-4 text-yellow-500" />;
       case "milestone": return <Star className="w-4 h-4 text-primary" />;
       case "levelup": return <Zap className="w-4 h-4 text-accent" />;
       case "streak": return <Flame className="w-4 h-4 text-orange-500" />;
-      default: return <Sparkles className="w-4 h-4 text-primary" />;
+      default: return null;
     }
+  };
+
+  // Render post content with clickable hashtags
+  const renderPostContent = (content: string) => {
+    const parts = content.split(/(#\w+)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('#')) {
+        return (
+          <button
+            key={index}
+            onClick={() => handleHashtagClick(part)}
+            className="text-primary hover:underline font-medium"
+          >
+            {part}
+          </button>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
   };
 
   if (loading) {
@@ -525,7 +630,7 @@ const Community = () => {
             </div>
             <h1 className="text-2xl font-bold mb-4">Lifetime Members Only</h1>
             <p className="text-muted-foreground mb-6">
-              The Community feed is an exclusive feature for Lifetime members. Connect with other students, share your achievements, and celebrate together! 🎉
+              The Community feed is an exclusive feature for Lifetime members. Connect with other Schedulrs, share your achievements, and celebrate together! 🎉
             </p>
             <Link to="/pricing?plan=lifetime">
               <Button variant="hero" size="lg" className="gap-2">
@@ -539,308 +644,490 @@ const Community = () => {
     );
   }
 
+  const hashtagFilter = searchParams.get("hashtag");
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 pt-20 pb-8 max-w-2xl">
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-            <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-            Community
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Share wins and connect with fellow Schedulrs 🎓
-          </p>
-        </div>
-
-        {/* Create Post */}
-        <Card className="mb-6">
-          <CardContent className="pt-4">
-            <div className="flex gap-3">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={userProfile?.avatar_url || ""} />
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {userProfile?.display_name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <Textarea
-                  placeholder="Share an achievement or update..."
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  className="min-h-[80px] resize-none"
-                />
-                
-                {/* Image Preview */}
-                {imagePreview && (
-                  <div className="relative mt-3 inline-block">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="max-h-48 rounded-lg object-cover"
-                    />
-                    <button
-                      onClick={clearSelectedImage}
-                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:opacity-80"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+      <main className="container mx-auto px-4 pt-20 pb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
+          {/* Left Sidebar - Navigation */}
+          <aside className="hidden lg:block lg:col-span-3">
+            <div className="sticky top-24 space-y-4">
+              <Card className="p-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={userProfile?.avatar_url || ""} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                      {userProfile?.display_name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold">{userProfile?.display_name || "Schedulr"}</p>
+                    <p className="text-sm text-muted-foreground">@{userProfile?.display_name?.toLowerCase().replace(/\s/g, '') || "user"}</p>
                   </div>
-                )}
-                
-                <div className="flex justify-between items-center mt-3">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageSelect}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="gap-2 text-muted-foreground"
-                  >
-                    <Image className="w-4 h-4" />
-                    Photo
-                  </Button>
-                  <Button
-                    onClick={handleCreatePost}
-                    disabled={(!newPost.trim() && !selectedImage) || posting}
-                    className="gap-2"
-                  >
-                    {posting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                    Post
-                  </Button>
                 </div>
-              </div>
+                <div className="grid grid-cols-2 gap-4 text-center border-t pt-4">
+                  <div>
+                    <p className="font-bold">{posts.filter(p => p.user_id === user?.id).length}</p>
+                    <p className="text-xs text-muted-foreground">Posts</p>
+                  </div>
+                  <div>
+                    <p className="font-bold">{following.length}</p>
+                    <p className="text-xs text-muted-foreground">Following</p>
+                  </div>
+                </div>
+              </Card>
+              
+              <Card className="p-2">
+                <nav className="space-y-1">
+                  <Link to="/community" className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 text-primary font-medium">
+                    <Users className="w-5 h-5" />
+                    Community
+                  </Link>
+                  <Link to="/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                    <Avatar className="w-5 h-5">
+                      <AvatarImage src={userProfile?.avatar_url || ""} />
+                      <AvatarFallback className="text-xs">{userProfile?.display_name?.charAt(0) || "U"}</AvatarFallback>
+                    </Avatar>
+                    Profile
+                  </Link>
+                </nav>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+          </aside>
 
-        {/* Posts Feed */}
-        <div className="space-y-4">
-          {posts.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  No posts yet. Be the first to share! 🚀
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            posts.map((post) => (
-              <Card key={post.id} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <Link to={`/profile/${post.user_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={post.profiles?.avatar_url || ""} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {post.profiles?.display_name?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold">
-                            {post.profiles?.display_name || "Anonymous"}
-                          </span>
-                          {post.profiles?.is_admin && (
-                            <AdminBadge size="md" />
-                          )}
-                          {post.profiles?.is_verified && (
-                            <VerifiedBadge size="md" />
-                          )}
-                          {getPostIcon(post.post_type)}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                        </p>
+          {/* Main Feed */}
+          <div className="lg:col-span-6">
+            {/* Header */}
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-primary" />
+                Community
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Connect with fellow Schedulrs 🎓
+              </p>
+            </div>
+
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+              <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+                <TabsTrigger value="for-you" className="gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="hidden sm:inline">For You</span>
+                </TabsTrigger>
+                <TabsTrigger value="following" className="gap-2">
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Following</span>
+                </TabsTrigger>
+                <TabsTrigger value="trending" className="gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="hidden sm:inline">Trending</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {/* Hashtag Filter Banner */}
+            {hashtagFilter && (
+              <div className="mb-4 p-3 bg-primary/10 rounded-lg flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Hash className="w-5 h-5 text-primary" />
+                  <span className="font-medium">#{hashtagFilter}</span>
+                  <span className="text-sm text-muted-foreground">
+                    ({filteredPosts.length} posts)
+                  </span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={clearHashtagFilter}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Create Post */}
+            <Card className="mb-4 border-2 border-primary/20">
+              <CardContent className="pt-4">
+                <div className="flex gap-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={userProfile?.avatar_url || ""} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {userProfile?.display_name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <Textarea
+                      placeholder="What's happening? Use #hashtags to join conversations..."
+                      value={newPost}
+                      onChange={(e) => setNewPost(e.target.value)}
+                      className="min-h-[80px] resize-none border-none shadow-none focus-visible:ring-0 text-lg placeholder:text-muted-foreground/60"
+                    />
+                    
+                    {imagePreview && (
+                      <div className="relative mt-3 inline-block">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="max-h-48 rounded-xl object-cover"
+                        />
+                        <button
+                          onClick={clearSelectedImage}
+                          className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 hover:bg-black/70"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
-                    </Link>
-                    {post.user_id !== user?.id ? (
+                    )}
+                    
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t">
+                      <div className="flex gap-1">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageSelect}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-primary hover:bg-primary/10"
+                        >
+                          <Image className="w-5 h-5" />
+                        </Button>
+                      </div>
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleFollow(post.user_id)}
-                        className="text-xs"
+                        onClick={handleCreatePost}
+                        disabled={(!newPost.trim() && !selectedImage) || posting}
+                        className="rounded-full px-6"
                       >
-                        {following.includes(post.user_id) ? (
-                          <>
-                            <UserMinus className="w-4 h-4 mr-1" />
-                            Unfollow
-                          </>
+                        {posting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          <>
-                            <UserPlus className="w-4 h-4 mr-1" />
-                            Follow
-                          </>
+                          "Post"
                         )}
                       </Button>
-                    ) : (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-popover">
-                          <DropdownMenuItem onClick={() => handleStartEdit(post)}>
-                            <Pencil className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => setDeletePostId(post.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Edit Mode */}
-                  {editingPostId === post.id ? (
-                    <div className="space-y-3 mb-4">
-                      <Textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        placeholder="What's on your mind?"
-                        className="min-h-[100px] resize-none"
-                      />
-                      <div className="flex gap-2 justify-end">
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Posts Feed */}
+            <div className="space-y-4">
+              {filteredPosts.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">
+                      {hashtagFilter 
+                        ? `No posts with #${hashtagFilter} yet. Be the first!` 
+                        : activeTab === "following" 
+                          ? "Follow some Schedulrs to see their posts here!"
+                          : "No posts yet. Be the first to share! 🚀"}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredPosts.map((post) => (
+                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <Link to={`/profile/${post.user_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={post.profiles?.avatar_url || ""} />
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {post.profiles?.display_name?.charAt(0) || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold">
+                                {post.profiles?.display_name || "Anonymous"}
+                              </span>
+                              {post.profiles?.is_admin && <AdminBadge size="md" />}
+                              {post.profiles?.is_verified && <VerifiedBadge size="md" />}
+                              {getPostIcon(post.post_type)}
+                              <span className="text-muted-foreground">·</span>
+                              <span className="text-sm text-muted-foreground">
+                                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              @{post.profiles?.display_name?.toLowerCase().replace(/\s/g, '') || "user"}
+                            </p>
+                          </div>
+                        </Link>
+                        <div className="flex items-center gap-2">
+                          {post.user_id !== user?.id ? (
+                            <Button
+                              variant={following.includes(post.user_id) ? "outline" : "default"}
+                              size="sm"
+                              onClick={() => handleFollow(post.user_id)}
+                              className="rounded-full text-xs h-8"
+                            >
+                              {following.includes(post.user_id) ? "Following" : "Follow"}
+                            </Button>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-popover">
+                                <DropdownMenuItem onClick={() => handleStartEdit(post)}>
+                                  <Pencil className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => setDeletePostId(post.id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {editingPostId === post.id ? (
+                        <div className="space-y-3 mb-4">
+                          <Textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            placeholder="What's on your mind?"
+                            className="min-h-[100px] resize-none"
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <Button variant="ghost" size="sm" onClick={handleCancelEdit} disabled={isSavingEdit}>
+                              Cancel
+                            </Button>
+                            <Button size="sm" onClick={() => handleSaveEdit(post.id)} disabled={!editContent.trim() || isSavingEdit}>
+                              {isSavingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        post.content && (
+                          <p className="text-foreground mb-3 whitespace-pre-wrap leading-relaxed">
+                            {renderPostContent(post.content)}
+                          </p>
+                        )
+                      )}
+                      
+                      {post.image_url && (
+                        <img 
+                          src={post.image_url} 
+                          alt="Post image" 
+                          className="w-full rounded-xl mb-3 max-h-96 object-cover"
+                        />
+                      )}
+                      
+                      {/* Actions Bar */}
+                      <div className="flex items-center justify-between pt-2 border-t">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={handleCancelEdit}
-                          disabled={isSavingEdit}
+                          onClick={() => toggleComments(post.id)}
+                          className="text-muted-foreground hover:text-primary hover:bg-primary/10 gap-2"
                         >
-                          <X className="w-4 h-4 mr-1" />
-                          Cancel
+                          <MessageCircle className="w-4 h-4" />
+                          <span>{post.comments_count}</span>
                         </Button>
                         <Button
+                          variant="ghost"
                           size="sm"
-                          onClick={() => handleSaveEdit(post.id)}
-                          disabled={!editContent.trim() || isSavingEdit}
+                          onClick={() => handleLike(post.id, post.is_liked)}
+                          className={`gap-2 ${post.is_liked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500"}`}
                         >
-                          {isSavingEdit ? (
-                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                          ) : (
-                            <Check className="w-4 h-4 mr-1" />
-                          )}
-                          Save
+                          <Heart className={`w-4 h-4 ${post.is_liked ? "fill-current" : ""}`} />
+                          <span>{post.likes_count}</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        >
+                          <BarChart2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          onClick={() => {
+                            navigator.clipboard.writeText(window.location.origin + `/community?post=${post.id}`);
+                            toast({ title: "Link copied!" });
+                          }}
+                        >
+                          <Share className="w-4 h-4" />
                         </Button>
                       </div>
-                    </div>
-                  ) : (
-                    post.content && (
-                      <p className="text-foreground mb-4 whitespace-pre-wrap">{post.content}</p>
-                    )
-                  )}
-                  
-                  {/* Post Image */}
-                  {post.image_url && (
-                    <img 
-                      src={post.image_url} 
-                      alt="Post image" 
-                      className="w-full rounded-lg mb-4 max-h-96 object-cover"
-                    />
-                  )}
-                  
-                  {/* Actions */}
-                  <div className="flex items-center gap-4 pt-2 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleLike(post.id, post.is_liked)}
-                      className={post.is_liked ? "text-red-500" : "text-muted-foreground"}
-                    >
-                      <Heart className={`w-4 h-4 mr-1 ${post.is_liked ? "fill-red-500" : ""}`} />
-                      {post.likes_count}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleComments(post.id)}
-                      className="text-muted-foreground"
-                    >
-                      <MessageCircle className="w-4 h-4 mr-1" />
-                      {post.comments_count}
-                    </Button>
-                  </div>
 
-                  {/* Comments Section */}
-                  {expandedComments.includes(post.id) && (
-                    <div className="mt-4 pt-4 border-t space-y-3">
-                      {comments[post.id]?.map((comment) => (
-                        <div key={comment.id} className="flex gap-2">
-                          <Link to={`/profile/${comment.user_id}`}>
-                            <Avatar className="w-8 h-8 hover:opacity-80 transition-opacity">
-                              <AvatarImage src={comment.profiles?.avatar_url || ""} />
-                              <AvatarFallback className="text-xs bg-muted">
-                                {comment.profiles?.display_name?.charAt(0) || "U"}
+                      {/* Comments Section */}
+                      {expandedComments.includes(post.id) && (
+                        <div className="mt-4 pt-4 border-t space-y-3">
+                          {comments[post.id]?.map((comment) => (
+                            <div key={comment.id} className="flex gap-2">
+                              <Link to={`/profile/${comment.user_id}`}>
+                                <Avatar className="w-8 h-8">
+                                  <AvatarImage src={comment.profiles?.avatar_url || ""} />
+                                  <AvatarFallback className="text-xs bg-muted">
+                                    {comment.profiles?.display_name?.charAt(0) || "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </Link>
+                              <div className="flex-1 bg-muted/50 rounded-2xl px-4 py-2">
+                                <Link to={`/profile/${comment.user_id}`} className="inline-flex items-center gap-1.5">
+                                  <span className="text-sm font-medium">
+                                    {comment.profiles?.display_name || "Anonymous"}
+                                  </span>
+                                  {comment.profiles?.is_admin && <AdminBadge size="sm" />}
+                                  {comment.profiles?.is_verified && <VerifiedBadge size="sm" />}
+                                </Link>
+                                <p className="text-sm">{comment.content}</p>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          <div className="flex gap-2">
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage src={userProfile?.avatar_url || ""} />
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                {userProfile?.display_name?.charAt(0) || "U"}
                               </AvatarFallback>
                             </Avatar>
-                          </Link>
-                          <div className="flex-1 bg-muted/50 rounded-lg px-3 py-2">
-                            <Link to={`/profile/${comment.user_id}`} className="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-                              <span className="text-sm font-medium">
-                                {comment.profiles?.display_name || "Anonymous"}
-                              </span>
-                              {comment.profiles?.is_admin && (
-                                <AdminBadge size="sm" />
-                              )}
-                              {comment.profiles?.is_verified && (
-                                <VerifiedBadge size="sm" />
-                              )}
-                            </Link>
-                            <p className="text-sm">{comment.content}</p>
+                            <div className="flex-1 flex gap-2">
+                              <Input
+                                placeholder="Post your reply..."
+                                value={newComments[post.id] || ""}
+                                onChange={(e) => setNewComments({ ...newComments, [post.id]: e.target.value })}
+                                onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
+                                className="rounded-full"
+                              />
+                              <Button
+                                size="icon"
+                                onClick={() => handleComment(post.id)}
+                                disabled={!newComments[post.id]?.trim()}
+                                className="rounded-full"
+                              >
+                                <Send className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Right Sidebar - Trending & Suggestions */}
+          <aside className="hidden lg:block lg:col-span-3">
+            <div className="sticky top-24 space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search posts..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (hashtagFilter) clearHashtagFilter();
+                  }}
+                  className="pl-10 rounded-full bg-muted/50"
+                />
+              </div>
+
+              {/* Trending Hashtags */}
+              {trendingHashtags.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <h3 className="font-bold flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                      Trending
+                    </h3>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      {trendingHashtags.map(({ tag, count }, index) => (
+                        <button
+                          key={tag}
+                          onClick={() => handleHashtagClick(tag)}
+                          className="w-full text-left hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                        >
+                          <p className="text-xs text-muted-foreground">{index + 1} · Trending</p>
+                          <p className="font-semibold text-primary">{tag}</p>
+                          <p className="text-xs text-muted-foreground">{count} posts</p>
+                        </button>
                       ))}
-                      
-                      {/* Add Comment */}
-                      <div className="flex gap-2">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={userProfile?.avatar_url || ""} />
-                          <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                            {userProfile?.display_name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Write a comment..."
-                            value={newComments[post.id] || ""}
-                            onChange={(e) => setNewComments({ ...newComments, [post.id]: e.target.value })}
-                            onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
-                            className="flex-1 bg-muted/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                          />
-                          <Button
-                            size="sm"
-                            onClick={() => handleComment(post.id)}
-                            disabled={!newComments[post.id]?.trim()}
-                          >
-                            <Send className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))
-          )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Who to Follow */}
+              {suggestedUsers.filter(u => !following.includes(u.user_id)).length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <h3 className="font-bold flex items-center gap-2">
+                      <UserPlus className="w-5 h-5 text-primary" />
+                      Who to follow
+                    </h3>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      {suggestedUsers
+                        .filter(u => !following.includes(u.user_id))
+                        .slice(0, 3)
+                        .map((suggestedUser) => (
+                          <div key={suggestedUser.user_id} className="flex items-center justify-between">
+                            <Link to={`/profile/${suggestedUser.user_id}`} className="flex items-center gap-2 hover:opacity-80">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage src={suggestedUser.avatar_url || ""} />
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {suggestedUser.display_name?.charAt(0) || "U"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-sm flex items-center gap-1">
+                                  {suggestedUser.display_name || "User"}
+                                  {suggestedUser.is_verified && <VerifiedBadge size="sm" />}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  @{suggestedUser.display_name?.toLowerCase().replace(/\s/g, '') || "user"}
+                                </p>
+                              </div>
+                            </Link>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full h-8"
+                              onClick={() => handleFollow(suggestedUser.user_id)}
+                            >
+                              Follow
+                            </Button>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Footer Links */}
+              <div className="px-4 text-xs text-muted-foreground space-x-2">
+                <Link to="/terms" className="hover:underline">Terms</Link>
+                <Link to="/privacy" className="hover:underline">Privacy</Link>
+                <span>© 2024 Schedulr</span>
+              </div>
+            </div>
+          </aside>
         </div>
       </main>
 
@@ -860,11 +1147,7 @@ const Community = () => {
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4 mr-2" />
-              )}
+              {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
