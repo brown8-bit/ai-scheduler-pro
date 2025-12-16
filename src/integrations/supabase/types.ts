@@ -993,6 +993,10 @@ export type Database = {
         Args: { p_limit: number; p_user_id: string }
         Returns: Json
       }
+      is_display_name_available: {
+        Args: { p_current_user_id?: string; p_display_name: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

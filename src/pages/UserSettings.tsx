@@ -51,6 +51,8 @@ const UserSettings = () => {
   const [workdayStart, setWorkdayStart] = useState("09:00");
   const [workdayEnd, setWorkdayEnd] = useState("17:00");
   const [soundNotifications, setSoundNotifications] = useState(true);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [checkingName, setCheckingName] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -203,17 +205,52 @@ const UserSettings = () => {
     }
   };
 
+  const checkNameAvailability = async (name: string): Promise<boolean> => {
+    if (!name.trim() || !user) return true;
+    
+    setCheckingName(true);
+    setNameError(null);
+    
+    try {
+      const { data, error } = await supabase.rpc('is_display_name_available', {
+        p_display_name: name.trim(),
+        p_current_user_id: user.id
+      });
+      
+      if (error) throw error;
+      
+      if (!data) {
+        setNameError("This display name is already taken");
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error checking name:", error);
+      return true; // Allow save attempt if check fails
+    } finally {
+      setCheckingName(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
     
     setSaving(true);
+    setNameError(null);
     
     try {
+      // Check if display name is available
+      const isAvailable = await checkNameAvailability(displayName);
+      if (!isAvailable) {
+        setSaving(false);
+        return;
+      }
+
       const { error } = await supabase
         .from("profiles")
         .upsert({
           user_id: user.id,
-          display_name: displayName,
+          display_name: displayName.trim(),
           avatar_url: avatarUrl,
         }, { onConflict: "user_id" });
 
@@ -316,9 +353,16 @@ const UserSettings = () => {
                   <Input 
                     id="displayName" 
                     value={displayName} 
-                    onChange={(e) => setDisplayName(e.target.value)} 
+                    onChange={(e) => {
+                      setDisplayName(e.target.value);
+                      setNameError(null);
+                    }} 
                     placeholder="Your name"
+                    className={nameError ? "border-destructive" : ""}
                   />
+                  {nameError && (
+                    <p className="text-sm text-destructive">{nameError}</p>
+                  )}
                 </div>
                 <div className="grid gap-2">
                   <Label>Email</Label>
