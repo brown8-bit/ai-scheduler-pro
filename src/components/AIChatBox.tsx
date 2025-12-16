@@ -43,6 +43,14 @@ const EVENT_CREATED_PHRASES = [
   "Nailed it! 🚀"
 ];
 
+const SUGGESTION_PROMPTS = [
+  "Schedule a meeting tomorrow at 2pm",
+  "Add a workout session this evening",
+  "Remind me to call mom on Sunday",
+  "Block focus time for 2 hours",
+  "Create a weekly team standup",
+];
+
 interface AIChatBoxProps {
   onEventCreated?: () => void;
 }
@@ -197,6 +205,10 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setInput(suggestion);
+  };
+
   return (
     <div className="w-full max-w-3xl bg-card rounded-2xl shadow-card border border-border overflow-hidden">
       {/* Chat Header */}
@@ -262,6 +274,25 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             </div>
           </div>
         )}
+        
+        {/* Suggestion Chips - Show when only initial greeting exists */}
+        {messages.length === 1 && !isLoading && (
+          <div className="mt-4 animate-fade-in">
+            <p className="text-xs text-muted-foreground mb-2">Try saying:</p>
+            <div className="flex flex-wrap gap-2">
+              {SUGGESTION_PROMPTS.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="px-3 py-1.5 text-xs rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border hover:border-primary/50 transition-all duration-200"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
       </div>
 
