@@ -145,20 +145,60 @@ const Community = () => {
   const [reposts, setReposts] = useState<Repost[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
 
-  // Extract hashtags from all posts for trending
+  // Extract hashtags from all posts for trending with engagement metrics
   const trendingHashtags = useMemo(() => {
-    const hashtagCounts: Record<string, number> = {};
+    const hashtagData: Record<string, { count: number; totalEngagement: number; recentPosts: number }> = {};
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
     posts.forEach(post => {
       const hashtags = post.content.match(/#\w+/g) || [];
+      const postDate = new Date(post.created_at);
+      const engagement = post.likes_count + post.comments_count + post.reposts_count;
+      
       hashtags.forEach(tag => {
         const normalized = tag.toLowerCase();
-        hashtagCounts[normalized] = (hashtagCounts[normalized] || 0) + 1;
+        if (!hashtagData[normalized]) {
+          hashtagData[normalized] = { count: 0, totalEngagement: 0, recentPosts: 0 };
+        }
+        hashtagData[normalized].count += 1;
+        hashtagData[normalized].totalEngagement += engagement;
+        if (postDate > oneDayAgo) {
+          hashtagData[normalized].recentPosts += 1;
+        }
       });
     });
-    return Object.entries(hashtagCounts)
-      .sort((a, b) => b[1] - a[1])
+    
+    // Categories for trending topics (X-style)
+    const categories = ['Schedulr', 'Productivity', 'Goals', 'Community', 'Technology', 'Lifestyle'];
+    
+    return Object.entries(hashtagData)
+      .sort((a, b) => {
+        // Prioritize recent activity and engagement
+        const scoreA = a[1].recentPosts * 2 + a[1].totalEngagement;
+        const scoreB = b[1].recentPosts * 2 + b[1].totalEngagement;
+        return scoreB - scoreA;
+      })
       .slice(0, 10)
-      .map(([tag, count]) => ({ tag, count }));
+      .map(([tag, data], index) => ({ 
+        tag, 
+        count: data.count, 
+        engagement: data.totalEngagement,
+        category: categories[index % categories.length],
+        isHot: data.recentPosts > 2
+      }));
+  }, [posts]);
+
+  // Get top trending posts (most engaging in last 24h)
+  const trendingPosts = useMemo(() => {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return [...posts]
+      .filter(post => new Date(post.created_at) > oneDayAgo)
+      .sort((a, b) => {
+        const engagementA = a.likes_count * 2 + a.comments_count * 3 + a.reposts_count * 4;
+        const engagementB = b.likes_count * 2 + b.comments_count * 3 + b.reposts_count * 4;
+        return engagementB - engagementA;
+      })
+      .slice(0, 5);
   }, [posts]);
 
   // Create combined feed with posts and quote reposts
@@ -180,18 +220,59 @@ const Community = () => {
   const filteredFeed = useMemo(() => {
     let filtered = combinedFeed;
     
-    // Filter by tab
+    // Filter by tab - each tab has distinctly different behavior
     if (activeTab === "following") {
+      // FOLLOWING: Only show posts from people you follow (chronological)
       filtered = filtered.filter(item => 
-        following.includes(item.data.user_id) || item.data.user_id === user?.id
+        following.includes(item.data.user_id)
       );
+      // Keep chronological order for following tab
     } else if (activeTab === "trending") {
-      // Sort by engagement (likes + comments) - only applies to posts
+      // TRENDING: Show only high-engagement posts, sorted by engagement score
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      filtered = filtered
+        .filter(item => {
+          if (item.type === 'post') {
+            // Only include posts with at least some engagement or recent posts
+            const hasEngagement = item.data.likes_count > 0 || item.data.comments_count > 0 || item.data.reposts_count > 0;
+            const isRecent = new Date(item.data.created_at) > oneDayAgo;
+            return hasEngagement || isRecent;
+          }
+          return false;
+        })
+        .sort((a, b) => {
+          if (a.type === 'post' && b.type === 'post') {
+            // Weighted engagement score: reposts > comments > likes
+            const scoreA = a.data.likes_count * 1 + a.data.comments_count * 2 + a.data.reposts_count * 3;
+            const scoreB = b.data.likes_count * 1 + b.data.comments_count * 2 + b.data.reposts_count * 3;
+            return scoreB - scoreA;
+          }
+          return 0;
+        });
+    } else {
+      // FOR YOU: Algorithmic feed - mix of followed users, trending, and discovery
       filtered = [...filtered].sort((a, b) => {
-        if (a.type === 'post' && b.type === 'post') {
-          return (b.data.likes_count + b.data.comments_count) - (a.data.likes_count + a.data.comments_count);
+        let scoreA = 0;
+        let scoreB = 0;
+        
+        // Boost posts from people you follow
+        if (following.includes(a.data.user_id)) scoreA += 50;
+        if (following.includes(b.data.user_id)) scoreB += 50;
+        
+        // Factor in engagement (post type only)
+        if (a.type === 'post') {
+          scoreA += a.data.likes_count * 2 + a.data.comments_count * 3 + a.data.reposts_count * 4;
         }
-        return 0;
+        if (b.type === 'post') {
+          scoreB += b.data.likes_count * 2 + b.data.comments_count * 3 + b.data.reposts_count * 4;
+        }
+        
+        // Recency bonus (posts from last hour get extra boost)
+        const oneHourAgo = Date.now() - 60 * 60 * 1000;
+        if (new Date(a.data.created_at).getTime() > oneHourAgo) scoreA += 30;
+        if (new Date(b.data.created_at).getTime() > oneHourAgo) scoreB += 30;
+        
+        return scoreB - scoreA;
       });
     }
     
@@ -1038,23 +1119,52 @@ const Community = () => {
               </p>
             </div>
 
-            {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-              <TabsList className="grid w-full grid-cols-3 bg-muted/50">
-                <TabsTrigger value="for-you" className="gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  <span className="hidden sm:inline">For You</span>
-                </TabsTrigger>
-                <TabsTrigger value="following" className="gap-2">
-                  <Users className="w-4 h-4" />
-                  <span className="hidden sm:inline">Following</span>
-                </TabsTrigger>
-                <TabsTrigger value="trending" className="gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="hidden sm:inline">Trending</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            {/* Tabs - X-style with distinct behaviors */}
+            <div className="border-b border-border mb-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="w-full h-auto p-0 bg-transparent gap-0 border-none">
+                  <TabsTrigger 
+                    value="for-you" 
+                    className="flex-1 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent hover:bg-muted/30 transition-colors"
+                  >
+                    <span className="font-semibold">For you</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="following" 
+                    className="flex-1 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent hover:bg-muted/30 transition-colors"
+                  >
+                    <span className="font-semibold">Following</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="trending" 
+                    className="flex-1 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent hover:bg-muted/30 transition-colors"
+                  >
+                    <span className="font-semibold flex items-center gap-1">
+                      <Flame className="w-4 h-4" />
+                      Hot
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            {/* Tab-specific headers */}
+            {activeTab === "following" && following.length === 0 && (
+              <Card className="mb-4 bg-primary/5 border-primary/20">
+                <CardContent className="py-4">
+                  <p className="text-sm text-center text-muted-foreground">
+                    Follow some Schedulrs to see their posts here!
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {activeTab === "trending" && (
+              <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+                <Flame className="w-4 h-4 text-orange-500" />
+                <span>Showing posts with highest engagement in the last 24 hours</span>
+              </div>
+            )}
 
             {/* Hashtag Filter Banner */}
             {hashtagFilter && (
@@ -1147,14 +1257,37 @@ const Community = () => {
               {filteredFeed.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">
-                      {hashtagFilter 
-                        ? `No posts with #${hashtagFilter} yet. Be the first!` 
-                        : activeTab === "following" 
-                          ? "Follow some Schedulrs to see their posts here!"
-                          : "No posts yet. Be the first to share! 🚀"}
-                    </p>
+                    {activeTab === "trending" ? (
+                      <>
+                        <Flame className="w-12 h-12 mx-auto text-orange-500/50 mb-4" />
+                        <p className="font-semibold text-lg mb-1">Nothing trending yet</p>
+                        <p className="text-muted-foreground text-sm">
+                          Be the first to create some buzz! Posts with likes, comments, and reposts will show up here.
+                        </p>
+                      </>
+                    ) : activeTab === "following" ? (
+                      <>
+                        <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                        <p className="font-semibold text-lg mb-1">Welcome to Following</p>
+                        <p className="text-muted-foreground text-sm">
+                          {following.length === 0 
+                            ? "Follow some Schedulrs to see their posts here!"
+                            : "The people you follow haven't posted yet. Check back soon!"}
+                        </p>
+                      </>
+                    ) : hashtagFilter ? (
+                      <>
+                        <Hash className="w-12 h-12 mx-auto text-primary/50 mb-4" />
+                        <p className="font-semibold text-lg mb-1">No posts with #{hashtagFilter}</p>
+                        <p className="text-muted-foreground text-sm">Be the first to post about this topic!</p>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-12 h-12 mx-auto text-primary/50 mb-4" />
+                        <p className="font-semibold text-lg mb-1">Welcome to Schedulr Community!</p>
+                        <p className="text-muted-foreground text-sm">Be the first to share something amazing! 🚀</p>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               ) : (
@@ -1497,27 +1630,94 @@ const Community = () => {
                 />
               </div>
 
-              {/* Trending Hashtags */}
-              {trendingHashtags.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <h3 className="font-bold flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5 text-primary" />
-                      Trending
-                    </h3>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      {trendingHashtags.map(({ tag, count }, index) => (
+              {/* Trending - X-style */}
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-0 pt-3 px-4">
+                  <h3 className="text-xl font-bold">Trends for you</h3>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {trendingHashtags.length > 0 ? (
+                    <div className="divide-y divide-border">
+                      {trendingHashtags.slice(0, 5).map(({ tag, count, category, isHot, engagement }, index) => (
                         <button
                           key={tag}
                           onClick={() => handleHashtagClick(tag)}
-                          className="w-full text-left hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                          className="w-full text-left hover:bg-muted/50 px-4 py-3 transition-colors group"
                         >
-                          <p className="text-xs text-muted-foreground">{index + 1} · Trending</p>
-                          <p className="font-semibold text-primary">{tag}</p>
-                          <p className="text-xs text-muted-foreground">{count} posts</p>
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-0.5">
+                              <p className="text-xs text-muted-foreground">
+                                {index + 1} · Trending in {category}
+                              </p>
+                              <p className="font-bold text-foreground group-hover:text-primary transition-colors flex items-center gap-1">
+                                {tag}
+                                {isHot && <Flame className="w-3 h-3 text-orange-500" />}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {count.toLocaleString()} posts · {engagement} interactions
+                              </p>
+                            </div>
+                            <MoreHorizontal className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
                         </button>
+                      ))}
+                      <button
+                        onClick={() => setActiveTab("trending")}
+                        className="w-full text-left hover:bg-muted/50 px-4 py-3 transition-colors text-primary text-sm font-medium"
+                      >
+                        Show more
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                      <Hash className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>No trending topics yet</p>
+                      <p className="text-xs mt-1">Start conversations with #hashtags!</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              {/* What's happening - Top trending posts */}
+              {trendingPosts.length > 0 && (
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-0 pt-3 px-4">
+                    <h3 className="text-xl font-bold">What's happening</h3>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-border">
+                      {trendingPosts.slice(0, 3).map((post) => (
+                        <div
+                          key={post.id}
+                          className="px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => setActiveTab("trending")}
+                        >
+                          <div className="flex gap-3">
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage src={post.profiles?.avatar_url || ""} />
+                              <AvatarFallback className="text-xs">
+                                {post.profiles?.display_name?.charAt(0) || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate flex items-center gap-1">
+                                {post.profiles?.display_name || "User"}
+                                {post.profiles?.is_verified && <VerifiedBadge size="sm" />}
+                              </p>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {post.content}
+                              </p>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Heart className="w-3 h-3" /> {post.likes_count}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageCircle className="w-3 h-3" /> {post.comments_count}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </CardContent>
