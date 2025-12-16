@@ -23,6 +23,7 @@ import {
   Settings,
   Grid3X3,
   Users,
+  Send,
 } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import AdminBadge from "@/components/AdminBadge";
@@ -46,6 +47,20 @@ interface Post {
   created_at: string;
   likes_count: number;
   comments_count: number;
+  is_liked: boolean;
+}
+
+interface Comment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profiles?: {
+    display_name: string | null;
+    avatar_url: string | null;
+    is_verified: boolean;
+    is_admin: boolean;
+  };
 }
 
 interface FollowUser {
@@ -67,6 +82,9 @@ const Profile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
+  const [expandedComments, setExpandedComments] = useState<string[]>([]);
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [newComments, setNewComments] = useState<Record<string, string>>({});
 
   const targetUserId = userId || user?.id;
   const isOwnProfile = !userId || userId === user?.id;
@@ -121,6 +139,13 @@ const Profile = () => {
         .select("post_id")
         .in("post_id", postIds);
 
+      // Fetch user's likes to check if they liked each post
+      const { data: userLikes } = await supabase
+        .from("post_likes")
+        .select("post_id")
+        .eq("user_id", user?.id || "")
+        .in("post_id", postIds);
+
       const { data: commentsData } = await supabase
         .from("post_comments")
         .select("post_id")
@@ -130,6 +155,7 @@ const Profile = () => {
         ...post,
         likes_count: likesData?.filter(l => l.post_id === post.id).length || 0,
         comments_count: commentsData?.filter(c => c.post_id === post.id).length || 0,
+        is_liked: userLikes?.some(l => l.post_id === post.id) || false,
       }));
 
       setPosts(enrichedPosts);
@@ -244,6 +270,130 @@ const Profile = () => {
         setFollowers([...followers, { ...myProfile, is_admin: !!myAdminRole }]);
       }
       toast({ title: "Following! 🎉", description: "You're now following this user" });
+    }
+  };
+
+  const handleLike = async (postId: string, isLiked: boolean) => {
+    if (!user) return;
+
+    if (isLiked) {
+      await supabase
+        .from("post_likes")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", user.id);
+    } else {
+      await supabase.from("post_likes").insert({
+        post_id: postId,
+        user_id: user.id,
+      });
+    }
+
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          is_liked: !isLiked,
+          likes_count: isLiked ? p.likes_count - 1 : p.likes_count + 1,
+        };
+      }
+      return p;
+    }));
+  };
+
+  const toggleComments = async (postId: string) => {
+    if (expandedComments.includes(postId)) {
+      setExpandedComments(expandedComments.filter(id => id !== postId));
+    } else {
+      setExpandedComments([...expandedComments, postId]);
+      
+      if (!comments[postId]) {
+        const { data } = await supabase
+          .from("post_comments")
+          .select("*")
+          .eq("post_id", postId)
+          .order("created_at", { ascending: true });
+
+        if (data) {
+          const userIds = [...new Set(data.map(c => c.user_id))];
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("user_id, display_name, avatar_url, is_verified")
+            .in("user_id", userIds);
+
+          const { data: adminRoles } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin")
+            .in("user_id", userIds);
+
+          const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+
+          const enrichedComments = data.map(comment => ({
+            ...comment,
+            profiles: profiles?.find(p => p.user_id === comment.user_id) ? {
+              ...profiles?.find(p => p.user_id === comment.user_id),
+              is_admin: adminUserIds.has(comment.user_id),
+            } : undefined,
+          }));
+
+          setComments({ ...comments, [postId]: enrichedComments as Comment[] });
+        }
+      }
+    }
+  };
+
+  const handleComment = async (postId: string) => {
+    if (!user || !newComments[postId]?.trim()) return;
+
+    const { error } = await supabase.from("post_comments").insert({
+      post_id: postId,
+      user_id: user.id,
+      content: newComments[postId].trim(),
+    });
+
+    if (!error) {
+      setNewComments({ ...newComments, [postId]: "" });
+      
+      // Refresh comments
+      const { data } = await supabase
+        .from("post_comments")
+        .select("*")
+        .eq("post_id", postId)
+        .order("created_at", { ascending: true });
+
+      if (data) {
+        const userIds = [...new Set(data.map(c => c.user_id))];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url, is_verified")
+          .in("user_id", userIds);
+
+        const { data: adminRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin")
+          .in("user_id", userIds);
+
+        const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+
+        const enrichedComments = data.map(comment => ({
+          ...comment,
+          profiles: profiles?.find(p => p.user_id === comment.user_id) ? {
+            ...profiles?.find(p => p.user_id === comment.user_id),
+            is_admin: adminUserIds.has(comment.user_id),
+          } : undefined,
+        }));
+
+        setComments({ ...comments, [postId]: enrichedComments as Comment[] });
+      }
+
+      setPosts(posts.map(p => {
+        if (p.id === postId) {
+          return { ...p, comments_count: p.comments_count + 1 };
+        }
+        return p;
+      }));
     }
   };
 
@@ -418,17 +568,99 @@ const Profile = () => {
                           {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="whitespace-pre-wrap">{post.content}</p>
-                      <div className="flex items-center gap-4 mt-3 pt-3 border-t text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" />
+                      
+                      {post.content && (
+                        <p className="whitespace-pre-wrap mb-3">{post.content}</p>
+                      )}
+                      
+                      {post.image_url && (
+                        <img 
+                          src={post.image_url} 
+                          alt="Post image" 
+                          className="w-full rounded-lg mb-3 max-h-96 object-cover"
+                        />
+                      )}
+                      
+                      {/* Interactive Actions */}
+                      <div className="flex items-center gap-4 pt-3 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleLike(post.id, post.is_liked)}
+                          className={post.is_liked ? "text-red-500" : "text-muted-foreground"}
+                        >
+                          <Heart className={`w-4 h-4 mr-1 ${post.is_liked ? "fill-red-500" : ""}`} />
                           {post.likes_count}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleComments(post.id)}
+                          className="text-muted-foreground"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-1" />
                           {post.comments_count}
-                        </span>
+                        </Button>
                       </div>
+
+                      {/* Comments Section */}
+                      {expandedComments.includes(post.id) && (
+                        <div className="mt-4 pt-4 border-t space-y-3">
+                          {comments[post.id]?.map((comment) => (
+                            <div key={comment.id} className="flex gap-2">
+                              <Link to={`/profile/${comment.user_id}`}>
+                                <Avatar className="w-8 h-8 hover:opacity-80 transition-opacity">
+                                  <AvatarImage src={comment.profiles?.avatar_url || ""} />
+                                  <AvatarFallback className="text-xs bg-muted">
+                                    {comment.profiles?.display_name?.charAt(0) || "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </Link>
+                              <div className="flex-1 bg-muted/50 rounded-lg px-3 py-2">
+                                <Link to={`/profile/${comment.user_id}`} className="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+                                  <span className="text-sm font-medium">
+                                    {comment.profiles?.display_name || "Anonymous"}
+                                  </span>
+                                  {comment.profiles?.is_admin && (
+                                    <AdminBadge size="sm" />
+                                  )}
+                                  {comment.profiles?.is_verified && (
+                                    <VerifiedBadge size="sm" />
+                                  )}
+                                </Link>
+                                <p className="text-sm">{comment.content}</p>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Add Comment */}
+                          <div className="flex gap-2">
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage src={profile?.avatar_url || ""} />
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                {profile?.display_name?.charAt(0) || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Write a comment..."
+                                value={newComments[post.id] || ""}
+                                onChange={(e) => setNewComments({ ...newComments, [post.id]: e.target.value })}
+                                onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
+                                className="flex-1 bg-muted/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => handleComment(post.id)}
+                                disabled={!newComments[post.id]?.trim()}
+                              >
+                                <Send className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
