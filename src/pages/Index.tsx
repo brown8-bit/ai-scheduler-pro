@@ -275,9 +275,9 @@ const Index = () => {
                       </div>
                     )}
                     
-                    <Link to="/register" className="mt-4 inline-block">
-                      <Button variant="outline" size="sm" className="text-xs">
-                        Claim Offer →
+                    <Link to="/pricing?plan=lifetime" className="mt-4 inline-block">
+                      <Button size="sm" className="text-xs gradient-primary text-primary-foreground hover:opacity-90 animate-pulse-soft">
+                        🔥 Claim Lifetime Deal →
                       </Button>
                     </Link>
                   </div>
