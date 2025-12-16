@@ -504,21 +504,23 @@ const Community = () => {
                     <div className="mt-4 pt-4 border-t space-y-3">
                       {comments[post.id]?.map((comment) => (
                         <div key={comment.id} className="flex gap-2">
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage src={comment.profiles?.avatar_url || ""} />
-                            <AvatarFallback className="text-xs bg-muted">
-                              {comment.profiles?.display_name?.charAt(0) || "U"}
-                            </AvatarFallback>
-                          </Avatar>
+                          <Link to={`/profile/${comment.user_id}`}>
+                            <Avatar className="w-8 h-8 hover:opacity-80 transition-opacity">
+                              <AvatarImage src={comment.profiles?.avatar_url || ""} />
+                              <AvatarFallback className="text-xs bg-muted">
+                                {comment.profiles?.display_name?.charAt(0) || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                          </Link>
                           <div className="flex-1 bg-muted/50 rounded-lg px-3 py-2">
-                            <div className="flex items-center gap-1.5">
+                            <Link to={`/profile/${comment.user_id}`} className="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity">
                               <span className="text-sm font-medium">
                                 {comment.profiles?.display_name || "Anonymous"}
                               </span>
                               {comment.profiles?.is_verified && (
                                 <BadgeCheck className="w-3.5 h-3.5 text-violet-500 fill-violet-500" />
                               )}
-                            </div>
+                            </Link>
                             <p className="text-sm">{comment.content}</p>
                           </div>
                         </div>
