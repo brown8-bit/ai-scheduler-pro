@@ -87,6 +87,7 @@ const App = () => (
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/focus" element={<FocusBlocks />} />
+              <Route path="/focus-blocks" element={<FocusBlocks />} />
               <Route path="/achievements" element={<Gamification />} />
               <Route path="/habits" element={<DailyHabits />} />
               <Route path="/progress" element={<Progress />} />
