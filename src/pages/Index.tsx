@@ -290,17 +290,17 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Coming Soon Section */}
+      {/* Don't Miss Section */}
       <section className="py-12 sm:py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 sm:mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-semibold mb-4">
               <Rocket className="w-4 h-4" />
-              Coming Soon
+              Don't Miss
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">🚀 What's Next</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">✨ Featured</h2>
             <p className="mt-3 text-sm sm:text-lg text-muted-foreground">
-              Exciting features launching soon!
+              Check out these popular features!
             </p>
           </div>
 
@@ -332,7 +332,7 @@ const Index = () => {
             {/* Focus Blocks */}
             <div className="relative p-5 sm:p-6 rounded-2xl bg-card border-2 border-dashed border-accent/30 hover:border-accent/60 transition-all duration-300 overflow-hidden">
               <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl bg-gradient-to-r from-accent to-primary text-white text-xs font-semibold">
-                NEW
+                POPULAR
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center">
                 <Target className="w-6 h-6 text-white" />
