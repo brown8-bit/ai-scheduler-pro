@@ -11,7 +11,6 @@ import { toast } from "@/hooks/use-toast";
 import {
   Heart,
   MessageCircle,
-  BadgeCheck,
   Loader2,
   UserPlus,
   UserMinus,
@@ -25,6 +24,7 @@ import {
   Grid3X3,
   Users,
 } from "lucide-react";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import { formatDistanceToNow } from "date-fns";
 
 interface ProfileData {
@@ -258,7 +258,7 @@ const Profile = () => {
                   <h1 className="text-2xl font-bold flex items-center gap-2">
                     {profile.display_name || "Anonymous"}
                     {profile.is_verified && (
-                      <BadgeCheck className="w-6 h-6 text-violet-500 fill-violet-500" />
+                      <VerifiedBadge size="lg" />
                     )}
                   </h1>
                   {profile.is_lifetime && (
@@ -422,7 +422,7 @@ const Profile = () => {
                               {follower.display_name || "Anonymous"}
                             </span>
                             {follower.is_verified && (
-                              <BadgeCheck className="w-4 h-4 text-violet-500 fill-violet-500" />
+                              <VerifiedBadge size="md" />
                             )}
                           </div>
                         </div>
@@ -466,7 +466,7 @@ const Profile = () => {
                               {followedUser.display_name || "Anonymous"}
                             </span>
                             {followedUser.is_verified && (
-                              <BadgeCheck className="w-4 h-4 text-violet-500 fill-violet-500" />
+                              <VerifiedBadge size="md" />
                             )}
                           </div>
                         </div>
