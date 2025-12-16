@@ -42,6 +42,7 @@ import Invoices from "./pages/Invoices";
 import VoiceNotes from "./pages/VoiceNotes";
 import Tasks from "./pages/Tasks";
 import Grades from "./pages/Grades";
+import Referrals from "./pages/Referrals";
 import NotFound from "./pages/NotFound";
 
 // Only lazy load Chat page to show Scheddy loader
@@ -100,6 +101,7 @@ const App = () => (
               <Route path="/voice-notes" element={<VoiceNotes />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/grades" element={<Grades />} />
+              <Route path="/referrals" element={<Referrals />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
