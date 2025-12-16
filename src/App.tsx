@@ -27,7 +27,7 @@ import BookingSettings from "./pages/BookingSettings";
 import BookPage from "./pages/BookPage";
 import CalendarPage from "./pages/Calendar";
 import Templates from "./pages/Templates";
-import FocusBlocks from "./pages/FocusBlocks";
+
 import Gamification from "./pages/Gamification";
 import DailyHabits from "./pages/DailyHabits";
 import Progress from "./pages/Progress";
@@ -86,8 +86,6 @@ const App = () => (
               <Route path="/book/:slug" element={<BookPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/templates" element={<Templates />} />
-              <Route path="/focus" element={<FocusBlocks />} />
-              <Route path="/focus-blocks" element={<FocusBlocks />} />
               <Route path="/achievements" element={<Gamification />} />
               <Route path="/habits" element={<DailyHabits />} />
               <Route path="/progress" element={<Progress />} />
