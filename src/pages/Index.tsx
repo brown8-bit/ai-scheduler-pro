@@ -88,22 +88,22 @@ const Index = () => {
     {
       icon: MessageSquare,
       title: "AI Scheduling",
-      description: "Schedule classes, study sessions, work shifts, and activities with natural language."
+      description: "Schedule meetings, tasks, appointments, and activities with natural language."
     },
     {
       icon: Clock,
       title: "Balance Everything",
-      description: "Smart scheduling that works around your classes, activities, jobs, and social life."
+      description: "Smart scheduling that works around your work, personal life, and commitments."
     },
     {
       icon: Zap,
       title: "Daily Habit Tracking",
-      description: "Track water intake, sleep, meals, study time, and self-care goals."
+      description: "Track water intake, sleep, exercise, focus time, and self-care goals."
     },
     {
       icon: Shield,
       title: "Stay Accountable",
-      description: "Earn XP, level up, and compete with other students."
+      description: "Earn XP, level up, and compete with others on the leaderboard."
     }
   ];
 
@@ -117,15 +117,15 @@ const Index = () => {
     },
     {
       icon: Trophy,
-      title: "Campus Champion",
-      description: "Balance 50 academic and personal tasks",
+      title: "Productivity Champion",
+      description: "Balance 50 work and personal tasks",
       reward: "+200 XP",
       progress: 62
     },
     {
       icon: Timer,
-      title: "Study Champion",
-      description: "Complete 20 study sessions",
+      title: "Focus Champion",
+      description: "Complete 20 focus sessions",
       reward: "+100 XP",
       progress: 45
     }
@@ -176,18 +176,18 @@ const Index = () => {
               
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
                 <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                Built for College Students 🎓
+                Your AI Scheduling Assistant ✨
               </div>
               
               <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight animate-fade-in delay-100">
                 Master Your
                 <br />
-                <span className="text-gradient">College Life</span>
+                <span className="text-gradient">Busy Life</span>
               </h1>
 
               <p className="mt-4 sm:mt-6 text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200 px-2">
-                The AI-powered app for students and student-athletes to manage classes, activities, daily habits, 
-                and goals. Earn points, level up, and stay on top of your game! 💪
+                The AI-powered app to manage your schedule, track daily habits, 
+                and crush your goals. Stay organized, earn points, and level up your productivity! 💪
               </p>
             </>
           )}
@@ -275,9 +275,9 @@ const Index = () => {
                       </div>
                     )}
                     
-                    <Link to="/pricing?plan=lifetime" className="mt-4 inline-block">
+                    <Link to={offer.title === "Early Bird Pro" ? "/pricing?plan=earlybird" : "/pricing?plan=lifetime"} className="mt-4 inline-block">
                       <Button size="sm" className="text-xs gradient-primary text-primary-foreground hover:opacity-90 animate-pulse-soft">
-                        🔥 Claim Lifetime Deal →
+                        🔥 {offer.title === "Early Bird Pro" ? "Claim Early Bird →" : "Claim Lifetime Deal →"}
                       </Button>
                     </Link>
                   </div>
@@ -354,13 +354,13 @@ const Index = () => {
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">How It Works 🎯</h2>
           <p className="mt-3 sm:mt-4 text-sm sm:text-lg text-muted-foreground max-w-xl mx-auto px-2">
-            Stay on top of school, activities, and daily wellness in three easy steps!
+            Stay organized and productive in three easy steps!
           </p>
 
           <div className="mt-10 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { step: "1", emoji: "📅", title: "Schedule Everything", desc: "AI helps you plan classes, activities, work, and study time" },
-              { step: "2", emoji: "✅", title: "Track Daily Habits", desc: "Complete health, academic, and self-care goals" },
+              { step: "1", emoji: "📅", title: "Schedule Everything", desc: "AI helps you plan meetings, tasks, and personal time" },
+              { step: "2", emoji: "✅", title: "Track Daily Habits", desc: "Complete health, work, and self-care goals" },
               { step: "3", emoji: "🏆", title: "Earn & Compete", desc: "Get XP, level up, and climb the leaderboard" }
             ].map((item, index) => (
               <div key={item.step} className="animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
@@ -408,10 +408,10 @@ const Index = () => {
         <div className="max-w-4xl mx-auto text-center">
           <div className="p-6 sm:p-12 rounded-2xl sm:rounded-3xl gradient-primary shadow-glow">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-foreground">
-              Ready to crush college life? 🏆
+              Ready to level up your productivity? 🏆
             </h2>
             <p className="mt-3 sm:mt-4 text-primary-foreground/80 text-sm sm:text-lg px-2">
-              Join thousands of college students who balance academics, activities, and wellness every day!
+              Join thousands of people who stay organized and crush their goals every day!
             </p>
             <Link to="/register" className="mt-6 sm:mt-8 inline-block w-full sm:w-auto">
               <Button variant="glass" size="xl" className="w-full sm:w-auto bg-background/20 text-primary-foreground border-primary-foreground/20 hover:bg-background/30">
