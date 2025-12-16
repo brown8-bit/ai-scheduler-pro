@@ -549,7 +549,7 @@ const Community = () => {
             Community
           </h1>
           <p className="text-muted-foreground mt-1">
-            Share wins and connect with fellow students 🎓
+            Share wins and connect with fellow Schedulrs 🎓
           </p>
         </div>
 
