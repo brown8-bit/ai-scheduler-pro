@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -22,9 +22,11 @@ import {
   UserMinus,
   Loader2,
   Sparkles,
+  Image,
+  X,
 } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
 interface Post {
   id: string;
@@ -69,6 +71,9 @@ const Community = () => {
   const [newComments, setNewComments] = useState<Record<string, string>>({});
   const [following, setFollowing] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) {
@@ -173,14 +178,67 @@ const Community = () => {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image under 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const clearSelectedImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleCreatePost = async () => {
-    if (!user || !newPost.trim()) return;
+    if (!user || (!newPost.trim() && !selectedImage)) return;
 
     setPosting(true);
+    let imageUrl: string | null = null;
+
+    // Upload image if selected
+    if (selectedImage) {
+      const fileExt = selectedImage.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('community-photos')
+        .upload(fileName, selectedImage);
+
+      if (uploadError) {
+        toast({
+          title: "Upload failed",
+          description: "Failed to upload image",
+          variant: "destructive",
+        });
+        setPosting(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('community-photos')
+        .getPublicUrl(fileName);
+      
+      imageUrl = urlData.publicUrl;
+    }
+
     const { error } = await supabase.from("social_posts").insert({
       user_id: user.id,
       content: newPost.trim(),
       post_type: "custom",
+      image_url: imageUrl,
     });
 
     if (error) {
@@ -191,6 +249,7 @@ const Community = () => {
       });
     } else {
       setNewPost("");
+      clearSelectedImage();
       fetchPosts();
       toast({
         title: "Posted! 🎉",
@@ -395,10 +454,45 @@ const Community = () => {
                   onChange={(e) => setNewPost(e.target.value)}
                   className="min-h-[80px] resize-none"
                 />
-                <div className="flex justify-end mt-3">
+                
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div className="relative mt-3 inline-block">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="max-h-48 rounded-lg object-cover"
+                    />
+                    <button
+                      onClick={clearSelectedImage}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:opacity-80"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center mt-3">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageSelect}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="gap-2 text-muted-foreground"
+                  >
+                    <Image className="w-4 h-4" />
+                    Photo
+                  </Button>
                   <Button
                     onClick={handleCreatePost}
-                    disabled={!newPost.trim() || posting}
+                    disabled={(!newPost.trim() && !selectedImage) || posting}
                     className="gap-2"
                   >
                     {posting ? (
@@ -475,7 +569,18 @@ const Community = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-foreground mb-4 whitespace-pre-wrap">{post.content}</p>
+                  {post.content && (
+                    <p className="text-foreground mb-4 whitespace-pre-wrap">{post.content}</p>
+                  )}
+                  
+                  {/* Post Image */}
+                  {post.image_url && (
+                    <img 
+                      src={post.image_url} 
+                      alt="Post image" 
+                      className="w-full rounded-lg mb-4 max-h-96 object-cover"
+                    />
+                  )}
                   
                   {/* Actions */}
                   <div className="flex items-center gap-4 pt-2 border-t">
