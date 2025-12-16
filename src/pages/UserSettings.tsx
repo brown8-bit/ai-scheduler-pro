@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, type ChangeEvent } from "react";
+import { useEffect, useState, useRef, type ChangeEvent, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,9 @@ import {
   Camera,
   CreditCard,
   Crown,
-  ExternalLink
+  ExternalLink,
+  Check,
+  X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -53,6 +55,9 @@ const UserSettings = () => {
   const [soundNotifications, setSoundNotifications] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
   const [checkingName, setCheckingName] = useState(false);
+  const [nameAvailable, setNameAvailable] = useState<boolean | null>(null);
+  const [originalName, setOriginalName] = useState("");
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -114,10 +119,66 @@ const UserSettings = () => {
       .single();
     
     if (data) {
-      setDisplayName(data.display_name || user.email?.split("@")[0] || "");
+      const name = data.display_name || user.email?.split("@")[0] || "";
+      setDisplayName(name);
+      setOriginalName(name);
       setAvatarUrl(data.avatar_url);
     }
   };
+
+  // Debounced name availability check
+  useEffect(() => {
+    // Clear previous timeout
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Reset states if name is empty or same as original
+    if (!displayName.trim() || displayName.trim().toLowerCase() === originalName.toLowerCase()) {
+      setNameError(null);
+      setNameAvailable(null);
+      setCheckingName(false);
+      return;
+    }
+
+    // Set checking state
+    setCheckingName(true);
+    setNameAvailable(null);
+    setNameError(null);
+
+    // Debounce the check
+    debounceRef.current = setTimeout(async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase.rpc('is_display_name_available', {
+          p_display_name: displayName.trim(),
+          p_current_user_id: user.id
+        });
+        
+        if (error) throw error;
+        
+        if (data) {
+          setNameAvailable(true);
+          setNameError(null);
+        } else {
+          setNameAvailable(false);
+          setNameError("This display name is already taken");
+        }
+      } catch (error) {
+        console.error("Error checking name:", error);
+        setNameAvailable(null);
+      } finally {
+        setCheckingName(false);
+      }
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [displayName, originalName, user]);
 
   const getSubscriptionTier = () => {
     if (!subscribed) return "Free";
@@ -205,47 +266,22 @@ const UserSettings = () => {
     }
   };
 
-  const checkNameAvailability = async (name: string): Promise<boolean> => {
-    if (!name.trim() || !user) return true;
-    
-    setCheckingName(true);
-    setNameError(null);
-    
-    try {
-      const { data, error } = await supabase.rpc('is_display_name_available', {
-        p_display_name: name.trim(),
-        p_current_user_id: user.id
-      });
-      
-      if (error) throw error;
-      
-      if (!data) {
-        setNameError("This display name is already taken");
-        return false;
-      }
-      return true;
-    } catch (error) {
-      console.error("Error checking name:", error);
-      return true; // Allow save attempt if check fails
-    } finally {
-      setCheckingName(false);
-    }
-  };
-
   const handleSave = async () => {
     if (!user) return;
     
+    // Don't allow save if name is taken
+    if (nameAvailable === false) {
+      toast({
+        title: "Name unavailable",
+        description: "Please choose a different display name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSaving(true);
-    setNameError(null);
     
     try {
-      // Check if display name is available
-      const isAvailable = await checkNameAvailability(displayName);
-      if (!isAvailable) {
-        setSaving(false);
-        return;
-      }
-
       const { error } = await supabase
         .from("profiles")
         .upsert({
@@ -350,18 +386,31 @@ const UserSettings = () => {
 
                 <div className="grid gap-2">
                   <Label htmlFor="displayName">Display Name</Label>
-                  <Input 
-                    id="displayName" 
-                    value={displayName} 
-                    onChange={(e) => {
-                      setDisplayName(e.target.value);
-                      setNameError(null);
-                    }} 
-                    placeholder="Your name"
-                    className={nameError ? "border-destructive" : ""}
-                  />
+                  <div className="relative">
+                    <Input 
+                      id="displayName" 
+                      value={displayName} 
+                      onChange={(e) => setDisplayName(e.target.value)} 
+                      placeholder="Your name"
+                      className={`pr-10 ${nameError ? "border-destructive" : nameAvailable ? "border-green-500" : ""}`}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {checkingName && (
+                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      )}
+                      {!checkingName && nameAvailable === true && (
+                        <Check className="w-4 h-4 text-green-500" />
+                      )}
+                      {!checkingName && nameAvailable === false && (
+                        <X className="w-4 h-4 text-destructive" />
+                      )}
+                    </div>
+                  </div>
                   {nameError && (
                     <p className="text-sm text-destructive">{nameError}</p>
+                  )}
+                  {nameAvailable === true && (
+                    <p className="text-sm text-green-500">Name is available!</p>
                   )}
                 </div>
                 <div className="grid gap-2">
