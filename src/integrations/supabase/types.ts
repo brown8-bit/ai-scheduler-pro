@@ -103,6 +103,39 @@ export type Database = {
           },
         ]
       }
+      daily_habits: {
+        Row: {
+          created_at: string
+          habit_icon: string
+          habit_name: string
+          habit_type: string
+          id: string
+          is_default: boolean | null
+          points_value: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          habit_icon?: string
+          habit_name: string
+          habit_type: string
+          id?: string
+          is_default?: boolean | null
+          points_value?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          habit_icon?: string
+          habit_name?: string
+          habit_type?: string
+          id?: string
+          is_default?: boolean | null
+          points_value?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_templates: {
         Row: {
           category: string | null
@@ -168,6 +201,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      habit_completions: {
+        Row: {
+          completed_at: string
+          completed_date: string
+          habit_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          completed_date?: string
+          habit_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          completed_date?: string
+          habit_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "daily_habits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       limited_offers: {
         Row: {
@@ -286,6 +351,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_points: {
+        Row: {
+          created_at: string
+          current_level: number | null
+          id: string
+          total_xp: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_level?: number | null
+          id?: string
+          total_xp?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_level?: number | null
+          id?: string
+          total_xp?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -372,6 +464,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_user_xp: {
+        Args: { p_user_id: string; p_xp_amount: number }
+        Returns: Json
+      }
       get_booking_slot_host_email: {
         Args: { slot_id_param: string }
         Returns: string
