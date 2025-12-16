@@ -584,6 +584,8 @@ const Community = () => {
   const handleLike = async (postId: string, isLiked: boolean) => {
     if (!user) return;
 
+    const post = posts.find(p => p.id === postId);
+
     if (isLiked) {
       await supabase
         .from("post_likes")
@@ -595,6 +597,16 @@ const Community = () => {
         post_id: postId,
         user_id: user.id,
       });
+
+      // Create notification for post owner (not for self-likes)
+      if (post && post.user_id !== user.id) {
+        await supabase.from("notifications").insert({
+          user_id: post.user_id,
+          actor_id: user.id,
+          type: 'like',
+          post_id: postId,
+        });
+      }
     }
 
     setPosts(posts.map(p => {
@@ -654,6 +666,8 @@ const Community = () => {
   const handleComment = async (postId: string) => {
     if (!user || !newComments[postId]?.trim()) return;
 
+    const post = posts.find(p => p.id === postId);
+
     const { error } = await supabase.from("post_comments").insert({
       post_id: postId,
       user_id: user.id,
@@ -661,6 +675,16 @@ const Community = () => {
     });
 
     if (!error) {
+      // Create notification for post owner (not for self-comments)
+      if (post && post.user_id !== user.id) {
+        await supabase.from("notifications").insert({
+          user_id: post.user_id,
+          actor_id: user.id,
+          type: 'comment',
+          post_id: postId,
+        });
+      }
+
       setNewComments({ ...newComments, [postId]: "" });
       
       const { data } = await supabase
@@ -720,6 +744,13 @@ const Community = () => {
         following_id: targetUserId,
       });
       setFollowing([...following, targetUserId]);
+
+      // Create notification for followed user
+      await supabase.from("notifications").insert({
+        user_id: targetUserId,
+        actor_id: user.id,
+        type: 'follow',
+      });
     }
   };
 
@@ -799,6 +830,7 @@ const Community = () => {
       }));
       toast({ title: "Repost removed" });
     } else {
+      const post = posts.find(p => p.id === postId);
       // Create repost
       const { error } = await supabase.from("post_reposts").insert({
         user_id: user.id,
@@ -807,6 +839,16 @@ const Community = () => {
       });
 
       if (!error) {
+        // Create notification for post owner (not for self-reposts)
+        if (post && post.user_id !== user.id) {
+          await supabase.from("notifications").insert({
+            user_id: post.user_id,
+            actor_id: user.id,
+            type: 'repost',
+            post_id: postId,
+          });
+        }
+
         setPosts(posts.map(p => {
           if (p.id === postId) {
             return { ...p, is_reposted: true, reposts_count: p.reposts_count + 1 };
@@ -821,6 +863,8 @@ const Community = () => {
   const handleQuotePost = async () => {
     if (!user || !quotePostId) return;
 
+    const post = posts.find(p => p.id === quotePostId);
+
     setIsReposting(true);
     const { error } = await supabase.from("post_reposts").insert({
       user_id: user.id,
@@ -832,6 +876,16 @@ const Community = () => {
     if (error) {
       toast({ title: "Error", description: "Failed to quote post", variant: "destructive" });
     } else {
+      // Create notification for post owner (not for self-quotes)
+      if (post && post.user_id !== user.id) {
+        await supabase.from("notifications").insert({
+          user_id: post.user_id,
+          actor_id: user.id,
+          type: 'quote',
+          post_id: quotePostId,
+        });
+      }
+
       setPosts(posts.map(p => {
         if (p.id === quotePostId) {
           return { ...p, reposts_count: p.reposts_count + 1 };
