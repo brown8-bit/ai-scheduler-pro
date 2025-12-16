@@ -339,7 +339,7 @@ const Index = () => {
             </div>
 
             <div className="text-center mt-8">
-              <Link to="/gamification">
+              <Link to="/achievements">
                 <Button variant="outline" size="lg">
                   View All Achievements →
                 </Button>
