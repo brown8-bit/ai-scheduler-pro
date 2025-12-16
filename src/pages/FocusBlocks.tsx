@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Focus, Plus, Trash2, Clock, Calendar, Sun, Moon } from "lucide-react";
+import { Focus, Plus, Trash2, Clock, Calendar, Sun, GripVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface FocusBlock {
@@ -19,6 +19,14 @@ interface FocusBlock {
   end_time: string;
   days_of_week: number[] | null;
   is_active: boolean | null;
+}
+
+interface DragState {
+  blockId: string;
+  type: "drag" | "resize-start" | "resize-end";
+  initialX: number;
+  initialStartTime: string;
+  initialEndTime: string;
 }
 
 const DAYS = [
@@ -32,6 +40,9 @@ const DAYS = [
 ];
 
 const TIMELINE_HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 6 AM to 10 PM
+const TIMELINE_START_HOUR = 6;
+const TIMELINE_END_HOUR = 22;
+const TOTAL_TIMELINE_MINUTES = (TIMELINE_END_HOUR - TIMELINE_START_HOUR) * 60;
 
 const FocusBlocks = () => {
   const navigate = useNavigate();
@@ -46,6 +57,10 @@ const FocusBlocks = () => {
     end_time: "11:00",
     days_of_week: [1, 2, 3, 4, 5],
   });
+  
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [previewBlocks, setPreviewBlocks] = useState<Record<string, { start_time: string; end_time: string }>>({});
+  const timelineRef = useRef<HTMLDivElement>(null);
 
   const today = new Date().getDay();
   const currentHour = new Date().getHours();
@@ -128,6 +143,21 @@ const FocusBlocks = () => {
     }
   };
 
+  const handleUpdateTime = async (id: string, startTime: string, endTime: string) => {
+    const { error } = await supabase
+      .from("focus_blocks")
+      .update({ start_time: startTime, end_time: endTime })
+      .eq("id", id);
+
+    if (!error) {
+      toast({
+        title: "Focus Block Updated ✨",
+        description: `${formatTime(startTime)} - ${formatTime(endTime)}`,
+      });
+      fetchFocusBlocks();
+    }
+  };
+
   const toggleDay = (day: number) => {
     setFormData((prev) => ({
       ...prev,
@@ -159,31 +189,130 @@ const FocusBlocks = () => {
     );
   };
 
+  const timeToMinutes = (time: string) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const minutesToTime = (totalMinutes: number) => {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  };
+
   const getBlockPosition = (time: string) => {
     const [hours, minutes] = time.split(":").map(Number);
-    const totalMinutes = (hours - 6) * 60 + minutes;
-    const totalTimelineMinutes = 16 * 60; // 6 AM to 10 PM
-    return (totalMinutes / totalTimelineMinutes) * 100;
+    const totalMinutes = (hours - TIMELINE_START_HOUR) * 60 + minutes;
+    return (totalMinutes / TOTAL_TIMELINE_MINUTES) * 100;
   };
 
   const getBlockWidth = (startTime: string, endTime: string) => {
-    const [startH, startM] = startTime.split(":").map(Number);
-    const [endH, endM] = endTime.split(":").map(Number);
-    const startMinutes = (startH - 6) * 60 + startM;
-    const endMinutes = (endH - 6) * 60 + endM;
-    const totalTimelineMinutes = 16 * 60;
-    return ((endMinutes - startMinutes) / totalTimelineMinutes) * 100;
+    const startMinutes = timeToMinutes(startTime) - TIMELINE_START_HOUR * 60;
+    const endMinutes = timeToMinutes(endTime) - TIMELINE_START_HOUR * 60;
+    return ((endMinutes - startMinutes) / TOTAL_TIMELINE_MINUTES) * 100;
   };
 
   const getCurrentTimePosition = () => {
-    if (currentHour < 6 || currentHour >= 22) return null;
-    const totalMinutes = (currentHour - 6) * 60 + currentMinute;
-    const totalTimelineMinutes = 16 * 60;
-    return (totalMinutes / totalTimelineMinutes) * 100;
+    if (currentHour < TIMELINE_START_HOUR || currentHour >= TIMELINE_END_HOUR) return null;
+    const totalMinutes = (currentHour - TIMELINE_START_HOUR) * 60 + currentMinute;
+    return (totalMinutes / TOTAL_TIMELINE_MINUTES) * 100;
   };
+
+  const positionToMinutes = useCallback((clientX: number) => {
+    if (!timelineRef.current) return 0;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const relativeX = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, relativeX / rect.width));
+    const minutes = percentage * TOTAL_TIMELINE_MINUTES + TIMELINE_START_HOUR * 60;
+    // Snap to 15-minute intervals
+    return Math.round(minutes / 15) * 15;
+  }, []);
+
+  const handleDragStart = (e: React.MouseEvent, block: FocusBlock, type: DragState["type"]) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragState({
+      blockId: block.id,
+      type,
+      initialX: e.clientX,
+      initialStartTime: block.start_time,
+      initialEndTime: block.end_time,
+    });
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!dragState || !timelineRef.current) return;
+
+    const currentMinutesAtMouse = positionToMinutes(e.clientX);
+    const initialStartMinutes = timeToMinutes(dragState.initialStartTime);
+    const initialEndMinutes = timeToMinutes(dragState.initialEndTime);
+    const duration = initialEndMinutes - initialStartMinutes;
+
+    let newStartMinutes = initialStartMinutes;
+    let newEndMinutes = initialEndMinutes;
+
+    if (dragState.type === "drag") {
+      // Calculate offset from initial position
+      const initialMinutesAtMouse = positionToMinutes(dragState.initialX);
+      const deltaMinutes = currentMinutesAtMouse - initialMinutesAtMouse;
+      
+      newStartMinutes = Math.round((initialStartMinutes + deltaMinutes) / 15) * 15;
+      newEndMinutes = newStartMinutes + duration;
+      
+      // Clamp to timeline bounds
+      if (newStartMinutes < TIMELINE_START_HOUR * 60) {
+        newStartMinutes = TIMELINE_START_HOUR * 60;
+        newEndMinutes = newStartMinutes + duration;
+      }
+      if (newEndMinutes > TIMELINE_END_HOUR * 60) {
+        newEndMinutes = TIMELINE_END_HOUR * 60;
+        newStartMinutes = newEndMinutes - duration;
+      }
+    } else if (dragState.type === "resize-start") {
+      newStartMinutes = Math.min(currentMinutesAtMouse, initialEndMinutes - 15);
+      newStartMinutes = Math.max(newStartMinutes, TIMELINE_START_HOUR * 60);
+    } else if (dragState.type === "resize-end") {
+      newEndMinutes = Math.max(currentMinutesAtMouse, initialStartMinutes + 15);
+      newEndMinutes = Math.min(newEndMinutes, TIMELINE_END_HOUR * 60);
+    }
+
+    setPreviewBlocks({
+      [dragState.blockId]: {
+        start_time: minutesToTime(newStartMinutes),
+        end_time: minutesToTime(newEndMinutes),
+      },
+    });
+  }, [dragState, positionToMinutes]);
+
+  const handleMouseUp = useCallback(() => {
+    if (dragState && previewBlocks[dragState.blockId]) {
+      const preview = previewBlocks[dragState.blockId];
+      handleUpdateTime(dragState.blockId, preview.start_time, preview.end_time);
+    }
+    setDragState(null);
+    setPreviewBlocks({});
+  }, [dragState, previewBlocks]);
+
+  useEffect(() => {
+    if (dragState) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [dragState, handleMouseMove, handleMouseUp]);
 
   const todayBlocks = getTodayBlocks();
   const currentTimePosition = getCurrentTimePosition();
+
+  const getDisplayTimes = (block: FocusBlock) => {
+    if (previewBlocks[block.id]) {
+      return previewBlocks[block.id];
+    }
+    return { start_time: block.start_time, end_time: block.end_time };
+  };
 
   if (loading) {
     return (
@@ -286,17 +415,20 @@ const FocusBlocks = () => {
               <Sun className="h-5 w-5 text-amber-500" />
               Today's Focus Schedule
               <span className="text-sm font-normal text-muted-foreground ml-2">
-                ({DAYS[today].label})
+                ({DAYS[today].label}) — Drag to move, resize edges to adjust
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="relative">
               {/* Timeline background */}
-              <div className="h-24 bg-muted/30 rounded-lg relative overflow-hidden border border-border">
+              <div 
+                ref={timelineRef}
+                className={`h-24 bg-muted/30 rounded-lg relative overflow-hidden border border-border ${dragState ? "cursor-grabbing" : ""}`}
+              >
                 {/* Hour markers */}
-                <div className="absolute inset-0 flex">
-                  {TIMELINE_HOURS.map((hour, index) => (
+                <div className="absolute inset-0 flex pointer-events-none">
+                  {TIMELINE_HOURS.map((hour) => (
                     <div
                       key={hour}
                       className="flex-1 border-l border-border/50 first:border-l-0 relative"
@@ -310,29 +442,61 @@ const FocusBlocks = () => {
 
                 {/* Focus blocks on timeline */}
                 {todayBlocks.map((block, index) => {
-                  const left = getBlockPosition(block.start_time);
-                  const width = getBlockWidth(block.start_time, block.end_time);
+                  const displayTimes = getDisplayTimes(block);
+                  const left = getBlockPosition(displayTimes.start_time);
+                  const width = getBlockWidth(displayTimes.start_time, displayTimes.end_time);
+                  const isDragging = dragState?.blockId === block.id;
                   const colors = [
-                    "bg-primary/80",
-                    "bg-accent/80",
-                    "bg-emerald-500/80",
-                    "bg-violet-500/80",
-                    "bg-rose-500/80",
+                    "bg-primary/80 hover:bg-primary/90",
+                    "bg-accent/80 hover:bg-accent/90",
+                    "bg-emerald-500/80 hover:bg-emerald-500/90",
+                    "bg-violet-500/80 hover:bg-violet-500/90",
+                    "bg-rose-500/80 hover:bg-rose-500/90",
                   ];
                   
                   return (
                     <div
                       key={block.id}
-                      className={`absolute top-2 h-12 ${colors[index % colors.length]} rounded-md flex items-center justify-center px-2 shadow-md transition-all hover:scale-[1.02] cursor-default`}
+                      className={`absolute top-2 h-12 ${colors[index % colors.length]} rounded-md flex items-center justify-center shadow-md transition-shadow group ${isDragging ? "ring-2 ring-primary ring-offset-2 z-20" : "z-10"}`}
                       style={{
                         left: `${Math.max(0, left)}%`,
                         width: `${Math.min(width, 100 - left)}%`,
+                        minWidth: "60px",
                       }}
-                      title={`${block.title}: ${formatTime(block.start_time)} - ${formatTime(block.end_time)}`}
                     >
-                      <span className="text-xs font-medium text-white truncate">
-                        {block.title}
-                      </span>
+                      {/* Left resize handle */}
+                      <div
+                        className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/20 rounded-l-md"
+                        onMouseDown={(e) => handleDragStart(e, block, "resize-start")}
+                      >
+                        <div className="w-0.5 h-6 bg-white/60 rounded-full" />
+                      </div>
+                      
+                      {/* Draggable center area */}
+                      <div
+                        className="flex-1 h-full flex items-center justify-center cursor-grab active:cursor-grabbing px-4"
+                        onMouseDown={(e) => handleDragStart(e, block, "drag")}
+                      >
+                        <GripVertical className="h-3 w-3 text-white/60 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <span className="text-xs font-medium text-white truncate">
+                          {block.title}
+                        </span>
+                      </div>
+                      
+                      {/* Right resize handle */}
+                      <div
+                        className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/20 rounded-r-md"
+                        onMouseDown={(e) => handleDragStart(e, block, "resize-end")}
+                      >
+                        <div className="w-0.5 h-6 bg-white/60 rounded-full" />
+                      </div>
+                      
+                      {/* Time tooltip when dragging */}
+                      {isDragging && (
+                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-2 py-1 rounded text-xs font-medium whitespace-nowrap animate-fade-in">
+                          {formatTime(displayTimes.start_time)} - {formatTime(displayTimes.end_time)}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -340,7 +504,7 @@ const FocusBlocks = () => {
                 {/* Current time indicator */}
                 {currentTimePosition !== null && (
                   <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                    className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30 pointer-events-none"
                     style={{ left: `${currentTimePosition}%` }}
                   >
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
@@ -349,7 +513,7 @@ const FocusBlocks = () => {
 
                 {/* Empty state */}
                 {todayBlocks.length === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <p className="text-muted-foreground text-sm">No focus blocks scheduled for today</p>
                   </div>
                 )}
@@ -363,6 +527,7 @@ const FocusBlocks = () => {
             {todayBlocks.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {todayBlocks.map((block, index) => {
+                  const displayTimes = getDisplayTimes(block);
                   const colors = [
                     "bg-primary/20 text-primary border-primary/30",
                     "bg-accent/20 text-accent-foreground border-accent/30",
@@ -373,9 +538,9 @@ const FocusBlocks = () => {
                   return (
                     <div
                       key={block.id}
-                      className={`px-3 py-1.5 rounded-full border text-xs font-medium ${colors[index % colors.length]}`}
+                      className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${colors[index % colors.length]}`}
                     >
-                      {block.title}: {formatTime(block.start_time)} - {formatTime(block.end_time)}
+                      {block.title}: {formatTime(displayTimes.start_time)} - {formatTime(displayTimes.end_time)}
                     </div>
                   );
                 })}
