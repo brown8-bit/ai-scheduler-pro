@@ -37,6 +37,7 @@ import {
   Repeat2,
   Bookmark,
   Share,
+  Mail,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -1202,6 +1203,10 @@ const Community = () => {
                     <Users className="w-5 h-5" />
                     Community
                   </Link>
+                  <Link to="/messages" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                    <Mail className="w-5 h-5" />
+                    Messages
+                  </Link>
                   <Link to="/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
                     <Avatar className="w-5 h-5">
                       <AvatarImage src={userProfile?.avatar_url || ""} />
@@ -1892,32 +1897,42 @@ const Community = () => {
                         .filter(u => !following.includes(u.user_id))
                         .slice(0, 3)
                         .map((suggestedUser) => (
-                          <div key={suggestedUser.user_id} className="flex items-center justify-between">
-                            <Link to={`/profile/${suggestedUser.user_id}`} className="flex items-center gap-2 hover:opacity-80">
-                              <Avatar className="w-10 h-10">
+                          <div key={suggestedUser.user_id} className="flex items-center justify-between gap-2">
+                            <Link to={`/profile/${suggestedUser.user_id}`} className="flex items-center gap-2 hover:opacity-80 min-w-0 flex-1">
+                              <Avatar className="w-10 h-10 shrink-0">
                                 <AvatarImage src={suggestedUser.avatar_url || ""} />
                                 <AvatarFallback className="bg-primary/10 text-primary">
                                   {suggestedUser.display_name?.charAt(0) || "U"}
                                 </AvatarFallback>
                               </Avatar>
-                              <div>
-                                <p className="font-medium text-sm flex items-center gap-1">
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm flex items-center gap-1 truncate">
                                   {suggestedUser.display_name || "User"}
                                   {suggestedUser.is_verified && <VerifiedBadge size="sm" />}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground truncate">
                                   @{suggestedUser.display_name?.toLowerCase().replace(/\s/g, '') || "user"}
                                 </p>
                               </div>
                             </Link>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-full h-8"
-                              onClick={() => handleFollow(suggestedUser.user_id)}
-                            >
-                              Follow
-                            </Button>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="rounded-full h-8 w-8"
+                                onClick={() => navigate(`/messages?userId=${suggestedUser.user_id}`)}
+                              >
+                                <Mail className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-full h-8"
+                                onClick={() => handleFollow(suggestedUser.user_id)}
+                              >
+                                Follow
+                              </Button>
+                            </div>
                           </div>
                         ))}
                     </div>

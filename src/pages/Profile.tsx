@@ -29,6 +29,7 @@ import {
   MoreHorizontal,
   X,
   Check,
+  Mail,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -582,23 +583,33 @@ const Profile = () => {
                       </Button>
                     </Link>
                   ) : (
-                    <Button
-                      onClick={handleFollow}
-                      variant={isFollowing ? "outline" : "default"}
-                      className="gap-2"
-                    >
-                      {isFollowing ? (
-                        <>
-                          <UserMinus className="w-4 h-4" />
-                          Unfollow
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4" />
-                          Follow
-                        </>
-                      )}
-                    </Button>
+                    <>
+                      <Button
+                        onClick={handleFollow}
+                        variant={isFollowing ? "outline" : "default"}
+                        className="gap-2"
+                      >
+                        {isFollowing ? (
+                          <>
+                            <UserMinus className="w-4 h-4" />
+                            Unfollow
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-4 h-4" />
+                            Follow
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => navigate(`/messages?userId=${profile?.user_id}`)}
+                      >
+                        <Mail className="w-4 h-4" />
+                        Message
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
