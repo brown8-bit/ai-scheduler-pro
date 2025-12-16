@@ -276,12 +276,75 @@ export type Database = {
         }
         Relationships: []
       }
+      post_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
           display_name: string | null
           id: string
+          is_lifetime: boolean | null
+          is_verified: boolean | null
           updated_at: string
           user_id: string
         }
@@ -290,6 +353,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_lifetime?: boolean | null
+          is_verified?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -298,6 +363,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_lifetime?: boolean | null
+          is_verified?: boolean | null
           updated_at?: string
           user_id?: string
         }
@@ -348,6 +415,60 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      social_posts: {
+        Row: {
+          achievement_data: Json | null
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          post_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_data?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          post_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_data?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          post_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
         }
         Relationships: []
       }
