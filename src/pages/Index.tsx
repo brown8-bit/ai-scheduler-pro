@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2 } from "lucide-react";
+import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2, Target, Rocket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
@@ -287,6 +287,72 @@ const Index = () => {
           ) : (
             <p className="text-center text-muted-foreground py-8">No offers available right now. Check back soon!</p>
           )}
+        </div>
+      </section>
+
+      {/* Coming Soon Section */}
+      <section className="py-12 sm:py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-semibold mb-4">
+              <Rocket className="w-4 h-4" />
+              Coming Soon
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">🚀 What's Next</h2>
+            <p className="mt-3 text-sm sm:text-lg text-muted-foreground">
+              Exciting features launching soon!
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {/* Early Bird Offer */}
+            <div className="relative p-5 sm:p-6 rounded-2xl bg-card border-2 border-dashed border-primary/30 hover:border-primary/60 transition-all duration-300 overflow-hidden">
+              <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl bg-gradient-to-r from-primary to-accent text-white text-xs font-semibold">
+                62% OFF
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <Gift className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="mt-4 font-semibold text-lg">Early Bird Pro</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Lock in $11/month forever! Limited spots available for early supporters.
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <span className="text-2xl font-bold text-primary">$11</span>
+                <span className="text-sm text-muted-foreground line-through">$29</span>
+                <span className="text-sm text-muted-foreground">/month</span>
+              </div>
+              <Link to="/pricing?plan=earlybird" className="mt-4 inline-block">
+                <Button size="sm" className="gradient-primary text-primary-foreground hover:opacity-90">
+                  🐦 Claim Early Bird →
+                </Button>
+              </Link>
+            </div>
+
+            {/* Focus Blocks */}
+            <div className="relative p-5 sm:p-6 rounded-2xl bg-card border-2 border-dashed border-accent/30 hover:border-accent/60 transition-all duration-300 overflow-hidden">
+              <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl bg-gradient-to-r from-accent to-primary text-white text-xs font-semibold">
+                NEW
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="mt-4 font-semibold text-lg">Focus Blocks</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Schedule dedicated focus time and protect your productivity with distraction-free blocks.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="px-2 py-1 rounded-full bg-accent/20 text-accent text-xs">Deep Work</span>
+                <span className="px-2 py-1 rounded-full bg-primary/20 text-primary text-xs">Time Blocking</span>
+                <span className="px-2 py-1 rounded-full bg-secondary text-secondary-foreground text-xs">Recurring</span>
+              </div>
+              <Link to="/focus-blocks" className="mt-4 inline-block">
+                <Button size="sm" variant="outline" className="hover:bg-accent/10">
+                  🎯 Try Focus Blocks →
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
