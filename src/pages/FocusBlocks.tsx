@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Focus, Plus, Trash2, Clock, Calendar, Sun, GripVertical } from "lucide-react";
+import { Focus, Plus, Trash2, Clock, Calendar, Sun } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface FocusBlock {
@@ -231,6 +231,11 @@ const FocusBlocks = () => {
   const handleDragStart = (e: React.MouseEvent, block: FocusBlock, type: DragState["type"]) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Prevent text selection during drag
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = type === "drag" ? "grabbing" : "ew-resize";
+    
     setDragState({
       blockId: block.id,
       type,
@@ -242,6 +247,7 @@ const FocusBlocks = () => {
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!dragState || !timelineRef.current) return;
+    e.preventDefault();
 
     const currentMinutesAtMouse = positionToMinutes(e.clientX);
     const initialStartMinutes = timeToMinutes(dragState.initialStartTime);
@@ -285,6 +291,10 @@ const FocusBlocks = () => {
   }, [dragState, positionToMinutes]);
 
   const handleMouseUp = useCallback(() => {
+    // Reset cursor and selection
+    document.body.style.userSelect = "";
+    document.body.style.cursor = "";
+    
     if (dragState && previewBlocks[dragState.blockId]) {
       const preview = previewBlocks[dragState.blockId];
       handleUpdateTime(dragState.blockId, preview.start_time, preview.end_time);
@@ -420,11 +430,12 @@ const FocusBlocks = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative">
+            <div className="relative pt-8">
               {/* Timeline background */}
               <div 
                 ref={timelineRef}
-                className={`h-24 bg-muted/30 rounded-lg relative overflow-hidden border border-border ${dragState ? "cursor-grabbing" : ""}`}
+                className={`h-20 bg-muted/30 rounded-lg relative border border-border ${dragState ? "cursor-grabbing" : ""}`}
+                style={{ overflow: 'visible' }}
               >
                 {/* Hour markers */}
                 <div className="absolute inset-0 flex pointer-events-none">
@@ -447,56 +458,55 @@ const FocusBlocks = () => {
                   const width = getBlockWidth(displayTimes.start_time, displayTimes.end_time);
                   const isDragging = dragState?.blockId === block.id;
                   const colors = [
-                    "bg-primary/80 hover:bg-primary/90",
-                    "bg-accent/80 hover:bg-accent/90",
-                    "bg-emerald-500/80 hover:bg-emerald-500/90",
-                    "bg-violet-500/80 hover:bg-violet-500/90",
-                    "bg-rose-500/80 hover:bg-rose-500/90",
+                    "bg-primary hover:bg-primary/90",
+                    "bg-accent hover:bg-accent/90",
+                    "bg-emerald-500 hover:bg-emerald-600",
+                    "bg-violet-500 hover:bg-violet-600",
+                    "bg-rose-500 hover:bg-rose-600",
                   ];
                   
                   return (
                     <div
                       key={block.id}
-                      className={`absolute top-2 h-12 ${colors[index % colors.length]} rounded-md flex items-center justify-center shadow-md transition-shadow group ${isDragging ? "ring-2 ring-primary ring-offset-2 z-20" : "z-10"}`}
+                      className={`absolute top-2 h-16 ${colors[index % colors.length]} rounded-md shadow-lg transition-all group select-none ${isDragging ? "ring-2 ring-white ring-offset-2 ring-offset-background z-50 scale-105" : "z-10 hover:shadow-xl"}`}
                       style={{
                         left: `${Math.max(0, left)}%`,
                         width: `${Math.min(width, 100 - left)}%`,
-                        minWidth: "60px",
+                        minWidth: "80px",
                       }}
                     >
+                      {/* Time tooltip - always visible when dragging */}
+                      {isDragging && (
+                        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap shadow-lg z-50">
+                          {formatTime(displayTimes.start_time)} - {formatTime(displayTimes.end_time)}
+                        </div>
+                      )}
+                      
                       {/* Left resize handle */}
                       <div
-                        className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/20 rounded-l-md"
+                        className="absolute left-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center bg-black/0 hover:bg-black/20 rounded-l-md transition-colors z-20"
                         onMouseDown={(e) => handleDragStart(e, block, "resize-start")}
                       >
-                        <div className="w-0.5 h-6 bg-white/60 rounded-full" />
+                        <div className="w-1 h-8 bg-white/40 group-hover:bg-white/70 rounded-full transition-colors" />
                       </div>
                       
                       {/* Draggable center area */}
                       <div
-                        className="flex-1 h-full flex items-center justify-center cursor-grab active:cursor-grabbing px-4"
+                        className="absolute left-4 right-4 top-0 bottom-0 flex items-center justify-center cursor-grab active:cursor-grabbing"
                         onMouseDown={(e) => handleDragStart(e, block, "drag")}
                       >
-                        <GripVertical className="h-3 w-3 text-white/60 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <span className="text-xs font-medium text-white truncate">
+                        <span className="text-sm font-semibold text-white truncate drop-shadow-sm">
                           {block.title}
                         </span>
                       </div>
                       
                       {/* Right resize handle */}
                       <div
-                        className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/20 rounded-r-md"
+                        className="absolute right-0 top-0 bottom-0 w-4 cursor-ew-resize flex items-center justify-center bg-black/0 hover:bg-black/20 rounded-r-md transition-colors z-20"
                         onMouseDown={(e) => handleDragStart(e, block, "resize-end")}
                       >
-                        <div className="w-0.5 h-6 bg-white/60 rounded-full" />
+                        <div className="w-1 h-8 bg-white/40 group-hover:bg-white/70 rounded-full transition-colors" />
                       </div>
-                      
-                      {/* Time tooltip when dragging */}
-                      {isDragging && (
-                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-2 py-1 rounded text-xs font-medium whitespace-nowrap animate-fade-in">
-                          {formatTime(displayTimes.start_time)} - {formatTime(displayTimes.end_time)}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
