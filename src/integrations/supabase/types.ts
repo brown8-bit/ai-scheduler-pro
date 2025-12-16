@@ -142,6 +142,42 @@ export type Database = {
         }
         Relationships: []
       }
+      courses: {
+        Row: {
+          created_at: string
+          credit_hours: number | null
+          current_grade: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          semester: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credit_hours?: number | null
+          current_grade?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          semester?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credit_hours?: number | null
+          current_grade?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          semester?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_habits: {
         Row: {
           created_at: string
@@ -238,6 +274,48 @@ export type Database = {
           start_time?: string
           title?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      grades: {
+        Row: {
+          assignment_name: string
+          category: string | null
+          course_name: string
+          created_at: string
+          due_date: string | null
+          grade_value: number | null
+          id: string
+          max_grade: number | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          assignment_name: string
+          category?: string | null
+          course_name: string
+          created_at?: string
+          due_date?: string | null
+          grade_value?: number | null
+          id?: string
+          max_grade?: number | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          assignment_name?: string
+          category?: string | null
+          course_name?: string
+          created_at?: string
+          due_date?: string | null
+          grade_value?: number | null
+          id?: string
+          max_grade?: number | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
         }
         Relationships: []
       }
@@ -367,6 +445,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pomodoro_sessions: {
+        Row: {
+          completed_at: string
+          duration_minutes: number
+          id: string
+          notes: string | null
+          session_type: string | null
+          task_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          session_type?: string | null
+          task_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          session_type?: string | null
+          task_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pomodoro_sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_comments: {
         Row: {
@@ -542,6 +658,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          event_id: string | null
+          id: string
+          is_completed: boolean | null
+          priority: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          event_id?: string | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          event_id?: string | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_members: {
         Row: {

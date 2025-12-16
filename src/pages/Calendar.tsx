@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { format, isSameDay } from "date-fns";
 import { CalendarDays, Clock, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import AddEventModal from "@/components/AddEventModal";
+import CalendarExport from "@/components/CalendarExport";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { toast } from "@/hooks/use-toast";
 
@@ -127,13 +128,16 @@ const CalendarPage = () => {
             </p>
           </div>
           
-          {user && (
-            <AddEventModal 
-              userId={user.id} 
-              selectedDate={selectedDate}
-              onEventAdded={fetchEvents}
-            />
-          )}
+          <div className="flex items-center gap-2">
+            <CalendarExport events={events} />
+            {user && (
+              <AddEventModal 
+                userId={user.id} 
+                selectedDate={selectedDate}
+                onEventAdded={fetchEvents}
+              />
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">

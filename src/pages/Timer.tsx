@@ -19,6 +19,7 @@ import {
   Minus
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 type TimerMode = "focus" | "break" | "custom";
@@ -32,6 +33,8 @@ const Timer = () => {
   const [customMinutes, setCustomMinutes] = useState(25);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
+  const [totalMinutesToday, setTotalMinutesToday] = useState(0);
+  const [sessionStartMinutes, setSessionStartMinutes] = useState(25);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -44,6 +47,8 @@ const Timer = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login");
+    } else if (user) {
+      fetchTodaysSessions();
     }
   }, [user, loading, navigate]);
 
@@ -51,6 +56,36 @@ const Timer = () => {
     // Create audio element for notification
     audioRef.current = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJOqrJaDb3J+jaKvopuKf4WJiISAenp+gYaKjI2OjYuIhYJ/fHp4eHl7foCDhoiKi4yMi4qIhoR/fHp4d3d4eXt+gYSHiYuMjIyLiYeEgX57eXd3d3h6fH+ChYiKjIyMi4qIhYJ/fHp4d3d4eXt+gYSHiYuMjIyLiYeEgX57eXd3d3h6fH+ChYiKjIyMi4qIhYJ/fHp4d3d4eXt+gYSHiYuMjIyLiYeEgX57eXd3d3h6fH+ChYiKjIyMi4qIhYJ/fHp4d3d4eXt+gQ==");
   }, []);
+
+  const fetchTodaysSessions = async () => {
+    if (!user) return;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const { data } = await supabase
+      .from("pomodoro_sessions")
+      .select("duration_minutes")
+      .eq("user_id", user.id)
+      .gte("completed_at", today.toISOString());
+    
+    if (data) {
+      setSessionsCompleted(data.length);
+      setTotalMinutesToday(data.reduce((sum, s) => sum + s.duration_minutes, 0));
+    }
+  };
+
+  const saveSession = async (durationMinutes: number, sessionType: string) => {
+    if (!user) return;
+    
+    await supabase.from("pomodoro_sessions").insert({
+      user_id: user.id,
+      duration_minutes: durationMinutes,
+      session_type: sessionType,
+    });
+    
+    fetchTodaysSessions();
+  };
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -68,17 +103,17 @@ const Timer = () => {
     };
   }, [isRunning, timeLeft]);
 
-  const handleTimerComplete = () => {
+  const handleTimerComplete = async () => {
     setIsRunning(false);
     if (soundEnabled && audioRef.current) {
       audioRef.current.play().catch(() => {});
     }
     
-    if (mode === "focus") {
-      setSessionsCompleted(prev => prev + 1);
+    if (mode === "focus" || mode === "custom") {
+      await saveSession(sessionStartMinutes, mode);
       toast({
         title: "Focus session complete! 🎉",
-        description: "Great work! Take a well-deserved break.",
+        description: `Great work! ${sessionStartMinutes} minutes logged.`,
       });
     } else {
       toast({
@@ -98,12 +133,14 @@ const Timer = () => {
     setMode(preset.mode);
     setTimeLeft(preset.minutes * 60);
     setCustomMinutes(preset.minutes);
+    setSessionStartMinutes(preset.minutes);
     setIsRunning(false);
   };
 
   const handleCustomTime = () => {
     setMode("custom");
     setTimeLeft(customMinutes * 60);
+    setSessionStartMinutes(customMinutes);
     setIsRunning(false);
   };
 
@@ -300,7 +337,7 @@ const Timer = () => {
             </Card>
             <Card>
               <CardContent className="p-6 text-center">
-                <p className="text-4xl font-bold text-green-500">{sessionsCompleted * 25}</p>
+                <p className="text-4xl font-bold text-green-500">{totalMinutesToday}</p>
                 <p className="text-sm text-muted-foreground mt-1">Minutes Focused</p>
               </CardContent>
             </Card>
