@@ -305,33 +305,7 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {/* Early Bird Offer */}
-            <div className="relative p-5 sm:p-6 rounded-2xl bg-card border-2 border-dashed border-primary/30 overflow-hidden">
-              <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl bg-gradient-to-r from-primary to-accent text-white text-xs font-semibold">
-                COMING SOON
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Gift className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="mt-4 font-semibold text-lg">Early Bird Pro</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Lock in $11/month forever! Limited spots available for early supporters.
-              </p>
-              <div className="mt-4 flex items-center gap-2">
-                <span className="text-2xl font-bold text-primary">$11</span>
-                <span className="text-sm text-muted-foreground line-through">$29</span>
-                <span className="text-sm text-muted-foreground">/month</span>
-              </div>
-              <div className="mt-4">
-                <WaitlistModal 
-                  feature="early_bird_pro"
-                  featureTitle="Early Bird Pro"
-                  featureDescription="Be the first to know when Early Bird Pro pricing launches. Lock in 62% savings forever!"
-                />
-              </div>
-            </div>
-
+          <div className="max-w-md mx-auto">
             {/* Focus Blocks */}
             <div className="relative p-5 sm:p-6 rounded-2xl bg-card border-2 border-dashed border-accent/30 overflow-hidden">
               <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl bg-gradient-to-r from-accent to-primary text-white text-xs font-semibold">
