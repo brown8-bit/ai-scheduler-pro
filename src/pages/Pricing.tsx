@@ -276,7 +276,8 @@ const Pricing = () => {
                   <p className="text-muted-foreground mt-2 text-sm">One-time payment, forever</p>
                   
                   <div className="mt-6">
-                    <span className="text-5xl font-bold">$299</span>
+                    <span className="text-xl text-muted-foreground line-through mr-2">$299</span>
+                    <span className="text-5xl font-bold text-primary">$160</span>
                     <span className="text-xl text-muted-foreground"> once</span>
                   </div>
                   
