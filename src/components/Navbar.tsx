@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users } from "lucide-react";
+import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users, User } from "lucide-react";
 import schedulrLogo from "@/assets/schedulr-logo.png";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -142,6 +142,10 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      My Profile
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
