@@ -161,36 +161,65 @@ const Community = () => {
       .map(([tag, count]) => ({ tag, count }));
   }, [posts]);
 
+  // Create combined feed with posts and quote reposts
+  type FeedItem = { type: 'post'; data: Post } | { type: 'quote'; data: Repost };
+  
+  const combinedFeed = useMemo(() => {
+    const feedItems: FeedItem[] = [
+      ...posts.map(p => ({ type: 'post' as const, data: p })),
+      ...reposts.filter(r => r.original_post).map(r => ({ type: 'quote' as const, data: r })),
+    ];
+    
+    // Sort by created_at descending
+    return feedItems.sort((a, b) => 
+      new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime()
+    );
+  }, [posts, reposts]);
+
   // Filter posts based on active tab and search
-  const filteredPosts = useMemo(() => {
-    let filtered = posts;
+  const filteredFeed = useMemo(() => {
+    let filtered = combinedFeed;
     
     // Filter by tab
     if (activeTab === "following") {
-      filtered = filtered.filter(p => following.includes(p.user_id) || p.user_id === user?.id);
-    } else if (activeTab === "trending") {
-      // Sort by engagement (likes + comments)
-      filtered = [...filtered].sort((a, b) => 
-        (b.likes_count + b.comments_count) - (a.likes_count + a.comments_count)
+      filtered = filtered.filter(item => 
+        following.includes(item.data.user_id) || item.data.user_id === user?.id
       );
+    } else if (activeTab === "trending") {
+      // Sort by engagement (likes + comments) - only applies to posts
+      filtered = [...filtered].sort((a, b) => {
+        if (a.type === 'post' && b.type === 'post') {
+          return (b.data.likes_count + b.data.comments_count) - (a.data.likes_count + a.data.comments_count);
+        }
+        return 0;
+      });
     }
     
     // Filter by search query or hashtag
     const hashtagParam = searchParams.get("hashtag");
     if (hashtagParam) {
-      filtered = filtered.filter(p => 
-        p.content.toLowerCase().includes(`#${hashtagParam.toLowerCase()}`)
-      );
+      filtered = filtered.filter(item => {
+        if (item.type === 'post') {
+          return item.data.content.toLowerCase().includes(`#${hashtagParam.toLowerCase()}`);
+        }
+        return item.data.quote_text?.toLowerCase().includes(`#${hashtagParam.toLowerCase()}`) || 
+               item.data.original_post?.content.toLowerCase().includes(`#${hashtagParam.toLowerCase()}`);
+      });
     } else if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.content.toLowerCase().includes(query) ||
-        p.profiles?.display_name?.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(item => {
+        if (item.type === 'post') {
+          return item.data.content.toLowerCase().includes(query) ||
+                 item.data.profiles?.display_name?.toLowerCase().includes(query);
+        }
+        return item.data.quote_text?.toLowerCase().includes(query) ||
+               item.data.profiles?.display_name?.toLowerCase().includes(query) ||
+               item.data.original_post?.content.toLowerCase().includes(query);
+      });
     }
     
     return filtered;
-  }, [posts, activeTab, following, user?.id, searchQuery, searchParams]);
+  }, [combinedFeed, activeTab, following, user?.id, searchQuery, searchParams]);
 
   useEffect(() => {
     if (!user) {
@@ -878,7 +907,7 @@ const Community = () => {
                   <Hash className="w-5 h-5 text-primary" />
                   <span className="font-medium">#{hashtagFilter}</span>
                   <span className="text-sm text-muted-foreground">
-                    ({filteredPosts.length} posts)
+                    ({filteredFeed.length} posts)
                   </span>
                 </div>
                 <Button variant="ghost" size="sm" onClick={clearHashtagFilter}>
@@ -959,7 +988,7 @@ const Community = () => {
 
             {/* Posts Feed */}
             <div className="space-y-4">
-              {filteredPosts.length === 0 ? (
+              {filteredFeed.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -973,215 +1002,324 @@ const Community = () => {
                   </CardContent>
                 </Card>
               ) : (
-                filteredPosts.map((post) => (
-                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <Link to={`/profile/${post.user_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={post.profiles?.avatar_url || ""} />
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {post.profiles?.display_name?.charAt(0) || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-semibold">
-                                {post.profiles?.display_name || "Anonymous"}
-                              </span>
-                              {post.profiles?.is_admin && <AdminBadge size="md" />}
-                              {post.profiles?.is_verified && <VerifiedBadge size="md" />}
-                              {getPostIcon(post.post_type)}
-                              <span className="text-muted-foreground">·</span>
-                              <span className="text-sm text-muted-foreground">
-                                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                              </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              @{post.profiles?.display_name?.toLowerCase().replace(/\s/g, '') || "user"}
+                filteredFeed.map((item) => {
+                  if (item.type === 'quote') {
+                    const quote = item.data;
+                    const originalPost = quote.original_post;
+                    if (!originalPost) return null;
+                    
+                    return (
+                      <Card key={`quote-${quote.id}`} className="overflow-hidden hover:shadow-lg transition-shadow">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+                            <Repeat2 className="w-4 h-4" />
+                            <span>{quote.profiles?.display_name || "Someone"} quoted</span>
+                          </div>
+                          <div className="flex items-start justify-between">
+                            <Link to={`/profile/${quote.user_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage src={quote.profiles?.avatar_url || ""} />
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {quote.profiles?.display_name?.charAt(0) || "U"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-semibold">
+                                    {quote.profiles?.display_name || "Anonymous"}
+                                  </span>
+                                  {quote.profiles?.is_admin && <AdminBadge size="md" />}
+                                  {quote.profiles?.is_verified && <VerifiedBadge size="md" />}
+                                  <span className="text-muted-foreground">·</span>
+                                  <span className="text-sm text-muted-foreground">
+                                    {formatDistanceToNow(new Date(quote.created_at), { addSuffix: true })}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  @{quote.profiles?.display_name?.toLowerCase().replace(/\s/g, '') || "user"}
+                                </p>
+                              </div>
+                            </Link>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          {quote.quote_text && (
+                            <p className="text-foreground mb-3 whitespace-pre-wrap leading-relaxed">
+                              {renderPostContent(quote.quote_text)}
                             </p>
-                          </div>
-                        </Link>
-                        <div className="flex items-center gap-2">
-                          {post.user_id !== user?.id ? (
-                            <Button
-                              variant={following.includes(post.user_id) ? "outline" : "default"}
-                              size="sm"
-                              onClick={() => handleFollow(post.user_id)}
-                              className="rounded-full text-xs h-8"
-                            >
-                              {following.includes(post.user_id) ? "Following" : "Follow"}
-                            </Button>
-                          ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-popover">
-                                <DropdownMenuItem onClick={() => handleStartEdit(post)}>
-                                  <Pencil className="w-4 h-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => setDeletePostId(post.id)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
                           )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {editingPostId === post.id ? (
-                        <div className="space-y-3 mb-4">
-                          <Textarea
-                            value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
-                            placeholder="What's on your mind?"
-                            className="min-h-[100px] resize-none"
-                          />
-                          <div className="flex gap-2 justify-end">
-                            <Button variant="ghost" size="sm" onClick={handleCancelEdit} disabled={isSavingEdit}>
-                              Cancel
-                            </Button>
-                            <Button size="sm" onClick={() => handleSaveEdit(post.id)} disabled={!editContent.trim() || isSavingEdit}>
-                              {isSavingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
-                            </Button>
+                          
+                          {/* Embedded Original Post */}
+                          <div className="border rounded-xl p-3 bg-muted/20 hover:bg-muted/30 transition-colors">
+                            <Link to={`/profile/${originalPost.user_id}`} className="flex items-center gap-2 mb-2">
+                              <Avatar className="w-6 h-6">
+                                <AvatarImage src={originalPost.profiles?.avatar_url || ""} />
+                                <AvatarFallback className="text-xs">
+                                  {originalPost.profiles?.display_name?.charAt(0) || "U"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm font-medium">
+                                {originalPost.profiles?.display_name || "Anonymous"}
+                              </span>
+                              {originalPost.profiles?.is_verified && <VerifiedBadge size="sm" />}
+                              <span className="text-xs text-muted-foreground">
+                                · {formatDistanceToNow(new Date(originalPost.created_at), { addSuffix: true })}
+                              </span>
+                            </Link>
+                            {originalPost.content && (
+                              <p className="text-sm text-foreground/80 whitespace-pre-wrap">
+                                {renderPostContent(originalPost.content)}
+                              </p>
+                            )}
+                            {originalPost.image_url && (
+                              <img 
+                                src={originalPost.image_url} 
+                                alt="Post image" 
+                                className="w-full rounded-lg mt-2 max-h-48 object-cover"
+                              />
+                            )}
                           </div>
-                        </div>
-                      ) : (
-                        post.content && (
-                          <p className="text-foreground mb-3 whitespace-pre-wrap leading-relaxed">
-                            {renderPostContent(post.content)}
-                          </p>
-                        )
-                      )}
-                      
-                      {post.image_url && (
-                        <img 
-                          src={post.image_url} 
-                          alt="Post image" 
-                          className="w-full rounded-xl mb-3 max-h-96 object-cover"
-                        />
-                      )}
-                      
-                      {/* Actions Bar */}
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleComments(post.id)}
-                          className="text-muted-foreground hover:text-primary hover:bg-primary/10 gap-2"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          <span>{post.comments_count}</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleLike(post.id, post.is_liked)}
-                          className={`gap-2 ${post.is_liked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500"}`}
-                        >
-                          <Heart className={`w-4 h-4 ${post.is_liked ? "fill-current" : ""}`} />
-                          <span>{post.likes_count}</span>
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                          
+                          {/* Minimal Actions for Quote */}
+                          <div className="flex items-center gap-4 pt-3 mt-3 border-t text-muted-foreground">
                             <Button
                               variant="ghost"
                               size="sm"
-                              className={`gap-2 ${post.is_reposted ? "text-green-500 hover:text-green-600" : "text-muted-foreground hover:text-green-500"}`}
+                              onClick={() => handleLike(originalPost.id, originalPost.is_liked)}
+                              className={`gap-2 ${originalPost.is_liked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500"}`}
                             >
-                              <Repeat2 className="w-4 h-4" />
-                              <span>{post.reposts_count}</span>
+                              <Heart className={`w-4 h-4 ${originalPost.is_liked ? "fill-current" : ""}`} />
+                              <span>{originalPost.likes_count}</span>
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="center" className="bg-popover">
-                            <DropdownMenuItem onClick={() => handleRepost(post.id, post.is_reposted)}>
-                              <Repeat2 className="w-4 h-4 mr-2" />
-                              {post.is_reposted ? "Undo Repost" : "Repost"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setQuotePostId(post.id)}>
-                              <Pencil className="w-4 h-4 mr-2" />
-                              Quote
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-primary hover:bg-primary/10"
-                          onClick={() => {
-                            navigator.clipboard.writeText(window.location.origin + `/community?post=${post.id}`);
-                            toast({ title: "Link copied!" });
-                          }}
-                        >
-                          <Share className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      {/* Comments Section */}
-                      {expandedComments.includes(post.id) && (
-                        <div className="mt-4 pt-4 border-t space-y-3">
-                          {comments[post.id]?.map((comment) => (
-                            <div key={comment.id} className="flex gap-2">
-                              <Link to={`/profile/${comment.user_id}`}>
-                                <Avatar className="w-8 h-8">
-                                  <AvatarImage src={comment.profiles?.avatar_url || ""} />
-                                  <AvatarFallback className="text-xs bg-muted">
-                                    {comment.profiles?.display_name?.charAt(0) || "U"}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </Link>
-                              <div className="flex-1 bg-muted/50 rounded-2xl px-4 py-2">
-                                <Link to={`/profile/${comment.user_id}`} className="inline-flex items-center gap-1.5">
-                                  <span className="text-sm font-medium">
-                                    {comment.profiles?.display_name || "Anonymous"}
-                                  </span>
-                                  {comment.profiles?.is_admin && <AdminBadge size="sm" />}
-                                  {comment.profiles?.is_verified && <VerifiedBadge size="sm" />}
-                                </Link>
-                                <p className="text-sm">{comment.content}</p>
-                              </div>
-                            </div>
-                          ))}
-                          
-                          <div className="flex gap-2">
-                            <Avatar className="w-8 h-8">
-                              <AvatarImage src={userProfile?.avatar_url || ""} />
-                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                {userProfile?.display_name?.charAt(0) || "U"}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              onClick={() => {
+                                navigator.clipboard.writeText(window.location.origin + `/community?post=${originalPost.id}`);
+                                toast({ title: "Link copied!" });
+                              }}
+                            >
+                              <Share className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+                  
+                  // Regular post
+                  const post = item.data;
+                  return (
+                    <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between">
+                          <Link to={`/profile/${post.user_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={post.profiles?.avatar_url || ""} />
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                {post.profiles?.display_name?.charAt(0) || "U"}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 flex gap-2">
-                              <Input
-                                placeholder="Post your reply..."
-                                value={newComments[post.id] || ""}
-                                onChange={(e) => setNewComments({ ...newComments, [post.id]: e.target.value })}
-                                onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
-                                className="rounded-full"
-                              />
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-semibold">
+                                  {post.profiles?.display_name || "Anonymous"}
+                                </span>
+                                {post.profiles?.is_admin && <AdminBadge size="md" />}
+                                {post.profiles?.is_verified && <VerifiedBadge size="md" />}
+                                {getPostIcon(post.post_type)}
+                                <span className="text-muted-foreground">·</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                @{post.profiles?.display_name?.toLowerCase().replace(/\s/g, '') || "user"}
+                              </p>
+                            </div>
+                          </Link>
+                          <div className="flex items-center gap-2">
+                            {post.user_id !== user?.id ? (
                               <Button
-                                size="icon"
-                                onClick={() => handleComment(post.id)}
-                                disabled={!newComments[post.id]?.trim()}
-                                className="rounded-full"
+                                variant={following.includes(post.user_id) ? "outline" : "default"}
+                                size="sm"
+                                onClick={() => handleFollow(post.user_id)}
+                                className="rounded-full text-xs h-8"
                               >
-                                <Send className="w-4 h-4" />
+                                {following.includes(post.user_id) ? "Following" : "Follow"}
+                              </Button>
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-popover">
+                                  <DropdownMenuItem onClick={() => handleStartEdit(post)}>
+                                    <Pencil className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => setDeletePostId(post.id)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        {editingPostId === post.id ? (
+                          <div className="space-y-3 mb-4">
+                            <Textarea
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              placeholder="What's on your mind?"
+                              className="min-h-[100px] resize-none"
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <Button variant="ghost" size="sm" onClick={handleCancelEdit} disabled={isSavingEdit}>
+                                Cancel
+                              </Button>
+                              <Button size="sm" onClick={() => handleSaveEdit(post.id)} disabled={!editContent.trim() || isSavingEdit}>
+                                {isSavingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
                               </Button>
                             </div>
                           </div>
+                        ) : (
+                          post.content && (
+                            <p className="text-foreground mb-3 whitespace-pre-wrap leading-relaxed">
+                              {renderPostContent(post.content)}
+                            </p>
+                          )
+                        )}
+                        
+                        {post.image_url && (
+                          <img 
+                            src={post.image_url} 
+                            alt="Post image" 
+                            className="w-full rounded-xl mb-3 max-h-96 object-cover"
+                          />
+                        )}
+                        
+                        {/* Actions Bar */}
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleComments(post.id)}
+                            className="text-muted-foreground hover:text-primary hover:bg-primary/10 gap-2"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span>{post.comments_count}</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleLike(post.id, post.is_liked)}
+                            className={`gap-2 ${post.is_liked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500"}`}
+                          >
+                            <Heart className={`w-4 h-4 ${post.is_liked ? "fill-current" : ""}`} />
+                            <span>{post.likes_count}</span>
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={`gap-2 ${post.is_reposted ? "text-green-500 hover:text-green-600" : "text-muted-foreground hover:text-green-500"}`}
+                              >
+                                <Repeat2 className="w-4 h-4" />
+                                <span>{post.reposts_count}</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="center" className="bg-popover">
+                              <DropdownMenuItem onClick={() => handleRepost(post.id, post.is_reposted)}>
+                                <Repeat2 className="w-4 h-4 mr-2" />
+                                {post.is_reposted ? "Undo Repost" : "Repost"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setQuotePostId(post.id)}>
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Quote
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            onClick={() => {
+                              navigator.clipboard.writeText(window.location.origin + `/community?post=${post.id}`);
+                              toast({ title: "Link copied!" });
+                            }}
+                          >
+                            <Share className="w-4 h-4" />
+                          </Button>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))
+
+                        {/* Comments Section */}
+                        {expandedComments.includes(post.id) && (
+                          <div className="mt-4 pt-4 border-t space-y-3">
+                            {comments[post.id]?.map((comment) => (
+                              <div key={comment.id} className="flex gap-2">
+                                <Link to={`/profile/${comment.user_id}`}>
+                                  <Avatar className="w-8 h-8">
+                                    <AvatarImage src={comment.profiles?.avatar_url || ""} />
+                                    <AvatarFallback className="text-xs bg-muted">
+                                      {comment.profiles?.display_name?.charAt(0) || "U"}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </Link>
+                                <div className="flex-1 bg-muted/50 rounded-2xl px-4 py-2">
+                                  <Link to={`/profile/${comment.user_id}`} className="inline-flex items-center gap-1.5">
+                                    <span className="text-sm font-medium">
+                                      {comment.profiles?.display_name || "Anonymous"}
+                                    </span>
+                                    {comment.profiles?.is_admin && <AdminBadge size="sm" />}
+                                    {comment.profiles?.is_verified && <VerifiedBadge size="sm" />}
+                                  </Link>
+                                  <p className="text-sm">{comment.content}</p>
+                                </div>
+                              </div>
+                            ))}
+                            
+                            <div className="flex gap-2">
+                              <Avatar className="w-8 h-8">
+                                <AvatarImage src={userProfile?.avatar_url || ""} />
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                  {userProfile?.display_name?.charAt(0) || "U"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 flex gap-2">
+                                <Input
+                                  placeholder="Post your reply..."
+                                  value={newComments[post.id] || ""}
+                                  onChange={(e) => setNewComments({ ...newComments, [post.id]: e.target.value })}
+                                  onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
+                                  className="rounded-full"
+                                />
+                                <Button
+                                  size="icon"
+                                  onClick={() => handleComment(post.id)}
+                                  disabled={!newComments[post.id]?.trim()}
+                                  className="rounded-full"
+                                >
+                                  <Send className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
             </div>
           </div>
