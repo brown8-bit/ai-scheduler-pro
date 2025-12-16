@@ -29,6 +29,7 @@ import CalendarPage from "./pages/Calendar";
 import Templates from "./pages/Templates";
 import FocusBlocks from "./pages/FocusBlocks";
 import Gamification from "./pages/Gamification";
+import DailyHabits from "./pages/DailyHabits";
 import AdminSettings from "./pages/AdminSettings";
 import UserSettings from "./pages/UserSettings";
 import Timer from "./pages/Timer";
@@ -76,6 +77,7 @@ const App = () => (
               <Route path="/templates" element={<Templates />} />
               <Route path="/focus" element={<FocusBlocks />} />
               <Route path="/achievements" element={<Gamification />} />
+              <Route path="/habits" element={<DailyHabits />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="/settings" element={<UserSettings />} />
               <Route path="/timer" element={<Timer />} />

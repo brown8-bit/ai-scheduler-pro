@@ -34,11 +34,17 @@ interface Achievement {
   unlocked: boolean;
 }
 
+interface UserPoints {
+  total_xp: number;
+  current_level: number;
+}
+
 const Gamification = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [streakData, setStreakData] = useState<UserStreak | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
+  const [userPoints, setUserPoints] = useState<UserPoints | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,8 +63,22 @@ const Gamification = () => {
     if (user) {
       fetchStreakData();
       fetchLeaderboard();
+      fetchUserPoints();
     }
   }, [user]);
+
+  const fetchUserPoints = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_points")
+      .select("total_xp, current_level")
+      .eq("user_id", user.id)
+      .single();
+    
+    if (data) {
+      setUserPoints(data);
+    }
+  };
 
   const fetchStreakData = async () => {
     if (!user) return;
@@ -254,9 +274,47 @@ const Gamification = () => {
             Achievements & Leaderboard
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-2">
-            Track your progress, earn badges, and compete with others! 🏆
+            Earn XP, level up, and compete with other student-athletes! 🏆
           </p>
         </div>
+
+        {/* XP and Level Overview */}
+        {userPoints && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <CardContent className="pt-4 pb-4">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Level</p>
+                  <p className="text-3xl font-bold text-primary">{userPoints.current_level}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-4">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Total XP</p>
+                  <p className="text-3xl font-bold">{userPoints.total_xp}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-4">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Next Level</p>
+                  <p className="text-3xl font-bold">{100 - (userPoints.total_xp % 100)} XP</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-4">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Badges</p>
+                  <p className="text-3xl font-bold">{unlockedCount}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <Tabs defaultValue="achievements" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
