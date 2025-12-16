@@ -3,19 +3,22 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Loader2, Crown, X, Flame, Clock, BadgeCheck } from "lucide-react";
+import { Check, Sparkles, Loader2, Crown, X, Flame, Clock, BadgeCheck, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 const Pricing = () => {
   const [loadingMonthly, setLoadingMonthly] = useState(false);
+  const [loadingEarlyBird, setLoadingEarlyBird] = useState(false);
   const [loadingLifetime, setLoadingLifetime] = useState(false);
   const [loadingVerified, setLoadingVerified] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [highlightLifetime, setHighlightLifetime] = useState(false);
+  const [highlightEarlyBird, setHighlightEarlyBird] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const lifetimeRef = useRef<HTMLDivElement>(null);
+  const earlyBirdRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -24,10 +27,16 @@ const Pricing = () => {
   }, []);
 
   useEffect(() => {
-    if (searchParams.get("plan") === "lifetime") {
+    const plan = searchParams.get("plan");
+    if (plan === "lifetime") {
       setHighlightLifetime(true);
       setTimeout(() => {
         lifetimeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    } else if (plan === "earlybird") {
+      setHighlightEarlyBird(true);
+      setTimeout(() => {
+        earlyBirdRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 300);
     }
   }, [searchParams]);
@@ -41,6 +50,16 @@ const Pricing = () => {
     { name: "Priority support", included: false },
     { name: "Analytics", included: false },
     { name: "API access", included: false },
+  ];
+
+  const earlyBirdFeatures = [
+    { name: "50 AI requests/month", included: true },
+    { name: "Full calendar view", included: true },
+    { name: "5 event templates", included: true },
+    { name: "Calendar sync", included: true },
+    { name: "Team collaboration (3 members)", included: true },
+    { name: "Email support", included: true },
+    { name: "Basic analytics", included: true },
   ];
 
   const proFeatures = [
@@ -74,6 +93,33 @@ const Pricing = () => {
     { name: "Full API access", included: true },
     { name: "Community access", included: true },
   ];
+
+  const handleEarlyBirdPurchase = async () => {
+    if (!user) {
+      navigate("/register");
+      return;
+    }
+
+    setLoadingEarlyBird(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-earlybird-checkout");
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error: any) {
+      console.error("Early Bird checkout error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start checkout. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingEarlyBird(false);
+    }
+  };
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -175,7 +221,7 @@ const Pricing = () => {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto animate-slide-up delay-100">
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-7xl mx-auto animate-slide-up delay-100">
             {/* Free Plan */}
             <div className="bg-card rounded-3xl shadow-card border border-border p-6 relative overflow-hidden">
               <div className="relative">
@@ -217,6 +263,71 @@ const Pricing = () => {
                       <span className={feature.included ? "text-foreground text-sm" : "text-muted-foreground text-sm line-through"}>
                         {feature.name}
                       </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Early Bird Pro Plan */}
+            <div 
+              ref={earlyBirdRef}
+              className={`bg-card rounded-3xl shadow-card border-2 p-6 relative overflow-hidden transition-all duration-500 ${
+                highlightEarlyBird 
+                  ? "border-green-500 ring-4 ring-green-500/30 scale-105 shadow-lg" 
+                  : "border-green-500"
+              }`}
+            >
+              <div className="absolute top-0 right-0 w-40 h-40 bg-green-500 opacity-10 rounded-full blur-3xl" />
+              <div className="absolute top-4 right-4">
+                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-500 text-white text-xs font-semibold animate-pulse-soft">
+                  <Zap className="w-3 h-3" />
+                  Limited Spots
+                </div>
+              </div>
+              
+              <div className="relative">
+                <div className="text-center mb-6 pt-4">
+                  <h2 className="text-2xl font-bold">Early Bird</h2>
+                  <p className="text-muted-foreground mt-2 text-sm">Great value for early adopters</p>
+                  
+                  <div className="mt-6">
+                    <span className="text-xl text-muted-foreground line-through mr-2">$29</span>
+                    <span className="text-5xl font-bold text-green-500">$11</span>
+                    <span className="text-xl text-muted-foreground">/month</span>
+                  </div>
+                  
+                  <p className="text-sm text-green-600 dark:text-green-400 font-medium mt-2">
+                    Save 62% forever!
+                  </p>
+                </div>
+
+                <Button 
+                  size="lg" 
+                  className="w-full bg-green-500 hover:bg-green-600 text-white"
+                  onClick={handleEarlyBirdPurchase}
+                  disabled={loadingEarlyBird}
+                >
+                  {loadingEarlyBird ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 mr-2" />
+                      Claim Early Bird
+                    </>
+                  )}
+                </Button>
+
+                <div className="mt-6 space-y-3">
+                  {earlyBirdFeatures.map((feature) => (
+                    <div key={feature.name} className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-foreground text-sm">{feature.name}</span>
                     </div>
                   ))}
                 </div>
