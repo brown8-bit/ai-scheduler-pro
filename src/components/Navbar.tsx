@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users, User, ChevronDown, MessageSquare, Timer, BarChart3, Sparkles, Clock, BookTemplate } from "lucide-react";
+import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users, User, ChevronDown, MessageSquare, Timer, BarChart3, Sparkles, Clock, BookTemplate, Briefcase, Receipt, UserPlus } from "lucide-react";
 import schedulrLogo from "@/assets/schedulr-logo.png";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -82,6 +82,12 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     { path: "/community", label: "Community", icon: Users },
   ];
 
+  const businessLinks = [
+    { path: "/clients", label: "Clients", icon: UserPlus },
+    { path: "/team", label: "Team", icon: Briefcase },
+    { path: "/invoices", label: "Invoices", icon: Receipt },
+  ];
+
   const userInitial = displayName.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U";
 
   return (
@@ -120,9 +126,22 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-48">
-                <DropdownMenuLabel>Quick Access</DropdownMenuLabel>
+                <DropdownMenuLabel>Productivity</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {featureLinks.map((link) => (
+                  <DropdownMenuItem 
+                    key={link.path} 
+                    onClick={() => navigate(link.path)} 
+                    className="cursor-pointer"
+                  >
+                    <link.icon className="mr-2 h-4 w-4" />
+                    {link.label}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Business</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {businessLinks.map((link) => (
                   <DropdownMenuItem 
                     key={link.path} 
                     onClick={() => navigate(link.path)} 
@@ -266,6 +285,26 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
               </div>
               
               {featureLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button
+                    variant="ghost"
+                    className={`w-full justify-start gap-2 ${isActive(link.path) ? "bg-accent" : ""}`}
+                  >
+                    <link.icon className="w-4 h-4" />
+                    {link.label}
+                  </Button>
+                </Link>
+              ))}
+              
+              <div className="px-4 py-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Business</p>
+              </div>
+              
+              {businessLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
