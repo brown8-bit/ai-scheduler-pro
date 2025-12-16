@@ -88,12 +88,12 @@ const Index = () => {
     {
       icon: MessageSquare,
       title: "AI Scheduling",
-      description: "Schedule practices, classes, and study sessions with natural language."
+      description: "Schedule classes, study sessions, work shifts, and activities with natural language."
     },
     {
       icon: Clock,
-      title: "Balance Sports & School",
-      description: "Smart scheduling that works around your games, practices, and classes."
+      title: "Balance Everything",
+      description: "Smart scheduling that works around your classes, activities, jobs, and social life."
     },
     {
       icon: Zap,
@@ -103,7 +103,7 @@ const Index = () => {
     {
       icon: Shield,
       title: "Stay Accountable",
-      description: "Earn XP, level up, and compete with other student-athletes."
+      description: "Earn XP, level up, and compete with other students."
     }
   ];
 
@@ -117,8 +117,8 @@ const Index = () => {
     },
     {
       icon: Trophy,
-      title: "Student-Athlete Pro",
-      description: "Balance 50 academic and sports tasks",
+      title: "Campus Champion",
+      description: "Balance 50 academic and personal tasks",
       reward: "+200 XP",
       progress: 62
     },
@@ -176,17 +176,17 @@ const Index = () => {
               
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
                 <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                Built for Student-Athletes 🏆
+                Built for College Students 🎓
               </div>
               
               <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight animate-fade-in delay-100">
-                Balance Sports
+                Master Your
                 <br />
-                <span className="text-gradient">& Academics</span>
+                <span className="text-gradient">College Life</span>
               </h1>
 
               <p className="mt-4 sm:mt-6 text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200 px-2">
-                The AI-powered app that helps student-athletes manage practices, classes, daily habits, 
+                The AI-powered app for students and student-athletes to manage classes, activities, daily habits, 
                 and goals. Earn points, level up, and stay on top of your game! 💪
               </p>
             </>
@@ -354,12 +354,12 @@ const Index = () => {
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">How It Works 🎯</h2>
           <p className="mt-3 sm:mt-4 text-sm sm:text-lg text-muted-foreground max-w-xl mx-auto px-2">
-            Stay on top of sports, school, and daily wellness in three easy steps!
+            Stay on top of school, activities, and daily wellness in three easy steps!
           </p>
 
           <div className="mt-10 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { step: "1", emoji: "📅", title: "Schedule Everything", desc: "AI helps you plan practices, classes, and study time" },
+              { step: "1", emoji: "📅", title: "Schedule Everything", desc: "AI helps you plan classes, activities, work, and study time" },
               { step: "2", emoji: "✅", title: "Track Daily Habits", desc: "Complete health, academic, and self-care goals" },
               { step: "3", emoji: "🏆", title: "Earn & Compete", desc: "Get XP, level up, and climb the leaderboard" }
             ].map((item, index) => (
@@ -408,10 +408,10 @@ const Index = () => {
         <div className="max-w-4xl mx-auto text-center">
           <div className="p-6 sm:p-12 rounded-2xl sm:rounded-3xl gradient-primary shadow-glow">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-foreground">
-              Ready to dominate both fields? 🏆
+              Ready to crush college life? 🏆
             </h2>
             <p className="mt-3 sm:mt-4 text-primary-foreground/80 text-sm sm:text-lg px-2">
-              Join thousands of student-athletes who balance sports, academics, and wellness every day!
+              Join thousands of college students who balance academics, activities, and wellness every day!
             </p>
             <Link to="/register" className="mt-6 sm:mt-8 inline-block w-full sm:w-auto">
               <Button variant="glass" size="xl" className="w-full sm:w-auto bg-background/20 text-primary-foreground border-primary-foreground/20 hover:bg-background/30">
