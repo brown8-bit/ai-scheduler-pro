@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users, User } from "lucide-react";
+import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users, User, ChevronDown, MessageSquare, Timer, BarChart3, Sparkles, Clock, BookTemplate } from "lucide-react";
 import schedulrLogo from "@/assets/schedulr-logo.png";
 import { useState, useEffect, forwardRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -67,11 +67,18 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     { path: "/", label: "Home" },
     { path: "/chat", label: "AI Chat" },
     { path: "/dashboard", label: "Dashboard" },
-    { path: "/calendar", label: "Calendar" },
-    { path: "/habits", label: "Habits" },
-    { path: "/progress", label: "Progress" },
-    { path: "/achievements", label: "Achievements" },
-    { path: "/community", label: "Community" },
+  ];
+
+  const featureLinks = [
+    { path: "/calendar", label: "Calendar", icon: CalendarDays },
+    { path: "/habits", label: "Daily Habits", icon: Target },
+    { path: "/focus-blocks", label: "Focus Blocks", icon: Clock },
+    { path: "/timer", label: "Focus Timer", icon: Timer },
+    { path: "/templates", label: "Templates", icon: BookTemplate },
+    { path: "/progress", label: "Progress", icon: TrendingUp },
+    { path: "/achievements", label: "Achievements", icon: Trophy },
+    { path: "/analytics", label: "Analytics", icon: BarChart3 },
+    { path: "/community", label: "Community", icon: Users },
   ];
 
   const userInitial = displayName.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U";
@@ -102,6 +109,30 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                 </Button>
               </Link>
             ))}
+            
+            {/* Features Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="gap-1">
+                  Features
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-48">
+                <DropdownMenuLabel>Quick Access</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {featureLinks.map((link) => (
+                  <DropdownMenuItem 
+                    key={link.path} 
+                    onClick={() => navigate(link.path)} 
+                    className="cursor-pointer"
+                  >
+                    <link.icon className="mr-2 h-4 w-4" />
+                    {link.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Auth Buttons */}
@@ -228,6 +259,27 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                   </Button>
                 </Link>
               ))}
+              
+              <div className="px-4 py-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Features</p>
+              </div>
+              
+              {featureLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button
+                    variant="ghost"
+                    className={`w-full justify-start gap-2 ${isActive(link.path) ? "bg-accent" : ""}`}
+                  >
+                    <link.icon className="w-4 h-4" />
+                    {link.label}
+                  </Button>
+                </Link>
+              ))}
+              
               <hr className="my-2 border-border" />
               {user ? (
                 <>
