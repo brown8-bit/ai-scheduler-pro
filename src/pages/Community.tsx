@@ -40,6 +40,7 @@ import {
   Mail,
   Feather,
   X as XIcon,
+  HelpCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -60,6 +61,7 @@ import {
 import VerifiedBadge from "@/components/VerifiedBadge";
 import AdminBadge from "@/components/AdminBadge";
 import { formatDistanceToNow } from "date-fns";
+import CommunityTour from "@/components/CommunityTour";
 
 interface Post {
   id: string;
@@ -156,6 +158,12 @@ const Community = () => {
       return !localStorage.getItem("community_onboarding_dismissed");
     }
     return true;
+  });
+  const [showTour, setShowTour] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !localStorage.getItem("community_tour_completed");
+    }
+    return false;
   });
   const postInputRef = useRef<HTMLTextAreaElement>(null);
   // Extract hashtags from all posts for trending with engagement metrics
@@ -1250,7 +1258,7 @@ const Community = () => {
                       <p className="text-sm text-muted-foreground mb-3">
                         Join the creator community – like, comment, and get feedback on your scheduled previews from fellow Schedulrs!
                       </p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 mb-3">
                         <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
                           <Heart className="w-3 h-3" /> Like posts
                         </span>
@@ -1261,6 +1269,18 @@ const Community = () => {
                           <UserPlus className="w-3 h-3" /> Follow creators
                         </span>
                       </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          dismissOnboarding();
+                          setShowTour(true);
+                        }}
+                        className="gap-2"
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                        Take a quick tour
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -1362,6 +1382,7 @@ const Community = () => {
                   <div className="flex-1">
                     <Textarea
                       ref={postInputRef}
+                      data-tour="post-input"
                       placeholder="What's happening? Use #hashtags to join conversations..."
                       value={newPost}
                       onChange={handleNewPostChange}
@@ -1702,6 +1723,7 @@ const Community = () => {
                           <Button
                             variant="ghost"
                             size="sm"
+                            data-tour="comment-button"
                             onClick={() => toggleComments(post.id)}
                             className="text-muted-foreground hover:text-primary hover:bg-primary/10 gap-2"
                           >
@@ -1711,6 +1733,7 @@ const Community = () => {
                           <Button
                             variant="ghost"
                             size="sm"
+                            data-tour="like-button"
                             onClick={() => handleLike(post.id, post.is_liked)}
                             className={`gap-2 ${post.is_liked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500"}`}
                           >
@@ -1831,7 +1854,7 @@ const Community = () => {
               </div>
 
               {/* Trending - X-style */}
-              <Card className="overflow-hidden">
+              <Card className="overflow-hidden" data-tour="trending-section">
                 <CardHeader className="pb-0 pt-3 px-4">
                   <h3 className="text-xl font-bold">Trends for you</h3>
                 </CardHeader>
@@ -1967,6 +1990,7 @@ const Community = () => {
                                 <Mail className="w-4 h-4" />
                               </Button>
                               <Button
+                                data-tour="follow-button"
                                 size="sm"
                                 variant="outline"
                                 className="rounded-full h-8"
@@ -2084,6 +2108,12 @@ const Community = () => {
       >
         <Feather className="w-6 h-6" />
       </button>
+
+      {/* Guided Tour */}
+      <CommunityTour 
+        isOpen={showTour} 
+        onComplete={() => setShowTour(false)} 
+      />
     </div>
   );
 };
