@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
+import { PresenceProvider } from "@/contexts/PresenceContext";
 import ScheddyLoader from "@/components/ScheddyLoader";
 
 // Regular imports for most pages (no loading animation)
@@ -56,10 +57,11 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <ThemeInitializer />
-          <Toaster />
-          <Sonner />
+        <PresenceProvider>
+          <TooltipProvider>
+            <ThemeInitializer />
+            <Toaster />
+            <Sonner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -108,7 +110,8 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </TooltipProvider>
+          </TooltipProvider>
+        </PresenceProvider>
       </AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>

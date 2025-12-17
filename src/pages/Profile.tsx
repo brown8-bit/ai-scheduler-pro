@@ -51,6 +51,9 @@ import { Textarea } from "@/components/ui/textarea";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import AdminBadge from "@/components/AdminBadge";
 import { formatDistanceToNow } from "date-fns";
+import { AvatarWithPresence } from "@/components/AvatarWithPresence";
+import { PresenceIndicator } from "@/components/PresenceIndicator";
+import { usePresenceContext } from "@/contexts/PresenceContext";
 
 interface ProfileData {
   user_id: string;
@@ -98,6 +101,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
   const { user } = useAuth();
+  const { isUserOnline } = usePresenceContext();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [followers, setFollowers] = useState<FollowUser[]>([]);
@@ -521,12 +525,19 @@ const Profile = () => {
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
               {/* Avatar */}
-              <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-background shadow-lg">
-                <AvatarImage src={profile.avatar_url || ""} />
-                <AvatarFallback className="text-3xl bg-primary/10 text-primary">
-                  {profile.display_name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-background shadow-lg">
+                  <AvatarImage src={profile.avatar_url || ""} />
+                  <AvatarFallback className="text-3xl bg-primary/10 text-primary">
+                    {profile.display_name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <PresenceIndicator 
+                  isOnline={isUserOnline(profile.user_id)} 
+                  size="lg" 
+                  className="bottom-1 right-1 sm:bottom-2 sm:right-2" 
+                />
+              </div>
 
               {/* Profile Info */}
               <div className="flex-1 text-center sm:text-left">

@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import ShareLinkModal from "@/components/ShareLinkModal";
 import { toast } from "@/hooks/use-toast";
+import { PresenceIndicator } from "@/components/PresenceIndicator";
 
 const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const location = useLocation();
@@ -193,13 +194,14 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                 {/* Avatar Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full">
+                    <button className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full relative">
                       <Avatar className="w-9 h-9 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                         <AvatarImage src={avatarUrl || undefined} alt={displayName} />
                         <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                           {userInitial}
                         </AvatarFallback>
                       </Avatar>
+                      <PresenceIndicator isOnline={true} size="sm" className="bottom-0 right-0" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -344,12 +346,15 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                   {/* Mobile Profile Section */}
                   <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
                     <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                          {userInitial}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={avatarUrl || undefined} alt={displayName} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                            {userInitial}
+                          </AvatarFallback>
+                        </Avatar>
+                        <PresenceIndicator isOnline={true} size="sm" className="bottom-0 right-0" />
+                      </div>
                       <div className="flex-1">
                         <p className="font-medium text-sm">{displayName || "User"}</p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
