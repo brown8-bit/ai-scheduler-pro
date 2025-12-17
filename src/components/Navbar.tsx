@@ -16,7 +16,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import ShareLinkModal from "@/components/ShareLinkModal";
-import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { toast } from "@/hooks/use-toast";
 
 const Navbar = forwardRef<HTMLElement>((_, ref) => {
@@ -102,12 +101,15 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <img 
-              src={schedulrLogo} 
-              alt="Schedulr" 
-              className="w-9 h-9 rounded-lg shadow-elegant group-hover:shadow-lg group-hover:scale-105 transition-all"
-            />
-            <span className="font-bold text-xl text-foreground">Schedulr</span>
+            <div className="relative">
+              <img 
+                src={schedulrLogo} 
+                alt="Schedulr" 
+                className="w-9 h-9 rounded-lg shadow-elegant group-hover:shadow-glow group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 ease-out"
+              />
+              <div className="absolute inset-0 rounded-lg bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md -z-10" />
+            </div>
+            <span className="font-bold text-xl text-foreground group-hover:text-primary transition-colors duration-300">Schedulr</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -174,7 +176,6 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                     <Mail className="w-5 h-5" />
                   </Button>
                 </Link>
-                <NotificationsDropdown />
                 <ShareLinkModal 
                   trigger={
                     <Button variant="outline" className="gap-2">
