@@ -20,7 +20,11 @@ import {
   Crown,
   ExternalLink,
   Check,
-  X
+  X,
+  Heart,
+  MessageCircle,
+  Repeat2,
+  UserPlus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +32,21 @@ import { useTheme } from "@/hooks/useTheme";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import NotificationToggle from "@/components/NotificationToggle";
+import { formatDistanceToNow } from "date-fns";
+
+interface ActivityNotification {
+  id: string;
+  user_id: string;
+  actor_id: string;
+  type: 'like' | 'comment' | 'repost' | 'quote' | 'follow';
+  post_id: string | null;
+  is_read: boolean;
+  created_at: string;
+  actor_profile?: {
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+}
 
 const UserSettings = () => {
   const navigate = useNavigate();
@@ -54,6 +73,11 @@ const UserSettings = () => {
   const [workdayEnd, setWorkdayEnd] = useState("17:00");
   const [soundNotifications, setSoundNotifications] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
+  
+  // Activity Notifications State
+  const [activityNotifications, setActivityNotifications] = useState<ActivityNotification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [checkingName, setCheckingName] = useState(false);
   const [nameAvailable, setNameAvailable] = useState<boolean | null>(null);
   const [originalName, setOriginalName] = useState("");
@@ -67,8 +91,85 @@ const UserSettings = () => {
       setDisplayName(user.email?.split("@")[0] || "");
       fetchProfile();
       checkSubscription();
+      fetchActivityNotifications();
     }
   }, [user, authLoading, navigate]);
+
+  const fetchActivityNotifications = async () => {
+    if (!user) return;
+    setNotificationsLoading(true);
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error('Error fetching notifications:', error);
+      setNotificationsLoading(false);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const actorIds = [...new Set(data.map(n => n.actor_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', actorIds);
+
+      const enrichedNotifications = data.map(notification => ({
+        ...notification,
+        actor_profile: profiles?.find(p => p.user_id === notification.actor_id),
+      }));
+
+      setActivityNotifications(enrichedNotifications as ActivityNotification[]);
+      setUnreadCount(data.filter(n => !n.is_read).length);
+    }
+    setNotificationsLoading(false);
+  };
+
+  const markAllAsRead = async () => {
+    if (!user) return;
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false);
+
+    setActivityNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+    toast({ title: "All notifications marked as read" });
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'like':
+        return <Heart className="h-4 w-4 text-red-500 fill-red-500" />;
+      case 'comment':
+        return <MessageCircle className="h-4 w-4 text-blue-500" />;
+      case 'repost':
+      case 'quote':
+        return <Repeat2 className="h-4 w-4 text-green-500" />;
+      case 'follow':
+        return <UserPlus className="h-4 w-4 text-primary" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+
+  const getNotificationText = (notification: ActivityNotification) => {
+    const name = notification.actor_profile?.display_name || 'Someone';
+    switch (notification.type) {
+      case 'like': return `${name} liked your post`;
+      case 'comment': return `${name} commented on your post`;
+      case 'repost': return `${name} reposted your post`;
+      case 'quote': return `${name} quoted your post`;
+      case 'follow': return `${name} started following you`;
+      default: return `${name} interacted with your content`;
+    }
+  };
 
   const checkSubscription = async () => {
     setSubscriptionLoading(true);
@@ -541,7 +642,72 @@ const UserSettings = () => {
               </div>
             </div>
 
-            {/* Calendar Preferences */}
+            {/* Activity Notifications */}
+            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-primary" />
+                  Activity
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
+                </h2>
+                {unreadCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs">
+                    Mark all read
+                  </Button>
+                )}
+              </div>
+              
+              {notificationsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : activityNotifications.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No notifications yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {activityNotifications.map(notification => (
+                    <div
+                      key={notification.id}
+                      onClick={() => {
+                        if (notification.post_id) {
+                          navigate(`/community?post=${notification.post_id}`);
+                        } else if (notification.type === 'follow') {
+                          navigate('/community');
+                        }
+                      }}
+                      className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-secondary/50 ${!notification.is_read ? 'bg-primary/5' : ''}`}
+                    >
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        <AvatarImage src={notification.actor_profile?.avatar_url || ''} />
+                        <AvatarFallback className="text-xs">
+                          {notification.actor_profile?.display_name?.charAt(0) || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {getNotificationIcon(notification.type)}
+                          <span className="text-sm">{getNotificationText(notification)}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                      {!notification.is_read && (
+                        <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-2" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="bg-card rounded-xl border border-border p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-primary" />
