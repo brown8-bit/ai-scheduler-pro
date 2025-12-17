@@ -111,7 +111,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1 ml-8">
             {navLinks.map((link) => (
               <Link key={link.path} to={link.path}>
                 <Button
