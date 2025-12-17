@@ -1206,6 +1206,10 @@ const Community = () => {
                     <Users className="w-5 h-5" />
                     Community
                   </Link>
+                  <Link to="/discover" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                    <Sparkles className="w-5 h-5" />
+                    Discover
+                  </Link>
                   <Link to="/messages" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
                     <Mail className="w-5 h-5" />
                     Messages
@@ -2002,6 +2006,12 @@ const Community = () => {
                           </div>
                         ))}
                     </div>
+                    <Link 
+                      to="/discover" 
+                      className="block text-center text-sm text-primary hover:underline mt-3 pt-3 border-t"
+                    >
+                      Discover more Schedulrs →
+                    </Link>
                   </CardContent>
                 </Card>
               )}
