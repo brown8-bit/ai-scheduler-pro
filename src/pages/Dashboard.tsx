@@ -58,6 +58,11 @@ interface Booking {
   booking_time: string;
   status: string;
   created_at: string;
+  notes: string | null;
+  slot_id: string | null;
+  booking_slots?: {
+    title: string;
+  } | null;
 }
 
 interface UserStreak {
@@ -135,17 +140,49 @@ const Dashboard = () => {
   };
 
   const fetchBookings = async () => {
+    if (!user) return;
     try {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*")
-        .order("created_at", { ascending: false })
+        .select("*, booking_slots(title)")
+        .eq("host_user_id", user.id)
+        .order("booking_date", { ascending: true })
         .limit(5);
 
       if (error) throw error;
       setBookings(data || []);
     } catch (error) {
       console.error("Error fetching bookings:", error);
+    }
+  };
+
+  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: newStatus })
+        .eq("id", bookingId);
+
+      if (error) throw error;
+
+      toast({
+        title: newStatus === 'confirmed' ? "Booking confirmed! ✅" : "Booking cancelled",
+        description: newStatus === 'confirmed' 
+          ? "The guest will be notified." 
+          : "The booking has been cancelled.",
+      });
+
+      // Update local state
+      setBookings(prev => 
+        prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b)
+      );
+    } catch (error) {
+      console.error("Error updating booking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update booking status.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -464,27 +501,63 @@ const Dashboard = () => {
                 ) : (
                   <div className="space-y-3">
                     {bookings.slice(0, 3).map((booking) => (
-                      <div key={booking.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div key={booking.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border group hover:bg-secondary/70 transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <span className="text-primary font-medium">
                             {booking.guest_name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{booking.guest_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(booking.booking_date), "MMM d")} at {booking.booking_time}
+                          <p className="text-sm text-muted-foreground truncate">
+                            {booking.booking_slots?.title || "Meeting"} • {format(new Date(booking.booking_date), "MMM d")} at {booking.booking_time}
                           </p>
+                          <p className="text-xs text-muted-foreground truncate">{booking.guest_email}</p>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          booking.status === 'confirmed' 
-                            ? 'bg-green-500/10 text-green-600' 
-                            : 'bg-yellow-500/10 text-yellow-600'
-                        }`}>
-                          {booking.status}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            booking.status === 'confirmed' 
+                              ? 'bg-green-500/10 text-green-600' 
+                              : booking.status === 'cancelled'
+                              ? 'bg-red-500/10 text-red-600'
+                              : 'bg-yellow-500/10 text-yellow-600'
+                          }`}>
+                            {booking.status}
+                          </span>
+                          {booking.status !== 'cancelled' && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <ChevronDown className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40 bg-popover">
+                                {booking.status !== 'confirmed' && (
+                                  <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'confirmed')}>
+                                    <Check className="w-4 h-4 mr-2 text-green-500" />
+                                    Confirm
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem 
+                                  onClick={() => updateBookingStatus(booking.id, 'cancelled')}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <CalendarCheck className="w-4 h-4 mr-2" />
+                                  Cancel
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </div>
                     ))}
+                    {bookings.length > 3 && (
+                      <Link to="/booking-settings">
+                        <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
+                          View all {bookings.length} bookings
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>
