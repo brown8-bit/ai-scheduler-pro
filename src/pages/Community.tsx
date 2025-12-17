@@ -62,6 +62,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import AdminBadge from "@/components/AdminBadge";
 import { formatDistanceToNow } from "date-fns";
 import CommunityTour from "@/components/CommunityTour";
+import { AvatarWithPresence } from "@/components/AvatarWithPresence";
 
 interface Post {
   id: string;
@@ -1968,12 +1969,12 @@ const Community = () => {
                         .map((suggestedUser) => (
                           <div key={suggestedUser.user_id} className="flex items-center justify-between gap-2">
                             <Link to={`/profile/${suggestedUser.user_id}`} className="flex items-center gap-2 hover:opacity-80 min-w-0 flex-1">
-                              <Avatar className="w-10 h-10 shrink-0">
-                                <AvatarImage src={suggestedUser.avatar_url || ""} />
-                                <AvatarFallback className="bg-primary/10 text-primary">
-                                  {suggestedUser.display_name?.charAt(0) || "U"}
-                                </AvatarFallback>
-                              </Avatar>
+                              <AvatarWithPresence
+                                userId={suggestedUser.user_id}
+                                avatarUrl={suggestedUser.avatar_url}
+                                displayName={suggestedUser.display_name || "User"}
+                                size="md"
+                              />
                               <div className="min-w-0">
                                 <p className="font-medium text-sm flex items-center gap-1 truncate">
                                   {suggestedUser.display_name || "User"}
