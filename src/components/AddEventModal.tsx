@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, Plus } from "lucide-react";
+import { CalendarIcon, Clock, Plus, Users, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +69,7 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrencePattern, setRecurrencePattern] = useState("weekly");
   const [reminder, setReminder] = useState(false);
+  const [shareToCommunity, setShareToCommunity] = useState(false);
 
   const resetForm = () => {
     setTitle("");
@@ -78,6 +80,7 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
     setIsRecurring(false);
     setRecurrencePattern("weekly");
     setReminder(false);
+    setShareToCommunity(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,6 +124,25 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
       });
 
       if (error) throw error;
+
+      // Share to community if checkbox is checked
+      if (shareToCommunity) {
+        const categoryLabel = EVENT_CATEGORIES.find(c => c.value === category)?.label || "General";
+        const scheduledDateStr = format(eventDate, "EEEE, MMMM d 'at' h:mm a");
+        
+        const communityContent = `📅 Scheduled preview – feedback welcome!\n\n**${title.trim()}**${description.trim() ? `\n\n${description.trim()}` : ""}\n\n🗓️ ${scheduledDateStr}\n📁 ${categoryLabel}${isRecurring ? `\n🔄 Repeats ${recurrencePattern}` : ""}\n\n#scheduled #${category} #productivity`;
+        
+        const { error: postError } = await supabase.from("social_posts").insert({
+          user_id: userId,
+          content: communityContent,
+          post_type: "scheduled_preview",
+        });
+
+        if (postError) {
+          console.error("Error sharing to community:", postError);
+          // Don't fail the whole operation if community post fails
+        }
+      }
 
       const randomPhrase = CONFIRMATION_PHRASES[Math.floor(Math.random() * CONFIRMATION_PHRASES.length)];
       
@@ -266,6 +288,26 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
               checked={isRecurring}
               onCheckedChange={setIsRecurring}
             />
+          </div>
+
+          {/* Share to Community */}
+          <div className="flex items-start space-x-3 py-3 px-3 rounded-lg bg-primary/5 border border-primary/20">
+            <Checkbox
+              id="share-community"
+              checked={shareToCommunity}
+              onCheckedChange={(checked) => setShareToCommunity(checked === true)}
+              className="mt-0.5"
+            />
+            <div className="flex-1 space-y-1">
+              <Label htmlFor="share-community" className="cursor-pointer flex items-center gap-2 text-sm font-medium">
+                <Users className="w-4 h-4 text-primary" />
+                Share preview to Community
+              </Label>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <MessageCircle className="w-3 h-3" />
+                Get feedback from fellow Schedulrs before it happens!
+              </p>
+            </div>
           </div>
 
           {isRecurring && (
