@@ -44,6 +44,7 @@ import Tasks from "./pages/Tasks";
 import Grades from "./pages/Grades";
 import Referrals from "./pages/Referrals";
 import Messages from "./pages/Messages";
+import Discover from "./pages/Discover";
 import NotFound from "./pages/NotFound";
 
 // Only lazy load Chat page to show Scheddy loader
@@ -103,6 +104,7 @@ const App = () => (
               <Route path="/grades" element={<Grades />} />
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/messages" element={<Messages />} />
+              <Route path="/discover" element={<Discover />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
