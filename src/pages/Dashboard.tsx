@@ -65,6 +65,17 @@ interface Booking {
   } | null;
 }
 
+interface BookingSlot {
+  id: string;
+  title: string;
+  duration_minutes: number;
+  available_days: number[] | null;
+  start_hour: number;
+  end_hour: number;
+  is_active: boolean | null;
+  public_slug: string | null;
+}
+
 interface UserStreak {
   current_streak: number;
   longest_streak: number;
@@ -76,6 +87,7 @@ const Dashboard = () => {
   const { user, loading } = useAuth();
   const [events, setEvents] = useState<ScheduledEvent[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingSlot, setBookingSlot] = useState<BookingSlot | null>(null);
   const [streak, setStreak] = useState<UserStreak | null>(null);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -95,6 +107,7 @@ const Dashboard = () => {
     if (user) {
       fetchEvents();
       fetchBookings();
+      fetchBookingSlot();
       fetchStreak();
     }
   }, [user]);
@@ -153,6 +166,22 @@ const Dashboard = () => {
       setBookings(data || []);
     } catch (error) {
       console.error("Error fetching bookings:", error);
+    }
+  };
+
+  const fetchBookingSlot = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("booking_slots")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setBookingSlot(data);
+    } catch (error) {
+      console.error("Error fetching booking slot:", error);
     }
   };
 
@@ -475,89 +504,137 @@ const Dashboard = () => {
                 )}
               </div>
 
-              {/* Recent Bookings */}
+              {/* Booking Page & Recent Bookings */}
               <div className="bg-card rounded-xl border border-border p-6 shadow-card">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold flex items-center gap-2">
                     <Users className="w-5 h-5 text-primary" />
-                    Recent Bookings
+                    Booking Page
                   </h2>
                   <Link to="/booking-settings">
                     <Button variant="ghost" size="sm" className="gap-1">
-                      Manage <ChevronRight className="w-4 h-4" />
+                      Settings <ChevronRight className="w-4 h-4" />
                     </Button>
                   </Link>
                 </div>
-                {bookings.length === 0 ? (
+
+                {/* Show booking slot settings if configured */}
+                {bookingSlot ? (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-medium">{bookingSlot.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {bookingSlot.duration_minutes} min • {bookingSlot.start_hour}:00 - {bookingSlot.end_hour}:00
+                          </p>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          bookingSlot.is_active 
+                            ? 'bg-green-500/10 text-green-600' 
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {bookingSlot.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      {bookingSlot.public_slug && (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 text-xs text-muted-foreground truncate bg-background rounded px-2 py-1 border">
+                            {window.location.origin}/book/{bookingSlot.public_slug}
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/book/${bookingSlot.public_slug}`);
+                              toast({ title: "Link copied! 📋" });
+                            }}
+                          >
+                            <Link2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Recent Bookings */}
+                    {bookings.length > 0 ? (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Recent Bookings</p>
+                        <div className="space-y-2">
+                          {bookings.slice(0, 3).map((booking) => (
+                            <div key={booking.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border group hover:bg-secondary/70 transition-colors">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-primary font-medium text-sm">
+                                  {booking.guest_name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{booking.guest_name}</p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {format(new Date(booking.booking_date), "MMM d")} at {booking.booking_time}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  booking.status === 'confirmed' 
+                                    ? 'bg-green-500/10 text-green-600' 
+                                    : booking.status === 'cancelled'
+                                    ? 'bg-red-500/10 text-red-600'
+                                    : 'bg-yellow-500/10 text-yellow-600'
+                                }`}>
+                                  {booking.status}
+                                </span>
+                                {booking.status !== 'cancelled' && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <ChevronDown className="w-3 h-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-36 bg-popover">
+                                      {booking.status !== 'confirmed' && (
+                                        <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'confirmed')}>
+                                          <Check className="w-4 h-4 mr-2 text-green-500" />
+                                          Confirm
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuItem 
+                                        onClick={() => updateBookingStatus(booking.id, 'cancelled')}
+                                        className="text-destructive focus:text-destructive"
+                                      >
+                                        <CalendarCheck className="w-4 h-4 mr-2" />
+                                        Cancel
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {bookings.length > 3 && (
+                            <Link to="/booking-settings">
+                              <Button variant="ghost" size="sm" className="w-full text-muted-foreground text-xs">
+                                View all {bookings.length} bookings
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        No bookings yet. Share your link to get started!
+                      </p>
+                    )}
+                  </div>
+                ) : (
                   <div className="text-center py-6">
-                    <p className="text-muted-foreground text-sm mb-3">No bookings yet</p>
+                    <p className="text-muted-foreground text-sm mb-3">Set up your booking page to let others schedule time with you</p>
                     <Link to="/booking-settings">
                       <Button variant="outline" size="sm" className="gap-2">
                         <Link2 className="w-4 h-4" />
                         Set up booking page
                       </Button>
                     </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {bookings.slice(0, 3).map((booking) => (
-                      <div key={booking.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border group hover:bg-secondary/70 transition-colors">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <span className="text-primary font-medium">
-                            {booking.guest_name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{booking.guest_name}</p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {booking.booking_slots?.title || "Meeting"} • {format(new Date(booking.booking_date), "MMM d")} at {booking.booking_time}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">{booking.guest_email}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            booking.status === 'confirmed' 
-                              ? 'bg-green-500/10 text-green-600' 
-                              : booking.status === 'cancelled'
-                              ? 'bg-red-500/10 text-red-600'
-                              : 'bg-yellow-500/10 text-yellow-600'
-                          }`}>
-                            {booking.status}
-                          </span>
-                          {booking.status !== 'cancelled' && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <ChevronDown className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40 bg-popover">
-                                {booking.status !== 'confirmed' && (
-                                  <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'confirmed')}>
-                                    <Check className="w-4 h-4 mr-2 text-green-500" />
-                                    Confirm
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem 
-                                  onClick={() => updateBookingStatus(booking.id, 'cancelled')}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <CalendarCheck className="w-4 h-4 mr-2" />
-                                  Cancel
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {bookings.length > 3 && (
-                      <Link to="/booking-settings">
-                        <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
-                          View all {bookings.length} bookings
-                        </Button>
-                      </Link>
-                    )}
                   </div>
                 )}
               </div>
