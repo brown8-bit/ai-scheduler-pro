@@ -1532,12 +1532,12 @@ const Community = () => {
                           </div>
                           <div className="flex items-start justify-between">
                             <Link to={`/profile/${quote.user_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                              <Avatar className="w-10 h-10">
-                                <AvatarImage src={quote.profiles?.avatar_url || ""} />
-                                <AvatarFallback className="bg-primary/10 text-primary">
-                                  {quote.profiles?.display_name?.charAt(0) || "U"}
-                                </AvatarFallback>
-                              </Avatar>
+                              <AvatarWithPresence
+                                userId={quote.user_id}
+                                avatarUrl={quote.profiles?.avatar_url}
+                                displayName={quote.profiles?.display_name || ""}
+                                size="md"
+                              />
                               <div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="font-semibold">
@@ -1567,12 +1567,12 @@ const Community = () => {
                           {/* Embedded Original Post */}
                           <div className="border rounded-xl p-3 bg-muted/20 hover:bg-muted/30 transition-colors">
                             <Link to={`/profile/${originalPost.user_id}`} className="flex items-center gap-2 mb-2">
-                              <Avatar className="w-6 h-6">
-                                <AvatarImage src={originalPost.profiles?.avatar_url || ""} />
-                                <AvatarFallback className="text-xs">
-                                  {originalPost.profiles?.display_name?.charAt(0) || "U"}
-                                </AvatarFallback>
-                              </Avatar>
+                              <AvatarWithPresence
+                                userId={originalPost.user_id}
+                                avatarUrl={originalPost.profiles?.avatar_url}
+                                displayName={originalPost.profiles?.display_name || ""}
+                                size="sm"
+                              />
                               <span className="text-sm font-medium">
                                 {originalPost.profiles?.display_name || "Anonymous"}
                               </span>
@@ -1630,12 +1630,12 @@ const Community = () => {
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between">
                           <Link to={`/profile/${post.user_id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage src={post.profiles?.avatar_url || ""} />
-                              <AvatarFallback className="bg-primary/10 text-primary">
-                                {post.profiles?.display_name?.charAt(0) || "U"}
-                              </AvatarFallback>
-                            </Avatar>
+                            <AvatarWithPresence
+                              userId={post.user_id}
+                              avatarUrl={post.profiles?.avatar_url}
+                              displayName={post.profiles?.display_name || ""}
+                              size="md"
+                            />
                             <div>
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-semibold">
@@ -1786,12 +1786,12 @@ const Community = () => {
                             {comments[post.id]?.map((comment) => (
                               <div key={comment.id} className="flex gap-2">
                                 <Link to={`/profile/${comment.user_id}`}>
-                                  <Avatar className="w-8 h-8">
-                                    <AvatarImage src={comment.profiles?.avatar_url || ""} />
-                                    <AvatarFallback className="text-xs bg-muted">
-                                      {comment.profiles?.display_name?.charAt(0) || "U"}
-                                    </AvatarFallback>
-                                  </Avatar>
+                                  <AvatarWithPresence
+                                    userId={comment.user_id}
+                                    avatarUrl={comment.profiles?.avatar_url}
+                                    displayName={comment.profiles?.display_name || ""}
+                                    size="sm"
+                                  />
                                 </Link>
                                 <div className="flex-1 bg-muted/50 rounded-2xl px-4 py-2">
                                   <Link to={`/profile/${comment.user_id}`} className="inline-flex items-center gap-1.5">
