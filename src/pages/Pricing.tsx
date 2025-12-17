@@ -11,6 +11,7 @@ const Pricing = () => {
   const [loadingMonthly, setLoadingMonthly] = useState(false);
   const [loadingLifetime, setLoadingLifetime] = useState(false);
   const [loadingVerified, setLoadingVerified] = useState(false);
+  const [loadingHoliday, setLoadingHoliday] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [highlightLifetime, setHighlightLifetime] = useState(false);
   const navigate = useNavigate();
@@ -55,6 +56,16 @@ const Pricing = () => {
     { name: "Email support", included: true },
     { name: "Basic analytics", included: true },
     { name: "API access", included: false },
+  ];
+
+  const holidayFeatures = [
+    { name: "100 AI requests/month", included: true },
+    { name: "Full calendar view", included: true },
+    { name: "10 event templates", included: true },
+    { name: "Calendar sync", included: true },
+    { name: "Team collaboration (5 members)", included: true },
+    { name: "Email support", included: true },
+    { name: "Basic analytics", included: true },
   ];
 
   const verifiedFeatures = [
@@ -160,6 +171,33 @@ const Pricing = () => {
     }
   };
 
+  const handleHolidayPurchase = async () => {
+    if (!user) {
+      navigate("/register");
+      return;
+    }
+
+    setLoadingHoliday(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-holiday-checkout");
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error: any) {
+      console.error("Holiday checkout error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start checkout. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingHoliday(false);
+    }
+  };
+
   return (
     <div className="min-h-screen gradient-hero">
       <Navbar />
@@ -179,7 +217,7 @@ const Pricing = () => {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto animate-slide-up delay-100">
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-7xl mx-auto animate-slide-up delay-100">
             {/* Free Plan */}
             <div className="bg-card rounded-3xl shadow-card border border-border p-6 relative overflow-hidden">
               <div className="relative">
@@ -280,6 +318,77 @@ const Pricing = () => {
                       <span className={feature.included ? "text-foreground text-sm" : "text-muted-foreground text-sm line-through"}>
                         {feature.name}
                       </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 🔥 Holiday Special - VERY LIMITED */}
+            <div className="bg-card rounded-3xl shadow-card border-2 border-red-500 p-6 relative overflow-hidden ring-4 ring-red-500/30 animate-pulse-soft">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-red-500 to-orange-500 opacity-20 rounded-full blur-3xl" />
+              <div className="absolute -top-1 -left-1 -right-1 bg-gradient-to-r from-red-600 to-orange-500 text-white text-center py-1 text-xs font-bold tracking-wider">
+                ⚡ ONLY 10 SPOTS LEFT ⚡
+              </div>
+              <div className="absolute top-10 right-2">
+                <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-600 text-white text-[10px] font-bold animate-pulse">
+                  <Flame className="w-3 h-3" />
+                  SELLING FAST
+                </div>
+              </div>
+              
+              <div className="relative pt-6">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold text-red-500 flex items-center justify-center gap-2">
+                    <Flame className="w-5 h-5" />
+                    Holiday Special
+                    <Flame className="w-5 h-5" />
+                  </h2>
+                  <p className="text-muted-foreground mt-2 text-xs">Pro features at insane price</p>
+                  
+                  <div className="mt-4">
+                    <span className="text-lg text-muted-foreground line-through mr-2">$29</span>
+                    <span className="text-4xl font-bold text-red-500">$25</span>
+                    <span className="text-lg text-muted-foreground">/mo</span>
+                  </div>
+                  
+                  <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-semibold">
+                    <Zap className="w-3 h-3" />
+                    14% OFF FOREVER
+                  </div>
+                  
+                  <p className="text-xs text-red-500 font-semibold mt-2 flex items-center justify-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Ends Dec 25th!
+                  </p>
+                </div>
+
+                <Button 
+                  size="lg" 
+                  className="w-full bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white font-bold shadow-lg"
+                  onClick={handleHolidayPurchase}
+                  disabled={loadingHoliday}
+                >
+                  {loadingHoliday ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 mr-2" />
+                      Claim Now
+                    </>
+                  )}
+                </Button>
+
+                <div className="mt-4 space-y-2">
+                  {holidayFeatures.map((feature) => (
+                    <div key={feature.name} className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-2.5 h-2.5 text-white" />
+                      </div>
+                      <span className="text-foreground text-xs">{feature.name}</span>
                     </div>
                   ))}
                 </div>
