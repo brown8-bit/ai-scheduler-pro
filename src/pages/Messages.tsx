@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarWithPresence } from "@/components/AvatarWithPresence";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
@@ -373,12 +374,12 @@ const Messages = () => {
                           selectedConversation === conversation.id && "bg-muted/50"
                         )}
                       >
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={conversation.other_user.avatar_url || ""} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {conversation.other_user.display_name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
+                        <AvatarWithPresence
+                          userId={conversation.other_user.user_id}
+                          avatarUrl={conversation.other_user.avatar_url}
+                          displayName={conversation.other_user.display_name || "U"}
+                          size="lg"
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-semibold truncate flex items-center gap-1">
@@ -432,12 +433,12 @@ const Messages = () => {
                       >
                         <ArrowLeft className="w-5 h-5" />
                       </Button>
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={otherUserProfile.avatar_url || ""} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {otherUserProfile.display_name?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <AvatarWithPresence
+                        userId={otherUserProfile.user_id}
+                        avatarUrl={otherUserProfile.avatar_url}
+                        displayName={otherUserProfile.display_name || "U"}
+                        size="md"
+                      />
                       <div>
                         <p className="font-semibold flex items-center gap-1">
                           {otherUserProfile.display_name || "User"}
