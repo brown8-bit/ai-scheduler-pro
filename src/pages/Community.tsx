@@ -38,6 +38,8 @@ import {
   Bookmark,
   Share,
   Mail,
+  Feather,
+  X as XIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -149,6 +151,13 @@ const Community = () => {
   const [livePostCounts, setLivePostCounts] = useState({ total: 0, following: 0, trending: 0 });
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const presenceChannelRef = useRef<any>(null);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !localStorage.getItem("community_onboarding_dismissed");
+    }
+    return true;
+  });
+  const postInputRef = useRef<HTMLTextAreaElement>(null);
   // Extract hashtags from all posts for trending with engagement metrics
   const trendingHashtags = useMemo(() => {
     const hashtagData: Record<string, { count: number; totalEngagement: number; recentPosts: number }> = {};
@@ -1128,6 +1137,16 @@ const Community = () => {
     });
   };
 
+  const dismissOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem("community_onboarding_dismissed", "true");
+  };
+
+  const scrollToPostInput = () => {
+    postInputRef.current?.focus();
+    postInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1207,6 +1226,46 @@ const Community = () => {
                 Connect with fellow Schedulrs 🎓
               </p>
             </div>
+
+            {/* Onboarding Banner for New Users */}
+            {showOnboarding && (
+              <Card className="mb-4 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/30 overflow-hidden relative">
+                <button 
+                  onClick={dismissOnboarding}
+                  className="absolute top-2 right-2 p-1 rounded-full hover:bg-background/50 transition-colors z-10"
+                  aria-label="Dismiss"
+                >
+                  <XIcon className="w-4 h-4 text-muted-foreground" />
+                </button>
+                <CardContent className="py-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1 pr-6">
+                      <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+                        Welcome to the Community! 
+                        <span className="text-xl">👋</span>
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Join the creator community – like, comment, and get feedback on your scheduled previews from fellow Schedulrs!
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                          <Heart className="w-3 h-3" /> Like posts
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                          <MessageCircle className="w-3 h-3" /> Comment & discuss
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                          <UserPlus className="w-3 h-3" /> Follow creators
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Tabs - X-style with distinct behaviors and live counts */}
             <div className="border-b border-border mb-4">
@@ -1302,6 +1361,7 @@ const Community = () => {
                   </Avatar>
                   <div className="flex-1">
                     <Textarea
+                      ref={postInputRef}
                       placeholder="What's happening? Use #hashtags to join conversations..."
                       value={newPost}
                       onChange={handleNewPostChange}
@@ -2015,6 +2075,15 @@ const Community = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Floating New Post Button for Mobile */}
+      <button
+        onClick={scrollToPostInput}
+        className="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center z-50"
+        aria-label="New Post"
+      >
+        <Feather className="w-6 h-6" />
+      </button>
     </div>
   );
 };

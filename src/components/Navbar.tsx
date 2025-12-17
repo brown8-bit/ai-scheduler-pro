@@ -69,7 +69,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     { path: "/chat", label: "AI Chat", icon: null },
     { path: "/dashboard", label: "Dashboard", icon: null },
     { path: "/calendar", label: "Calendar", icon: CalendarDays },
-    { path: "/community", label: "Community", icon: Users },
+    { path: "/community", label: "Community", icon: Users, highlight: true },
     { path: "/pricing", label: "Pricing", icon: null },
   ];
 
@@ -115,11 +115,14 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
             {navLinks.map((link) => (
               <Link key={link.path} to={link.path}>
                 <Button
-                  variant="ghost"
-                  className={`${isActive(link.path) ? "bg-accent" : ""} ${link.icon ? "gap-1.5" : ""}`}
+                  variant={link.highlight && !isActive(link.path) ? "outline" : "ghost"}
+                  className={`${isActive(link.path) ? "bg-accent" : ""} ${link.icon ? "gap-1.5" : ""} ${link.highlight && !isActive(link.path) ? "border-primary/50 text-primary hover:bg-primary/10" : ""}`}
                 >
                   {link.icon && <link.icon className="w-4 h-4" />}
                   {link.label}
+                  {link.highlight && !isActive(link.path) && (
+                    <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-primary text-primary-foreground rounded-full">NEW</span>
+                  )}
                 </Button>
               </Link>
             ))}
