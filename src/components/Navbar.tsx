@@ -105,7 +105,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
               <img 
                 src={schedulrLogo} 
                 alt="Schedulr" 
-                className="w-9 h-9 rounded-lg shadow-elegant group-hover:shadow-glow group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 ease-out"
+                className="h-10 w-10 object-contain rounded-lg shadow-elegant group-hover:shadow-glow group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 ease-out"
               />
               <div className="absolute inset-0 rounded-lg bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md -z-10" />
             </div>
