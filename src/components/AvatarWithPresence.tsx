@@ -2,6 +2,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PresenceIndicator } from "@/components/PresenceIndicator";
 import { usePresenceContext } from "@/contexts/PresenceContext";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AvatarWithPresenceProps {
   userId: string;
@@ -35,6 +37,26 @@ export const AvatarWithPresence = ({
   const { isUserOnline } = usePresenceContext();
   const isOnline = isUserOnline(userId);
   const initial = displayName.charAt(0).toUpperCase() || "U";
+  const [lastSeen, setLastSeen] = useState<string | null>(null);
+
+  // Fetch last seen for offline users
+  useEffect(() => {
+    if (isOnline || !showPresence) return;
+
+    const fetchLastSeen = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("last_seen_at")
+        .eq("user_id", userId)
+        .single();
+      
+      if (data?.last_seen_at) {
+        setLastSeen(data.last_seen_at);
+      }
+    };
+
+    fetchLastSeen();
+  }, [userId, isOnline, showPresence]);
 
   return (
     <div className={cn("relative inline-block", className)}>
@@ -48,7 +70,8 @@ export const AvatarWithPresence = ({
         <PresenceIndicator 
           isOnline={isOnline} 
           size={size === "lg" ? "md" : "sm"} 
-          className={indicatorPosition[size]} 
+          className={indicatorPosition[size]}
+          lastSeen={lastSeen}
         />
       )}
     </div>
