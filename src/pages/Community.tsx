@@ -316,7 +316,7 @@ const Community = () => {
 
   // Real-time presence for typing indicators
   useEffect(() => {
-    if (!user || !isLifetime || !userProfile) return;
+    if (!user || !userProfile) return;
 
     const channel = supabase.channel('community-presence', {
       config: {
@@ -363,7 +363,7 @@ const Community = () => {
         clearTimeout(typingTimeoutRef.current);
       }
     };
-  }, [user, isLifetime, userProfile]);
+  }, [user, userProfile]);
 
   // Update live post counts when posts change
   useEffect(() => {
@@ -385,7 +385,7 @@ const Community = () => {
 
   // Realtime subscriptions for posts, reposts, and likes
   useEffect(() => {
-    if (!user || !isLifetime) return;
+    if (!user) return;
 
     const channel = supabase
       .channel('community-realtime')
@@ -483,7 +483,7 @@ const Community = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, isLifetime]);
+  }, [user]);
 
   const checkLifetimeAccess = async () => {
     if (!user) return;
@@ -497,13 +497,12 @@ const Community = () => {
     if (profile) {
       setUserProfile(profile);
       setIsLifetime(profile.is_lifetime || false);
-      
-      if (profile.is_lifetime) {
-        fetchPosts();
-        fetchFollowing();
-        fetchSuggestedUsers();
-      }
     }
+    
+    // Fetch data for all authenticated users
+    fetchPosts();
+    fetchFollowing();
+    fetchSuggestedUsers();
     setLoading(false);
   };
 
@@ -1137,30 +1136,7 @@ const Community = () => {
     );
   }
 
-  if (!isLifetime) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="container mx-auto px-4 pt-24 pb-8">
-          <div className="max-w-md mx-auto text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <Lock className="w-10 h-10 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold mb-4">Lifetime Members Only</h1>
-            <p className="text-muted-foreground mb-6">
-              The Community feed is an exclusive feature for Lifetime members. Connect with other Schedulrs, share your achievements, and celebrate together! 🎉
-            </p>
-            <Link to="/pricing?plan=lifetime">
-              <Button variant="hero" size="lg" className="gap-2">
-                <Crown className="w-5 h-5" />
-                Get Lifetime Access
-              </Button>
-            </Link>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // Removed lifetime-only gating - Community is now open to all authenticated users
 
   const hashtagFilter = searchParams.get("hashtag");
 
@@ -1382,15 +1358,21 @@ const Community = () => {
                           onChange={handleImageSelect}
                           accept="image/*"
                           className="hidden"
+                          disabled={!isLifetime}
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="text-primary hover:bg-primary/10"
+                          onClick={() => isLifetime ? fileInputRef.current?.click() : toast({
+                            title: "Premium Feature",
+                            description: "Photo uploads are available for Pro and Lifetime members only.",
+                          })}
+                          className={`${isLifetime ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground'}`}
+                          title={isLifetime ? "Add photo" : "Premium feature - upgrade to upload photos"}
                         >
                           <Image className="w-5 h-5" />
+                          {!isLifetime && <Crown className="w-3 h-3 absolute -top-0.5 -right-0.5 text-yellow-500" />}
                         </Button>
                       </div>
                       <Button
