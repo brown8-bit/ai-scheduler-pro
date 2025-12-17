@@ -2007,10 +2007,22 @@ const Community = () => {
               )}
 
               {/* Footer Links */}
-              <div className="px-4 text-xs text-muted-foreground space-x-2">
-                <Link to="/terms" className="hover:underline">Terms</Link>
-                <Link to="/privacy" className="hover:underline">Privacy</Link>
-                <span>© 2024 Schedulr</span>
+              <div className="px-4 text-xs text-muted-foreground space-y-2">
+                <button
+                  onClick={() => {
+                    localStorage.removeItem("community_tour_completed");
+                    setShowTour(true);
+                  }}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  <HelpCircle className="w-3 h-3" />
+                  Take Tour
+                </button>
+                <div className="space-x-2">
+                  <Link to="/terms" className="hover:underline">Terms</Link>
+                  <Link to="/privacy" className="hover:underline">Privacy</Link>
+                  <span>© 2024 Schedulr</span>
+                </div>
               </div>
             </div>
           </aside>
