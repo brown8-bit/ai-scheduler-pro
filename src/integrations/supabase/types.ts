@@ -711,6 +711,7 @@ export type Database = {
           id: string
           is_lifetime: boolean | null
           is_verified: boolean | null
+          last_seen_at: string | null
           referral_code: string | null
           updated_at: string
           user_id: string
@@ -722,6 +723,7 @@ export type Database = {
           id?: string
           is_lifetime?: boolean | null
           is_verified?: boolean | null
+          last_seen_at?: string | null
           referral_code?: string | null
           updated_at?: string
           user_id: string
@@ -733,6 +735,7 @@ export type Database = {
           id?: string
           is_lifetime?: boolean | null
           is_verified?: boolean | null
+          last_seen_at?: string | null
           referral_code?: string | null
           updated_at?: string
           user_id?: string
