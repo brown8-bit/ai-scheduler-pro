@@ -853,12 +853,12 @@ const Profile = () => {
                         to={`/profile/${follower.user_id}`}
                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                       >
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={follower.avatar_url || ""} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {follower.display_name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
+                        <AvatarWithPresence
+                          userId={follower.user_id}
+                          avatarUrl={follower.avatar_url}
+                          displayName={follower.display_name || "U"}
+                          size="md"
+                        />
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5">
                             <span className="font-medium">
@@ -900,12 +900,12 @@ const Profile = () => {
                         to={`/profile/${followedUser.user_id}`}
                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                       >
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={followedUser.avatar_url || ""} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {followedUser.display_name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
+                        <AvatarWithPresence
+                          userId={followedUser.user_id}
+                          avatarUrl={followedUser.avatar_url}
+                          displayName={followedUser.display_name || "U"}
+                          size="md"
+                        />
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5">
                             <span className="font-medium">
