@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -62,8 +62,11 @@ const Messages = () => {
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [otherUserProfile, setOtherUserProfile] = useState<any>(null);
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingChannelRef = useRef<any>(null);
 
   // Check for userId param to start new conversation
   useEffect(() => {
@@ -115,6 +118,52 @@ const Messages = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Typing indicator presence channel
+  useEffect(() => {
+    if (!selectedConversation || !user || !otherUserProfile) return;
+
+    const channel = supabase.channel(`typing-${selectedConversation}`)
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const typingUsers = Object.values(state).flat() as unknown as { user_id: string; typing: boolean }[];
+        const otherTyping = typingUsers.some(
+          (u) => u.user_id === otherUserProfile.user_id && u.typing
+        );
+        setIsOtherUserTyping(otherTyping);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ user_id: user.id, typing: false });
+        }
+      });
+
+    typingChannelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      typingChannelRef.current = null;
+    };
+  }, [selectedConversation, user, otherUserProfile]);
+
+  // Broadcast typing state
+  const broadcastTyping = useCallback((isTyping: boolean) => {
+    if (typingChannelRef.current && user) {
+      typingChannelRef.current.track({ user_id: user.id, typing: isTyping });
+    }
+  }, [user]);
+
+  const handleTyping = useCallback(() => {
+    broadcastTyping(true);
+    
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      broadcastTyping(false);
+    }, 2000);
+  }, [broadcastTyping]);
 
   const fetchConversations = async () => {
     if (!user) return;
@@ -511,22 +560,42 @@ const Messages = () => {
 
                     {/* Message Input */}
                     <div className="p-4 border-t">
+                      {/* Typing Indicator */}
+                      {isOtherUserTyping && (
+                        <div className="flex items-center gap-2 mb-2 text-muted-foreground text-sm">
+                          <div className="flex gap-1">
+                            <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                          <span>{otherUserProfile?.display_name || 'User'} is typing...</span>
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <Input
                           ref={inputRef}
                           placeholder="Type a message..."
                           value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
+                          onChange={(e) => {
+                            setNewMessage(e.target.value);
+                            if (e.target.value.trim()) {
+                              handleTyping();
+                            }
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
+                              broadcastTyping(false);
                               handleSendMessage();
                             }
                           }}
                           className="rounded-full"
                         />
                         <Button
-                          onClick={handleSendMessage}
+                          onClick={() => {
+                            broadcastTyping(false);
+                            handleSendMessage();
+                          }}
                           disabled={!newMessage.trim() || sending}
                           className="rounded-full"
                           size="icon"
