@@ -63,6 +63,7 @@ import AdminBadge from "@/components/AdminBadge";
 import { formatDistanceToNow } from "date-fns";
 import CommunityTour from "@/components/CommunityTour";
 import { AvatarWithPresence } from "@/components/AvatarWithPresence";
+import { usePresenceContext } from "@/contexts/PresenceContext";
 
 interface Post {
   id: string;
@@ -125,6 +126,7 @@ const Community = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
+  const { isUserOnline } = usePresenceContext();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLifetime, setIsLifetime] = useState(false);
@@ -1545,6 +1547,11 @@ const Community = () => {
                                   </span>
                                   {quote.profiles?.is_admin && <AdminBadge size="md" />}
                                   {quote.profiles?.is_verified && <VerifiedBadge size="md" />}
+                                  {isUserOnline(quote.user_id) && (
+                                    <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full font-medium">
+                                      Active now
+                                    </span>
+                                  )}
                                   <span className="text-muted-foreground">·</span>
                                   <span className="text-sm text-muted-foreground">
                                     {formatDistanceToNow(new Date(quote.created_at), { addSuffix: true })}
@@ -1577,6 +1584,11 @@ const Community = () => {
                                 {originalPost.profiles?.display_name || "Anonymous"}
                               </span>
                               {originalPost.profiles?.is_verified && <VerifiedBadge size="sm" />}
+                              {isUserOnline(originalPost.user_id) && (
+                                <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full font-medium">
+                                  Active now
+                                </span>
+                              )}
                               <span className="text-xs text-muted-foreground">
                                 · {formatDistanceToNow(new Date(originalPost.created_at), { addSuffix: true })}
                               </span>
@@ -1643,6 +1655,11 @@ const Community = () => {
                                 </span>
                                 {post.profiles?.is_admin && <AdminBadge size="md" />}
                                 {post.profiles?.is_verified && <VerifiedBadge size="md" />}
+                                {isUserOnline(post.user_id) && (
+                                  <span className="text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full font-medium">
+                                    Active now
+                                  </span>
+                                )}
                                 {getPostIcon(post.post_type)}
                                 <span className="text-muted-foreground">·</span>
                                 <span className="text-sm text-muted-foreground">
