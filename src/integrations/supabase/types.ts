@@ -68,40 +68,67 @@ export type Database = {
       booking_slots: {
         Row: {
           available_days: number[] | null
+          buffer_after_minutes: number | null
+          buffer_before_minutes: number | null
+          confirmation_message: string | null
           created_at: string
+          description: string | null
           duration_minutes: number
           end_hour: number
           host_email: string | null
           id: string
           is_active: boolean | null
+          location: string | null
+          max_participants: number | null
+          meeting_type: string | null
           public_slug: string | null
+          questions: Json | null
           start_hour: number
+          timezone: string | null
           title: string
           user_id: string
         }
         Insert: {
           available_days?: number[] | null
+          buffer_after_minutes?: number | null
+          buffer_before_minutes?: number | null
+          confirmation_message?: string | null
           created_at?: string
+          description?: string | null
           duration_minutes?: number
           end_hour?: number
           host_email?: string | null
           id?: string
           is_active?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          meeting_type?: string | null
           public_slug?: string | null
+          questions?: Json | null
           start_hour?: number
+          timezone?: string | null
           title?: string
           user_id: string
         }
         Update: {
           available_days?: number[] | null
+          buffer_after_minutes?: number | null
+          buffer_before_minutes?: number | null
+          confirmation_message?: string | null
           created_at?: string
+          description?: string | null
           duration_minutes?: number
           end_hour?: number
           host_email?: string | null
           id?: string
           is_active?: boolean | null
+          location?: string | null
+          max_participants?: number | null
+          meeting_type?: string | null
           public_slug?: string | null
+          questions?: Json | null
           start_hour?: number
+          timezone?: string | null
           title?: string
           user_id?: string
         }
@@ -153,6 +180,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      calendar_connections: {
+        Row: {
+          access_token: string | null
+          calendar_ids: string[] | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          provider: string
+          provider_account_id: string | null
+          provider_email: string | null
+          refresh_token: string | null
+          settings: Json | null
+          sync_enabled: boolean | null
+          sync_error: string | null
+          sync_status: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          calendar_ids?: string[] | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider: string
+          provider_account_id?: string | null
+          provider_email?: string | null
+          refresh_token?: string | null
+          settings?: Json | null
+          sync_enabled?: boolean | null
+          sync_error?: string | null
+          sync_status?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          calendar_ids?: string[] | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          provider?: string
+          provider_account_id?: string | null
+          provider_email?: string | null
+          refresh_token?: string | null
+          settings?: Json | null
+          sync_enabled?: boolean | null
+          sync_error?: string | null
+          sync_status?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       clients: {
         Row: {
@@ -912,6 +996,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      synced_events: {
+        Row: {
+          attendees: Json | null
+          connection_id: string
+          created_at: string
+          description: string | null
+          end_time: string
+          external_event_id: string
+          id: string
+          is_all_day: boolean | null
+          is_busy: boolean | null
+          location: string | null
+          raw_data: Json | null
+          start_time: string
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attendees?: Json | null
+          connection_id: string
+          created_at?: string
+          description?: string | null
+          end_time: string
+          external_event_id: string
+          id?: string
+          is_all_day?: boolean | null
+          is_busy?: boolean | null
+          location?: string | null
+          raw_data?: Json | null
+          start_time: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attendees?: Json | null
+          connection_id?: string
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          external_event_id?: string
+          id?: string
+          is_all_day?: boolean | null
+          is_busy?: boolean | null
+          location?: string | null
+          raw_data?: Json | null
+          start_time?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "synced_events_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_connections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {

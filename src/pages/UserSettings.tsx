@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, type ChangeEvent, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +27,9 @@ import {
   UserPlus,
   Trophy,
   Users,
-  Shield
+  Shield,
+  Link2,
+  BarChart3
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +38,7 @@ import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import NotificationToggle from "@/components/NotificationToggle";
 import ImageCropper from "@/components/ImageCropper";
+import CalendarConnections from "@/components/CalendarConnections";
 import { formatDistanceToNow } from "date-fns";
 
 interface ActivityNotification {
@@ -737,11 +740,28 @@ const UserSettings = () => {
               )}
             </div>
 
+            {/* Calendar Integrations */}
             <div className="bg-card rounded-xl border border-border p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-primary" />
-                Calendar Preferences
+                <Link2 className="w-5 h-5 text-primary" />
+                Calendar Integrations
               </h2>
+              <CalendarConnections />
+            </div>
+
+            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  Calendar Preferences
+                </h2>
+                <Link to="/booking-settings">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Link2 className="w-4 h-4" />
+                    Booking Links
+                  </Button>
+                </Link>
+              </div>
               <div className="space-y-4">
                 <div className="grid gap-2">
                   <Label htmlFor="defaultDuration">Default Event Duration (minutes)</Label>
@@ -793,31 +813,49 @@ const UserSettings = () => {
               </div>
             </div>
 
-            {/* Gamification & Community */}
+            {/* Gamification & Community - renamed to Progress Tracking when enabled */}
             <div className="bg-card rounded-xl border border-border p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                Earn & Compete Mode
+                {gamificationEnabled ? (
+                  <>
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    Progress Tracking
+                  </>
+                ) : (
+                  <>
+                    <Trophy className="w-5 h-5 text-primary" />
+                    Motivation Mode
+                  </>
+                )}
               </h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Enable Earn & Compete Mode</Label>
-                    <p className="text-sm text-muted-foreground">Show XP, leveling, leaderboard & community</p>
+                    <Label>Enable {gamificationEnabled ? "Progress Tracking" : "Motivation Mode"}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {gamificationEnabled 
+                        ? "Track your productivity with XP, levels & achievements"
+                        : "Show XP, leveling, achievements & private leaderboard"
+                      }
+                    </p>
                   </div>
                   <Switch 
                     checked={gamificationEnabled} 
                     onCheckedChange={setGamificationEnabled} 
                   />
                 </div>
-                <div className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg space-y-1">
+                <div className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg space-y-2">
                   <p className="flex items-center gap-1.5">
                     <Shield className="w-3.5 h-3.5 text-green-500" />
                     <span>Optional motivation tools — your data is private and never sold.</span>
                   </p>
+                  <p className="flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Leaderboard is private — only visible to you, no public competition.</span>
+                  </p>
                   {!gamificationEnabled && (
-                    <p className="text-muted-foreground/70">
-                      When disabled, you won't see XP, achievements, leaderboards, or community.
+                    <p className="text-muted-foreground/70 pt-1 border-t border-border/50">
+                      When disabled, all XP, achievements, leaderboards and community features are hidden.
                     </p>
                   )}
                 </div>

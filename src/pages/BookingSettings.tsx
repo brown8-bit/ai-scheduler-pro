@@ -1,22 +1,46 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Link2, Copy, Check, Settings } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { 
+  ArrowLeft, 
+  Link2, 
+  Copy, 
+  Check, 
+  Settings, 
+  Clock, 
+  Calendar,
+  MapPin,
+  Users,
+  Shield,
+  ExternalLink,
+  QrCode
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
+import PrivacyBadge from "@/components/PrivacyBadge";
 
 interface BookingSlot {
   id: string;
   title: string;
+  description: string | null;
   duration_minutes: number;
   available_days: number[];
   start_hour: number;
   end_hour: number;
   is_active: boolean;
   public_slug: string | null;
+  buffer_before_minutes: number;
+  buffer_after_minutes: number;
+  location: string | null;
+  meeting_type: string;
+  timezone: string;
 }
 
 const BookingSettings = () => {
@@ -29,11 +53,16 @@ const BookingSettings = () => {
 
   // Form state
   const [title, setTitle] = useState("30 Minute Meeting");
+  const [description, setDescription] = useState("");
   const [duration, setDuration] = useState(30);
   const [startHour, setStartHour] = useState(9);
   const [endHour, setEndHour] = useState(17);
   const [availableDays, setAvailableDays] = useState([1, 2, 3, 4, 5]);
   const [isActive, setIsActive] = useState(true);
+  const [bufferBefore, setBufferBefore] = useState(0);
+  const [bufferAfter, setBufferAfter] = useState(15);
+  const [location, setLocation] = useState("");
+  const [meetingType, setMeetingType] = useState("one_on_one");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -60,11 +89,16 @@ const BookingSettings = () => {
       if (data) {
         setSlot(data);
         setTitle(data.title);
+        setDescription(data.description || "");
         setDuration(data.duration_minutes);
         setStartHour(data.start_hour);
         setEndHour(data.end_hour);
         setAvailableDays(data.available_days || [1, 2, 3, 4, 5]);
-        setIsActive(data.is_active);
+        setIsActive(data.is_active ?? true);
+        setBufferBefore(data.buffer_before_minutes || 0);
+        setBufferAfter(data.buffer_after_minutes || 15);
+        setLocation(data.location || "");
+        setMeetingType(data.meeting_type || "one_on_one");
       }
     } catch (error) {
       console.error("Error fetching booking slot:", error);
@@ -83,13 +117,18 @@ const BookingSettings = () => {
       const slotData = {
         user_id: user!.id,
         title,
+        description: description || null,
         duration_minutes: duration,
         start_hour: startHour,
         end_hour: endHour,
         available_days: availableDays,
         is_active: isActive,
         public_slug: slot?.public_slug || generateSlug(),
-        host_email: user!.email
+        host_email: user!.email,
+        buffer_before_minutes: bufferBefore,
+        buffer_after_minutes: bufferAfter,
+        location: location || null,
+        meeting_type: meetingType,
       };
 
       if (slot) {
@@ -164,8 +203,8 @@ const BookingSettings = () => {
   return (
     <>
       <Helmet>
-        <title>Booking Settings | Schedulr</title>
-        <meta name="description" content="Configure your public booking page settings." />
+        <title>Booking Links | Schedulr</title>
+        <meta name="description" content="Create and manage your public booking page — let others schedule time with you easily." />
       </Helmet>
 
       <div className="min-h-screen bg-secondary/30">
@@ -178,11 +217,11 @@ const BookingSettings = () => {
               <div>
                 <h1 className="text-3xl font-bold flex items-center gap-3">
                   <Link2 className="w-8 h-8 text-primary" />
-                  Booking Page
+                  Booking Links
                 </h1>
-                <p className="text-muted-foreground mt-1">Let others book time with you</p>
+                <p className="text-muted-foreground mt-1">Let others book time with you — like Calendly</p>
               </div>
-              <Link to="/dashboard">
+              <Link to="/settings">
                 <Button variant="outline" className="gap-2">
                   <ArrowLeft className="w-4 h-4" />
                   Back
@@ -190,66 +229,157 @@ const BookingSettings = () => {
               </Link>
             </div>
 
-            {/* Booking Link */}
+            {/* Booking Link Card */}
             {bookingUrl && (
-              <div className="bg-card rounded-xl border border-border p-6 shadow-card mb-6">
-                <h2 className="font-semibold mb-3">Your Booking Link</h2>
-                <div className="flex gap-2">
+              <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl border border-primary/20 p-6 shadow-card mb-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="font-semibold text-lg">Your Booking Link</h2>
+                    <p className="text-sm text-muted-foreground">Share this link to let anyone book time on your calendar</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isActive ? (
+                      <span className="px-2 py-1 text-xs font-medium bg-green-500/10 text-green-600 rounded-full">Active</span>
+                    ) : (
+                      <span className="px-2 py-1 text-xs font-medium bg-red-500/10 text-red-600 rounded-full">Inactive</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2 mb-4">
                   <input
                     type="text"
                     value={bookingUrl}
                     readOnly
-                    className="flex-1 bg-secondary rounded-lg px-4 py-2 text-sm"
+                    className="flex-1 bg-background/80 rounded-lg px-4 py-3 text-sm border border-border"
                   />
-                  <Button onClick={copyLink} variant="outline" className="gap-2">
+                  <Button onClick={copyLink} variant="default" className="gap-2">
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? "Copied!" : "Copy"}
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Share this link to let anyone book time on your calendar
-                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => window.open(bookingUrl, '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Preview Page
+                  </Button>
+                </div>
               </div>
             )}
 
             {/* Settings Form */}
-            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
-              <h2 className="font-semibold mb-6 flex items-center gap-2">
+            <div className="bg-card rounded-xl border border-border p-6 shadow-card space-y-6">
+              <h2 className="font-semibold flex items-center gap-2">
                 <Settings className="w-5 h-5" />
                 Booking Settings
               </h2>
 
-              <div className="space-y-6">
-                {/* Title */}
+              {/* Basic Info */}
+              <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Meeting Title</label>
-                  <input
-                    type="text"
+                  <Label htmlFor="title">Meeting Title</Label>
+                  <Input
+                    id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full bg-secondary rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     placeholder="30 Minute Meeting"
+                    className="mt-1"
                   />
                 </div>
 
-                {/* Duration */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Duration (minutes)</label>
-                  <select
-                    value={duration}
-                    onChange={(e) => setDuration(Number(e.target.value))}
-                    className="w-full bg-secondary rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  >
-                    <option value={15}>15 minutes</option>
-                    <option value={30}>30 minutes</option>
-                    <option value={45}>45 minutes</option>
-                    <option value={60}>1 hour</option>
-                  </select>
+                  <Label htmlFor="description">Description (optional)</Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="What's this meeting about?"
+                    className="mt-1"
+                    rows={3}
+                  />
                 </div>
 
-                {/* Available Days */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Available Days</label>
+                  <Label htmlFor="location">Location / Meeting Link (optional)</Label>
+                  <div className="relative mt-1">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="location"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Zoom link, office address, or 'TBD'"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Duration & Buffers */}
+              <div className="space-y-4 pt-4 border-t border-border">
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Duration & Buffers
+                </h3>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>Duration</Label>
+                    <select
+                      value={duration}
+                      onChange={(e) => setDuration(Number(e.target.value))}
+                      className="w-full mt-1 bg-secondary rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      <option value={15}>15 min</option>
+                      <option value={30}>30 min</option>
+                      <option value={45}>45 min</option>
+                      <option value={60}>1 hour</option>
+                      <option value={90}>1.5 hours</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Buffer Before</Label>
+                    <select
+                      value={bufferBefore}
+                      onChange={(e) => setBufferBefore(Number(e.target.value))}
+                      className="w-full mt-1 bg-secondary rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      <option value={0}>None</option>
+                      <option value={5}>5 min</option>
+                      <option value={10}>10 min</option>
+                      <option value={15}>15 min</option>
+                      <option value={30}>30 min</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Buffer After</Label>
+                    <select
+                      value={bufferAfter}
+                      onChange={(e) => setBufferAfter(Number(e.target.value))}
+                      className="w-full mt-1 bg-secondary rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      <option value={0}>None</option>
+                      <option value={5}>5 min</option>
+                      <option value={10}>10 min</option>
+                      <option value={15}>15 min</option>
+                      <option value={30}>30 min</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Availability */}
+              <div className="space-y-4 pt-4 border-t border-border">
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Availability
+                </h3>
+
+                <div>
+                  <Label className="mb-2 block">Available Days</Label>
                   <div className="flex flex-wrap gap-2">
                     {dayNames.map((name, index) => (
                       <button
@@ -268,14 +398,13 @@ const BookingSettings = () => {
                   </div>
                 </div>
 
-                {/* Hours */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Start Time</label>
+                    <Label>Start Time</Label>
                     <select
                       value={startHour}
                       onChange={(e) => setStartHour(Number(e.target.value))}
-                      className="w-full bg-secondary rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full mt-1 bg-secondary rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       {Array.from({ length: 24 }, (_, i) => (
                         <option key={i} value={i}>
@@ -285,11 +414,11 @@ const BookingSettings = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-2 block">End Time</label>
+                    <Label>End Time</Label>
                     <select
                       value={endHour}
                       onChange={(e) => setEndHour(Number(e.target.value))}
-                      className="w-full bg-secondary rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full mt-1 bg-secondary rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       {Array.from({ length: 24 }, (_, i) => (
                         <option key={i} value={i}>
@@ -299,38 +428,34 @@ const BookingSettings = () => {
                     </select>
                   </div>
                 </div>
-
-                {/* Active Toggle */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Booking Page Active</p>
-                    <p className="text-sm text-muted-foreground">Allow others to book time with you</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsActive(!isActive)}
-                    className={`w-12 h-6 rounded-full transition-colors ${
-                      isActive ? "bg-primary" : "bg-secondary"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                        isActive ? "translate-x-6" : "translate-x-0.5"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <Button
-                  onClick={saveBookingSlot}
-                  variant="hero"
-                  size="lg"
-                  className="w-full"
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : "Save Settings"}
-                </Button>
               </div>
+
+              {/* Active Toggle */}
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <div>
+                  <p className="font-medium">Booking Page Active</p>
+                  <p className="text-sm text-muted-foreground">Allow others to book time with you</p>
+                </div>
+                <Switch
+                  checked={isActive}
+                  onCheckedChange={setIsActive}
+                />
+              </div>
+
+              <Button
+                onClick={saveBookingSlot}
+                variant="hero"
+                size="lg"
+                className="w-full"
+                disabled={saving}
+              >
+                {saving ? "Saving..." : "Save Settings"}
+              </Button>
+            </div>
+
+            {/* Privacy Note */}
+            <div className="mt-6">
+              <PrivacyBadge variant="compact" />
             </div>
           </div>
         </main>
