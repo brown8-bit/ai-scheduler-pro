@@ -37,7 +37,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from "date-fns";
-import scheddyAvatar from "@/assets/scheddy-avatar.svg";
+import scheddyAvatar from "@/assets/scheddy-avatar.png";
 import { ReferralCard } from "@/components/ReferralCard";
 import { PullToRefresh } from "@/components/PullToRefresh";
 
