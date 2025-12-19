@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { useConfetti } from "@/hooks/useConfetti";
 import {
   Droplet,
   Apple,
@@ -87,6 +88,7 @@ const iconMap: Record<string, React.ReactNode> = {
 const DailyHabits = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { fireLevelUpConfetti } = useConfetti();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
   const [userPoints, setUserPoints] = useState<UserPoints | null>(null);
@@ -219,6 +221,7 @@ const DailyHabits = () => {
         });
 
         if (result.level_up) {
+          fireLevelUpConfetti();
           toast({
             title: "🎉 Level Up!",
             description: `Congratulations! You reached Level ${result.current_level}!`,
