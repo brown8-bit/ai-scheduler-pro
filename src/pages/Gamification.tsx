@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Flame, Target, Star, Award, Zap, Crown, Medal, Sparkles } from "lucide-react";
+import { useConfetti } from "@/hooks/useConfetti";
 
 interface UserStreak {
   current_streak: number;
@@ -43,11 +44,13 @@ const MAX_LEVEL = 350;
 
 const Gamification = () => {
   const navigate = useNavigate();
+  const { fireAchievementConfetti } = useConfetti();
   const [user, setUser] = useState<any>(null);
   const [streakData, setStreakData] = useState<UserStreak | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [userPoints, setUserPoints] = useState<UserPoints | null>(null);
   const [loading, setLoading] = useState(true);
+  const [previousUnlockedCount, setPreviousUnlockedCount] = useState<number | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -319,6 +322,15 @@ const Gamification = () => {
 
   const achievements = getAchievements();
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  
+  // Fire confetti when a new achievement is unlocked
+  useEffect(() => {
+    if (previousUnlockedCount !== null && unlockedCount > previousUnlockedCount) {
+      fireAchievementConfetti();
+    }
+    setPreviousUnlockedCount(unlockedCount);
+  }, [unlockedCount, previousUnlockedCount, fireAchievementConfetti]);
+  
   // User rank is now based on their position relative to their total_events_completed
   const userRank = leaderboard.findIndex(u => u.total_events_completed <= (streakData?.total_events_completed || 0)) + 1 || leaderboard.length + 1;
 
