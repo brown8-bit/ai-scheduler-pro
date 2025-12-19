@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Calendar } from "@/components/ui/calendar";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, isSameDay } from "date-fns";
-import { CalendarDays, Clock, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle2, Plus, Trash2, Sparkles } from "lucide-react";
 import AddEventModal from "@/components/AddEventModal";
 import CalendarExport from "@/components/CalendarExport";
 import ScheddyLoader from "@/components/ScheddyLoader";
@@ -22,9 +22,54 @@ interface ScheduledEvent {
   is_completed: boolean | null;
 }
 
+// Demo events for guest users
+const DEMO_EVENTS: ScheduledEvent[] = [
+  {
+    id: "demo-1",
+    title: "Morning Workout",
+    event_date: new Date(new Date().setHours(7, 0, 0, 0)).toISOString(),
+    description: "30 min cardio + stretching",
+    category: "health",
+    is_completed: true,
+  },
+  {
+    id: "demo-2",
+    title: "Team Standup",
+    event_date: new Date(new Date().setHours(10, 0, 0, 0)).toISOString(),
+    description: "Daily sync with the team",
+    category: "work",
+    is_completed: false,
+  },
+  {
+    id: "demo-3",
+    title: "Focus Time - Project Work",
+    event_date: new Date(new Date().setHours(14, 0, 0, 0)).toISOString(),
+    description: "Deep work session",
+    category: "work",
+    is_completed: false,
+  },
+  {
+    id: "demo-4",
+    title: "Coffee with Sarah",
+    event_date: new Date(new Date().setHours(16, 30, 0, 0)).toISOString(),
+    description: "Catch up at the usual spot",
+    category: "social",
+    is_completed: false,
+  },
+  {
+    id: "demo-5",
+    title: "Yoga Class",
+    event_date: new Date(Date.now() + 86400000).setHours(18, 0, 0, 0) as unknown as string,
+    description: "Evening yoga session",
+    category: "health",
+    is_completed: false,
+  },
+];
+
 const CalendarPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [events, setEvents] = useState<ScheduledEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +78,15 @@ const CalendarPage = () => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/login");
+        // Guest mode - show demo data
+        setIsGuest(true);
+        setEvents(DEMO_EVENTS.map(e => ({
+          ...e,
+          event_date: e.id === "demo-5" 
+            ? new Date(Date.now() + 86400000).toISOString().replace(/T.*/, 'T18:00:00.000Z')
+            : e.event_date
+        })));
+        setLoading(false);
         return;
       }
       setUser(user);
@@ -61,6 +114,20 @@ const CalendarPage = () => {
   };
 
   const handleToggleComplete = async (event: ScheduledEvent) => {
+    if (isGuest) {
+      // Demo mode - just toggle locally
+      setEvents(prev => prev.map(e => 
+        e.id === event.id ? { ...e, is_completed: !e.is_completed } : e
+      ));
+      toast({
+        title: event.is_completed ? "Marked as incomplete" : "Nice work! ✅",
+        description: event.is_completed 
+          ? `"${event.title}" is back on your list.`
+          : `"${event.title}" completed!`,
+      });
+      return;
+    }
+    
     const { error } = await supabase
       .from("scheduled_events")
       .update({ is_completed: !event.is_completed })
@@ -78,6 +145,16 @@ const CalendarPage = () => {
   };
 
   const handleDeleteEvent = async (event: ScheduledEvent) => {
+    if (isGuest) {
+      // Demo mode - just remove locally
+      setEvents(prev => prev.filter(e => e.id !== event.id));
+      toast({
+        title: "Event removed",
+        description: `"${event.title}" has been deleted.`,
+      });
+      return;
+    }
+    
     const { error } = await supabase
       .from("scheduled_events")
       .delete()
@@ -117,6 +194,26 @@ const CalendarPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-24 pb-8">
+        {/* Guest Demo Banner */}
+        {isGuest && (
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+            <div className="flex items-center gap-3 flex-wrap justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">You're exploring demo mode!</p>
+                  <p className="text-xs text-muted-foreground">Sign up to save your own events and unlock all features.</p>
+                </div>
+              </div>
+              <Link to="/register">
+                <Button size="sm" variant="hero">Sign up free</Button>
+              </Link>
+            </div>
+          </div>
+        )}
+        
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
@@ -124,7 +221,7 @@ const CalendarPage = () => {
               Calendar View
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-2">
-              See all your scheduled events at a glance 📅
+              {isGuest ? "Try out the calendar - this is sample data! 📅" : "See all your scheduled events at a glance 📅"}
             </p>
           </div>
           
