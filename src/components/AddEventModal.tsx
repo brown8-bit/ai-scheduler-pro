@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, Plus, Users, MessageCircle } from "lucide-react";
+import { CalendarIcon, Clock, Plus, Users, MessageCircle, AlertTriangle } from "lucide-react";
+import { useConflictDetection, ConflictingEvent } from "@/hooks/useConflictDetection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,6 +71,10 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
   const [recurrencePattern, setRecurrencePattern] = useState("weekly");
   const [reminder, setReminder] = useState(false);
   const [shareToCommunity, setShareToCommunity] = useState(false);
+  const [conflicts, setConflicts] = useState<ConflictingEvent[]>([]);
+  const [showConflictWarning, setShowConflictWarning] = useState(false);
+  
+  const { checkForConflicts, checking } = useConflictDetection();
 
   const resetForm = () => {
     setTitle("");
@@ -81,9 +86,11 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
     setRecurrencePattern("weekly");
     setReminder(false);
     setShareToCommunity(false);
+    setConflicts([]);
+    setShowConflictWarning(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, forceCreate = false) => {
     e.preventDefault();
     
     if (!title.trim()) {
@@ -104,14 +111,25 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
       return;
     }
 
+    // Combine date and time
+    const [hours, minutes] = time.split(":").map(Number);
+    const eventDate = new Date(date);
+    eventDate.setHours(hours, minutes, 0, 0);
+
+    // Check for conflicts if not forcing creation
+    if (!forceCreate) {
+      const result = await checkForConflicts(userId, eventDate);
+      if (result.hasConflict) {
+        setConflicts(result.conflicts);
+        setShowConflictWarning(true);
+        return;
+      }
+    }
+
     setLoading(true);
+    setShowConflictWarning(false);
 
     try {
-      // Combine date and time
-      const [hours, minutes] = time.split(":").map(Number);
-      const eventDate = new Date(date);
-      eventDate.setHours(hours, minutes, 0, 0);
-
       const { error } = await supabase.from("scheduled_events").insert({
         user_id: userId,
         title: title.trim(),
@@ -140,7 +158,6 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
 
         if (postError) {
           console.error("Error sharing to community:", postError);
-          // Don't fail the whole operation if community post fails
         }
       }
 
@@ -339,10 +356,60 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
             />
           </div>
 
+          {/* Conflict Warning */}
+          {showConflictWarning && conflicts.length > 0 && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 space-y-2">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <span className="font-medium text-sm">Scheduling Conflict</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                This event overlaps with:
+              </p>
+              <ul className="text-xs space-y-1">
+                {conflicts.map((conflict) => (
+                  <li key={conflict.id} className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                    <span>
+                      {conflict.title} at{" "}
+                      {format(new Date(conflict.event_date), "h:mm a")}
+                      {conflict.source === "synced" && (
+                        <span className="text-muted-foreground ml-1">(calendar)</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setShowConflictWarning(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1"
+                  onClick={(e) => handleSubmit(e, true)}
+                  disabled={loading}
+                >
+                  {loading ? "Creating..." : "Create Anyway"}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Submit */}
-          <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-            {loading ? "Creating..." : "Create Event"}
-          </Button>
+          {!showConflictWarning && (
+            <Button type="submit" variant="hero" className="w-full" disabled={loading || checking}>
+              {checking ? "Checking conflicts..." : loading ? "Creating..." : "Create Event"}
+            </Button>
+          )}
         </form>
       </DialogContent>
     </Dialog>
