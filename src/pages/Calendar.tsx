@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, isSameDay } from "date-fns";
-import { CalendarDays, Clock, CheckCircle2, Plus, Trash2, Sparkles } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle2, Plus, Trash2, Sparkles, AlertTriangle } from "lucide-react";
 import AddEventModal from "@/components/AddEventModal";
 import CalendarExport from "@/components/CalendarExport";
 import ScheddyLoader from "@/components/ScheddyLoader";
@@ -286,15 +286,27 @@ const CalendarPage = () => {
       <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-24 pb-8">
         {/* Guest Banner */}
         {isGuest && (
-          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+          <div className={`mb-6 p-4 rounded-xl border ${guestCredits <= 50 ? "bg-amber-500/10 border-amber-500/30" : "bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20"}`}>
             <div className="flex items-center gap-3 flex-wrap justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-primary" />
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${guestCredits <= 50 ? "bg-amber-500/20" : "bg-primary/20"}`}>
+                  {guestCredits <= 50 ? (
+                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  ) : (
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  )}
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Try out the calendar! <span className="text-primary">({guestCredits} credits left)</span></p>
-                  <p className="text-xs text-muted-foreground">Events you add here won't be saved. Sign up to keep them.</p>
+                  <p className="font-medium text-sm">
+                    {guestCredits <= 50 ? (
+                      <span className="text-amber-600 dark:text-amber-400">⚠️ Only {guestCredits} credits left!</span>
+                    ) : (
+                      <>Try out the calendar! <span className="text-primary">({guestCredits} credits left)</span></>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {guestCredits <= 50 ? "Sign up now to save your events and get unlimited access." : "Events you add here won't be saved. Sign up to keep them."}
+                  </p>
                 </div>
               </div>
               <Link to="/register">
