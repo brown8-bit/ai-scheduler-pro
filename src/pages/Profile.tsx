@@ -30,6 +30,12 @@ import {
   X,
   Check,
   Mail,
+  Share2,
+  Copy,
+  Twitter,
+  Facebook,
+  Linkedin,
+  Link2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -303,6 +309,26 @@ const Profile = () => {
       }
       toast({ title: "Following! 🎉", description: "You're now following this user" });
     }
+  };
+
+  const handleCopyProfileLink = async () => {
+    const profileUrl = `${window.location.origin}/profile/${targetUserId}`;
+    await navigator.clipboard.writeText(profileUrl);
+    toast({ title: "Link copied!", description: "Profile link copied to clipboard" });
+  };
+
+  const handleShareSocial = (platform: 'twitter' | 'facebook' | 'linkedin') => {
+    const profileUrl = `${window.location.origin}/profile/${targetUserId}`;
+    const displayName = profile?.display_name || "this user";
+    const text = `Check out ${displayName}'s profile!`;
+    
+    const urls: Record<string, string> = {
+      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(profileUrl)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(profileUrl)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(profileUrl)}`,
+    };
+    
+    window.open(urls[platform], '_blank', 'width=600,height=400');
   };
 
   const handleLike = async (postId: string, isLiked: boolean) => {
@@ -587,12 +613,39 @@ const Profile = () => {
                 {/* Action Buttons */}
                 <div className="flex justify-center sm:justify-start gap-2 w-full sm:w-auto">
                   {isOwnProfile ? (
-                    <Link to="/settings">
-                      <Button variant="outline" className="gap-2">
-                        <Settings className="w-4 h-4" />
-                        Edit Profile
-                      </Button>
-                    </Link>
+                    <>
+                      <Link to="/settings">
+                        <Button variant="outline" className="gap-2">
+                          <Settings className="w-4 h-4" />
+                          Edit Profile
+                        </Button>
+                      </Link>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon">
+                            <Share2 className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={handleCopyProfileLink} className="gap-2 cursor-pointer">
+                            <Copy className="w-4 h-4" />
+                            Copy link
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShareSocial('twitter')} className="gap-2 cursor-pointer">
+                            <Twitter className="w-4 h-4" />
+                            Share on X
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShareSocial('facebook')} className="gap-2 cursor-pointer">
+                            <Facebook className="w-4 h-4" />
+                            Share on Facebook
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShareSocial('linkedin')} className="gap-2 cursor-pointer">
+                            <Linkedin className="w-4 h-4" />
+                            Share on LinkedIn
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>
                   ) : (
                     <>
                       <Button
@@ -620,6 +673,31 @@ const Profile = () => {
                         <Send className="w-4 h-4" />
                         Message
                       </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon">
+                            <Share2 className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={handleCopyProfileLink} className="gap-2 cursor-pointer">
+                            <Copy className="w-4 h-4" />
+                            Copy link
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShareSocial('twitter')} className="gap-2 cursor-pointer">
+                            <Twitter className="w-4 h-4" />
+                            Share on X
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShareSocial('facebook')} className="gap-2 cursor-pointer">
+                            <Facebook className="w-4 h-4" />
+                            Share on Facebook
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShareSocial('linkedin')} className="gap-2 cursor-pointer">
+                            <Linkedin className="w-4 h-4" />
+                            Share on LinkedIn
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </>
                   )}
                 </div>
