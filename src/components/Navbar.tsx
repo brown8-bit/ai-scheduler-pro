@@ -39,7 +39,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [gamificationEnabled, setGamificationEnabled] = useState(true);
+  const [gamificationEnabled, setGamificationEnabled] = useState(false); // Default off
 
   useEffect(() => {
     if (user) {
@@ -49,6 +49,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
       setAvatarUrl(null);
       setDisplayName("");
       setIsAdmin(false);
+      setGamificationEnabled(false); // Ensure off for guests
     }
   }, [user]);
 

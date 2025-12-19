@@ -26,7 +26,8 @@ import {
   Repeat2,
   UserPlus,
   Trophy,
-  Users
+  Users,
+  Shield
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -796,24 +797,30 @@ const UserSettings = () => {
             <div className="bg-card rounded-xl border border-border p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-primary" />
-                XP, Achievements & Community
+                Earn & Compete Mode
               </h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Enable Gamification Features</Label>
-                    <p className="text-sm text-muted-foreground">Show XP, achievements, leaderboard & community</p>
+                    <Label>Enable Earn & Compete Mode</Label>
+                    <p className="text-sm text-muted-foreground">Show XP, leveling, leaderboard & community</p>
                   </div>
                   <Switch 
                     checked={gamificationEnabled} 
                     onCheckedChange={setGamificationEnabled} 
                   />
                 </div>
-                {!gamificationEnabled && (
-                  <p className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
-                    When disabled, you won't see XP progress, achievements, leaderboards, or the community feed.
+                <div className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg space-y-1">
+                  <p className="flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-green-500" />
+                    <span>Optional motivation tools — your data is private and never sold.</span>
                   </p>
-                )}
+                  {!gamificationEnabled && (
+                    <p className="text-muted-foreground/70">
+                      When disabled, you won't see XP, achievements, leaderboards, or community.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
