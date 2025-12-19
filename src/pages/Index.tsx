@@ -222,7 +222,7 @@ const Index = () => {
 
           {!user && (
             <p className="mt-4 text-sm sm:text-base text-muted-foreground animate-fade-in delay-400">
-              ❤️ Loved by thousands • <span className="font-semibold text-foreground">$29/month</span> after your free trial
+              ✨ <span className="font-semibold text-foreground">Try free</span> — no signup required • <span className="font-semibold text-foreground">$29/month</span> after trial
             </p>
           )}
         </div>
