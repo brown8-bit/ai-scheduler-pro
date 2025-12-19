@@ -1202,7 +1202,8 @@ const Community = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-4 pt-20 pb-8">
-        <PullToRefresh onRefresh={handleRefresh} className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
+        <PullToRefresh onRefresh={handleRefresh} className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Sidebar - Navigation */}
           <aside className="hidden lg:block lg:col-span-3">
             <div className="sticky top-24 space-y-4">
@@ -2082,6 +2083,7 @@ const Community = () => {
               </div>
             </div>
           </aside>
+          </div>
         </PullToRefresh>
       </main>
 
