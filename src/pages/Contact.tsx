@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Send, Mail, MessageSquare, User } from "lucide-react";
+import { ArrowLeft, Send, Mail, MessageSquare, User, HelpCircle } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,47 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+const faqs = [
+  {
+    question: "How do I get started with Schedulr AI?",
+    answer: "Simply create an account, and you can start chatting with Scheddy, our AI assistant. Tell it what you want to schedule, and it will help you create events, set reminders, and manage your calendar effortlessly.",
+  },
+  {
+    question: "Can I sync my Google Calendar?",
+    answer: "Yes! Schedulr AI integrates with Google Calendar. Go to your Settings and connect your Google account to sync events both ways.",
+  },
+  {
+    question: "How much does Schedulr cost?",
+    answer: "Schedulr AI is $29/month for unlimited AI scheduling assistance, calendar sync, smart suggestions, and all premium features. Visit our Pricing page for more details.",
+  },
+  {
+    question: "Can I cancel my subscription anytime?",
+    answer: "Absolutely! You can cancel your subscription at any time from your dashboard. Your access will continue until the end of your current billing period.",
+  },
+  {
+    question: "Is my data secure?",
+    answer: "Yes, we take security seriously. All data is encrypted in transit and at rest. We never sell your personal information. Read our Privacy Policy for full details.",
+  },
+  {
+    question: "How does the AI scheduling work?",
+    answer: "Our AI analyzes your existing events, preferences, and patterns to suggest optimal times for new events. It can detect conflicts, find free slots, and even reschedule events when needed.",
+  },
+  {
+    question: "Can I share my booking link with others?",
+    answer: "Yes! Create a booking slot in your Booking Settings, and you'll get a unique link that others can use to book time with you based on your availability.",
+  },
+  {
+    question: "What if I need help or have a problem?",
+    answer: "We're here to help! Use the contact form above to reach our support team, or email us directly at Support@schedulr.com. We typically respond within 24 hours.",
+  },
+];
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -198,6 +239,32 @@ const Contact = () => {
             >
               Support@schedulr.com
             </a>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="mt-16">
+            <div className="text-center mb-8">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <HelpCircle className="w-6 h-6 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Frequently Asked Questions</h2>
+              <p className="text-muted-foreground text-sm">
+                Find quick answers to common questions
+              </p>
+            </div>
+
+            <Accordion type="single" collapsible className="w-full">
+              {faqs.map((faq, index) => (
+                <AccordionItem key={index} value={`item-${index}`}>
+                  <AccordionTrigger className="text-left">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </div>
       </div>
