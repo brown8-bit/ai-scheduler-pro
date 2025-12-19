@@ -192,8 +192,8 @@ const Tasks = () => {
     <div className="min-h-screen bg-secondary/30">
       <Navbar />
       
-      <PullToRefresh onRefresh={handleRefresh} className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4 min-h-[calc(100vh-64px)]">
-        <div className="max-w-4xl mx-auto">
+      <main className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4">
+        <PullToRefresh onRefresh={handleRefresh} className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
@@ -390,8 +390,8 @@ const Tasks = () => {
               ))
             )}
           </div>
-        </div>
-      </PullToRefresh>
+        </PullToRefresh>
+      </main>
     </div>
   );
 };
