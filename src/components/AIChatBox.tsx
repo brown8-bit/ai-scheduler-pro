@@ -307,8 +307,24 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
 
   
 
+  const isLowCredits = !user && guestCredits > 0 && guestCredits <= 50;
+
   return (
     <div className="w-full max-w-3xl bg-card rounded-2xl shadow-card border border-border overflow-hidden">
+      {/* Low Credits Warning */}
+      {isLowCredits && (
+        <div className="px-3 py-2 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between gap-2">
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            ⚠️ Only {guestCredits} credits left! Sign up to continue using Scheddy.
+          </p>
+          <Link to="/register">
+            <Button size="sm" variant="outline" className="text-xs h-7 border-amber-500/30 hover:bg-amber-500/10">
+              Sign up
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Chat Header */}
       <div className="p-3 sm:p-4 border-b border-border bg-secondary/30">
         <div className="flex items-center justify-between">
@@ -318,12 +334,12 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-sm sm:text-base">Scheddy</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">
+              <p className={`text-xs sm:text-sm truncate ${isLowCredits ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
                 {user ? statusPhrase : `${guestCredits} credits remaining`}
               </p>
             </div>
           </div>
-          {!user && (
+          {!user && !isLowCredits && (
             <Link to="/register">
               <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                 <LogIn className="w-3.5 h-3.5" />
