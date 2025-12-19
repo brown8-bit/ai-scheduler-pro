@@ -51,11 +51,12 @@ serve(async (req) => {
     // Get redirect URL from request body
     const { redirectUrl } = await req.json();
     
-    // Google OAuth scopes for calendar access
+    // Google OAuth scopes for full calendar access (read + write)
     const scopes = [
-      "https://www.googleapis.com/auth/calendar.readonly",
-      "https://www.googleapis.com/auth/calendar.events.readonly",
+      "https://www.googleapis.com/auth/calendar",
+      "https://www.googleapis.com/auth/calendar.events",
       "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
     ].join(" ");
 
     // Create state with user ID for security
