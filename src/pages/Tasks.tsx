@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,7 +75,7 @@ const Tasks = () => {
     }
   }, [user, loading, navigate]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     if (!user) return;
     
     const { data, error } = await supabase
@@ -89,7 +90,12 @@ const Tasks = () => {
       setTasks(data || []);
     }
     setIsLoading(false);
-  };
+  }, [user]);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchTasks();
+    toast({ title: "Refreshed!" });
+  }, [fetchTasks]);
 
   const handleCreateTask = async () => {
     if (!user || !newTask.title.trim()) return;
@@ -186,7 +192,7 @@ const Tasks = () => {
     <div className="min-h-screen bg-secondary/30">
       <Navbar />
       
-      <main className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4">
+      <PullToRefresh onRefresh={handleRefresh} className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4 min-h-[calc(100vh-64px)]">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -385,7 +391,7 @@ const Tasks = () => {
             )}
           </div>
         </div>
-      </main>
+      </PullToRefresh>
     </div>
   );
 };

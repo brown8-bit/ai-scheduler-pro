@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ import { toast } from "@/hooks/use-toast";
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from "date-fns";
 import scheddyAvatar from "@/assets/scheddy-avatar.png";
 import { ReferralCard } from "@/components/ReferralCard";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 interface ScheduledEvent {
   id: string;
@@ -110,6 +111,17 @@ const Dashboard = () => {
       fetchBookingSlot();
       fetchStreak();
     }
+  }, [user]);
+
+  const handleRefresh = useCallback(async () => {
+    if (!user) return;
+    await Promise.all([
+      fetchEvents(),
+      fetchBookings(),
+      fetchBookingSlot(),
+      fetchStreak(),
+    ]);
+    toast({ title: "Refreshed!", description: "Data updated" });
   }, [user]);
 
   const fetchEvents = async () => {
@@ -325,7 +337,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-secondary/30">
       <Navbar />
       
-      <main className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4">
+      <PullToRefresh onRefresh={handleRefresh} className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4 min-h-[calc(100vh-64px)]">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
@@ -723,7 +735,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </main>
+      </PullToRefresh>
     </div>
   );
 };
