@@ -29,6 +29,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Guest credits system (shared with AI chat)
+const GUEST_CREDITS_KEY = "schedulr_guest_credits";
+const INITIAL_GUEST_CREDITS = 350;
+
+const getGuestCredits = (): number => {
+  const stored = localStorage.getItem(GUEST_CREDITS_KEY);
+  if (stored === null) {
+    localStorage.setItem(GUEST_CREDITS_KEY, String(INITIAL_GUEST_CREDITS));
+    return INITIAL_GUEST_CREDITS;
+  }
+  return parseInt(stored, 10);
+};
+
+const decrementGuestCredits = (): number => {
+  const current = getGuestCredits();
+  const newValue = Math.max(0, current - 1);
+  localStorage.setItem(GUEST_CREDITS_KEY, String(newValue));
+  return newValue;
+};
+
 interface ScheduledEvent {
   id: string;
   title: string;
@@ -118,6 +138,7 @@ const CalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [events, setEvents] = useState<ScheduledEvent[]>([]);
   const [guestEvents, setGuestEvents] = useState<ScheduledEvent[]>([]);
+  const [guestCredits, setGuestCredits] = useState(() => getGuestCredits());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -154,6 +175,15 @@ const CalendarPage = () => {
 
   // Guest event management (local only)
   const addGuestEvent = (title: string, date: Date, category: string) => {
+    if (guestCredits <= 0) {
+      toast({
+        title: "Credits exhausted",
+        description: "Sign up for free to continue adding events!",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newEvent: ScheduledEvent = {
       id: `guest-${Date.now()}`,
       title,
@@ -163,9 +193,14 @@ const CalendarPage = () => {
       is_completed: false,
     };
     setGuestEvents(prev => [...prev, newEvent]);
+    
+    // Decrement credits
+    const remaining = decrementGuestCredits();
+    setGuestCredits(remaining);
+    
     toast({
       title: "Event added! 🎉",
-      description: "Sign up to save your events permanently.",
+      description: `${remaining} credits remaining. Sign up to save events permanently.`,
     });
   };
 
@@ -258,7 +293,7 @@ const CalendarPage = () => {
                   <Sparkles className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Try out the calendar!</p>
+                  <p className="font-medium text-sm">Try out the calendar! <span className="text-primary">({guestCredits} credits left)</span></p>
                   <p className="text-xs text-muted-foreground">Events you add here won't be saved. Sign up to keep them.</p>
                 </div>
               </div>
