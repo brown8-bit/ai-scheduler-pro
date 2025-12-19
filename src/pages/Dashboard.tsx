@@ -40,6 +40,7 @@ import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from "date-fns";
 import scheddyAvatar from "@/assets/scheddy-avatar.png";
 import { ReferralCard } from "@/components/ReferralCard";
 import { PullToRefresh } from "@/components/PullToRefresh";
+import { AISuggestions } from "@/components/AISuggestions";
 
 interface ScheduledEvent {
   id: string;
@@ -450,6 +451,11 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* AI Suggestions */}
+          <div className="mb-6">
+            <AISuggestions />
           </div>
 
           {/* Main Content */}
