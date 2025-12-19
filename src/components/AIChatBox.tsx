@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn, Mic, MicOff } from "lucide-react";
+import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn, Mic, MicOff, Zap } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import scheddyAvatar from "@/assets/scheddy-modern.png";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { useQuickActions } from "@/hooks/useQuickActions";
 
 interface Message {
   role: "user" | "assistant";
@@ -89,6 +90,7 @@ interface AIChatBoxProps {
 
 const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const { user } = useAuth();
+  const { quickActions } = useQuickActions();
   const [input, setInput] = useState("");
   const [statusPhrase] = useState(() => 
     SCHEDDY_STATUS_PHRASES[Math.floor(Math.random() * SCHEDDY_STATUS_PHRASES.length)]
@@ -474,7 +476,21 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             </button>
           </div>
         )}
-        
+
+        {/* Quick Action Buttons */}
+        <div className="mb-3 flex flex-wrap gap-2">
+          {quickActions.map((action) => (
+            <button
+              key={action.id}
+              onClick={() => setInput(action.prompt)}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border hover:border-primary/50 transition-all duration-200 disabled:opacity-50"
+            >
+              <span>{action.icon}</span>
+              <span>{action.label}</span>
+            </button>
+          ))}
+        </div>
         
         <div className="flex gap-2 sm:gap-3">
           {/* Photo & Voice Buttons */}
