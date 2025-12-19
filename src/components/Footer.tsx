@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { forwardRef } from "react";
-import scheddyAvatar from "@/assets/scheddy-avatar.png";
+import scheddyAvatar from "@/assets/scheddy-avatar.svg";
 
 const Footer = forwardRef<HTMLElement>((_, ref) => {
   return (

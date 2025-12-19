@@ -7,7 +7,7 @@ import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, S
 import { supabase } from "@/integrations/supabase/client";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
-import scheddyAvatar from "@/assets/scheddy-friendly.png";
+import scheddyAvatar from "@/assets/scheddy-friendly.svg";
 import WaitlistModal from "@/components/WaitlistModal";
 interface Offer {
   id: string;
