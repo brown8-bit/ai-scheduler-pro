@@ -1184,8 +1184,8 @@ const Community = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <PullToRefresh onRefresh={handleRefresh} className="container mx-auto px-4 pt-20 pb-8 min-h-[calc(100vh-64px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
+      <main className="container mx-auto px-4 pt-20 pb-8">
+        <PullToRefresh onRefresh={handleRefresh} className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
           {/* Left Sidebar - Navigation */}
           <aside className="hidden lg:block lg:col-span-3">
             <div className="sticky top-24 space-y-4">
@@ -2065,8 +2065,8 @@ const Community = () => {
               </div>
             </div>
           </aside>
-        </div>
-      </PullToRefresh>
+        </PullToRefresh>
+      </main>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
