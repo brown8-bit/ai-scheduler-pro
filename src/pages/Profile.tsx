@@ -585,7 +585,7 @@ const Profile = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-center sm:justify-start gap-2">
+                <div className="flex justify-center sm:justify-start gap-2 w-full sm:w-auto">
                   {isOwnProfile ? (
                     <Link to="/settings">
                       <Button variant="outline" className="gap-2">
@@ -597,13 +597,13 @@ const Profile = () => {
                     <>
                       <Button
                         onClick={handleFollow}
-                        variant={isFollowing ? "outline" : "default"}
-                        className="gap-2"
+                        variant={isFollowing ? "secondary" : "default"}
+                        className="gap-2 flex-1 sm:flex-none"
                       >
                         {isFollowing ? (
                           <>
                             <UserMinus className="w-4 h-4" />
-                            Unfollow
+                            Following
                           </>
                         ) : (
                           <>
@@ -613,11 +613,11 @@ const Profile = () => {
                         )}
                       </Button>
                       <Button
-                        variant="outline"
-                        className="gap-2"
+                        variant="secondary"
+                        className="gap-2 flex-1 sm:flex-none"
                         onClick={() => navigate(`/messages?userId=${profile?.user_id}`)}
                       >
-                        <Mail className="w-4 h-4" />
+                        <Send className="w-4 h-4" />
                         Message
                       </Button>
                     </>
