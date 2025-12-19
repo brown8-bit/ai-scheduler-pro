@@ -56,6 +56,7 @@ interface ScheduledEvent {
   description: string | null;
   category: string | null;
   is_completed: boolean | null;
+  hasConflict?: boolean;
 }
 
 // Simple add event component for guests
@@ -168,9 +169,35 @@ const CalendarPage = () => {
       .order("event_date", { ascending: true });
 
     if (!error && data) {
-      setEvents(data);
+      // Detect conflicts
+      const eventsWithConflicts = detectConflicts(data);
+      setEvents(eventsWithConflicts);
     }
     setLoading(false);
+  };
+
+  // Detect overlapping events (within 1 hour of each other)
+  const detectConflicts = (eventList: ScheduledEvent[]): ScheduledEvent[] => {
+    const DEFAULT_DURATION = 60 * 60 * 1000; // 1 hour in ms
+    
+    return eventList.map((event, index) => {
+      const eventStart = new Date(event.event_date).getTime();
+      const eventEnd = eventStart + DEFAULT_DURATION;
+      
+      // Check against all other events
+      const hasConflict = eventList.some((other, otherIndex) => {
+        if (index === otherIndex) return false;
+        if (event.is_completed || other.is_completed) return false;
+        
+        const otherStart = new Date(other.event_date).getTime();
+        const otherEnd = otherStart + DEFAULT_DURATION;
+        
+        // Check for overlap
+        return eventStart < otherEnd && eventEnd > otherStart;
+      });
+      
+      return { ...event, hasConflict };
+    });
   };
 
   // Guest event management (local only)
@@ -264,6 +291,11 @@ const CalendarPage = () => {
   );
 
   const datesWithEvents = activeEvents.map((e) => new Date(e.event_date));
+  
+  // Get dates that have conflicts
+  const datesWithConflicts = activeEvents
+    .filter(e => e.hasConflict && !e.is_completed)
+    .map(e => new Date(e.event_date));
 
   const getCategoryColor = (category: string | null) => {
     const colors: Record<string, string> = {
@@ -358,11 +390,17 @@ const CalendarPage = () => {
                 className="rounded-md border mx-auto pointer-events-auto"
                 modifiers={{
                   hasEvent: datesWithEvents,
+                  hasConflict: datesWithConflicts,
                 }}
                 modifiersStyles={{
                   hasEvent: {
                     backgroundColor: "hsl(var(--primary) / 0.2)",
                     borderRadius: "50%",
+                  },
+                  hasConflict: {
+                    backgroundColor: "hsl(45 93% 47% / 0.3)",
+                    borderRadius: "50%",
+                    boxShadow: "inset 0 0 0 2px hsl(45 93% 47% / 0.6)",
                   },
                 }}
               />
@@ -426,12 +464,24 @@ const CalendarPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Conflict summary */}
+                  {eventsForSelectedDate.some(e => e.hasConflict) && (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400">
+                      <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                      <span className="text-sm font-medium">
+                        Some events overlap - consider rescheduling
+                      </span>
+                    </div>
+                  )}
+                  
                   {eventsForSelectedDate.map((event) => (
                     <div
                       key={event.id}
-                      className={`flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors ${
-                        event.is_completed ? "opacity-60" : ""
-                      }`}
+                      className={`flex items-start gap-4 p-4 rounded-lg border transition-colors ${
+                        event.hasConflict && !event.is_completed
+                          ? "bg-amber-500/5 border-amber-500/30 hover:bg-amber-500/10" 
+                          : "bg-card hover:bg-muted/50"
+                      } ${event.is_completed ? "opacity-60" : ""}`}
                     >
                       <button
                         onClick={() => handleToggleComplete(event)}
@@ -453,6 +503,12 @@ const CalendarPage = () => {
                           <h3 className={`font-medium text-foreground ${event.is_completed ? "line-through" : ""}`}>
                             {event.title}
                           </h3>
+                          {event.hasConflict && !event.is_completed && (
+                            <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                              <AlertTriangle className="h-3.5 w-3.5" />
+                              <span className="text-xs font-medium">Conflict</span>
+                            </div>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(event.event_date), "h:mm a")}
@@ -462,9 +518,11 @@ const CalendarPage = () => {
                             {event.description}
                           </p>
                         )}
-                        <Badge variant="secondary" className="mt-2 text-xs">
-                          {event.category || "general"}
-                        </Badge>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {event.category || "general"}
+                          </Badge>
+                        </div>
                       </div>
                       <Button
                         variant="ghost"
