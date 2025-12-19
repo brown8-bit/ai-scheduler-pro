@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn, Mic, MicOff, Zap } from "lucide-react";
+import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn, Mic, MicOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
