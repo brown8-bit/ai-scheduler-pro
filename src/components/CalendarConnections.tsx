@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Calendar, 
-  Link2, 
   Check, 
   AlertCircle, 
   Loader2, 
   RefreshCw,
-  Settings,
   Trash2,
   ChevronRight
 } from "lucide-react";
@@ -106,16 +104,85 @@ const CalendarConnections = () => {
     }
   };
 
+  // Listen for OAuth popup messages
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "google-calendar-success") {
+        toast({
+          title: "Calendar Connected!",
+          description: "Your Google Calendar has been successfully connected.",
+        });
+        fetchConnections();
+        setConnecting(null);
+      } else if (event.data?.type === "google-calendar-error") {
+        toast({
+          title: "Connection Failed",
+          description: event.data.error || "Failed to connect calendar. Please try again.",
+          variant: "destructive",
+        });
+        setConnecting(null);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
   const handleConnect = async (providerId: string) => {
+    if (providerId !== "google") {
+      toast({
+        title: "Coming Soon!",
+        description: `${PROVIDERS.find(p => p.id === providerId)?.name} integration is coming soon.`,
+      });
+      return;
+    }
+
     setConnecting(providerId);
-    
-    // For now, show a coming soon message since OAuth requires setup
-    toast({
-      title: "Coming Soon! 🚀",
-      description: `${PROVIDERS.find(p => p.id === providerId)?.name} integration is coming soon. We'll notify you when it's ready!`,
-    });
-    
-    setConnecting(null);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({
+          title: "Not authenticated",
+          description: "Please log in to connect your calendar.",
+          variant: "destructive",
+        });
+        setConnecting(null);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("google-calendar-auth", {
+        body: { redirectUrl: window.location.origin + "/settings" },
+      });
+
+      if (error) {
+        console.error("OAuth error:", error);
+        throw error;
+      }
+
+      if (data?.url) {
+        // Open OAuth popup
+        const width = 500;
+        const height = 600;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        window.open(
+          data.url,
+          "google-oauth",
+          `width=${width},height=${height},left=${left},top=${top},popup=1`
+        );
+      } else {
+        throw new Error("No OAuth URL received");
+      }
+    } catch (error) {
+      console.error("Connect error:", error);
+      toast({
+        title: "Connection Error",
+        description: "Failed to start OAuth flow. Please try again.",
+        variant: "destructive",
+      });
+      setConnecting(null);
+    }
   };
 
   const handleDisconnect = async (connectionId: string) => {
