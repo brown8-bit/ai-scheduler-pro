@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Shield, Mail, Lock, ArrowLeft, UserPlus, LogIn } from "lucide-react";
+import { Shield, Mail, Lock, ArrowLeft, LogIn } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -9,15 +9,11 @@ import { z } from "zod";
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
 const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
 
-// Only this email can create an admin account
-const ALLOWED_ADMIN_EMAIL = "brown851@verizon.net";
-
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
 
   useEffect(() => {
     // Check if already logged in
@@ -77,110 +73,47 @@ const AdminLogin = () => {
     setIsLoading(true);
     
     try {
-      if (isSignUp) {
-        // Check if email is allowed to sign up as admin
-        if (emailResult.data.toLowerCase() !== ALLOWED_ADMIN_EMAIL.toLowerCase()) {
+      // Log in existing admin
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: emailResult.data,
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        // Check if user has admin role
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (!roleData) {
+          await supabase.auth.signOut();
           toast({
-            title: "Access Denied",
-            description: "This email is not authorized to create an admin account.",
+            title: "Access denied",
+            description: "You don't have admin privileges. Please contact an administrator.",
             variant: "destructive",
           });
           setIsLoading(false);
           return;
         }
 
-        // Sign up new admin
-        const { data, error } = await supabase.auth.signUp({
-          email: emailResult.data,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/admin-login`
-          }
+        toast({
+          title: "Welcome back! 🎉",
+          description: "Admin access granted.",
         });
-
-        if (error) {
-          if (error.message.includes("already registered")) {
-            toast({
-              title: "Account exists",
-              description: "This email is already registered. Try logging in instead.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Sign up failed",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-          setIsLoading(false);
-          return;
-        }
-
-        if (data.user) {
-          // Assign admin role to the new user
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({ user_id: data.user.id, role: 'admin' });
-
-          if (roleError) {
-            toast({
-              title: "Role assignment failed",
-              description: "Account created but admin role could not be assigned. Contact support.",
-              variant: "destructive",
-            });
-            setIsLoading(false);
-            return;
-          }
-
-          toast({
-            title: "Admin account created! ✨",
-            description: "Welcome to the Admin Control Center.",
-          });
-          navigate("/admin");
-        }
-      } else {
-        // Log in existing admin
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: emailResult.data,
-          password,
-        });
-
-        if (error) {
-          toast({
-            title: "Login failed",
-            description: error.message,
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        if (data.user) {
-          // Check if user has admin role
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', data.user.id)
-            .eq('role', 'admin')
-            .maybeSingle();
-
-          if (!roleData) {
-            await supabase.auth.signOut();
-            toast({
-              title: "Access denied",
-              description: "You don't have admin privileges. Please contact an administrator.",
-              variant: "destructive",
-            });
-            setIsLoading(false);
-            return;
-          }
-
-          toast({
-            title: "Welcome back! 🎉",
-            description: "Admin access granted.",
-          });
-          navigate("/admin");
-        }
+        navigate("/admin");
       }
     } catch (error) {
       toast({
@@ -214,7 +147,7 @@ const AdminLogin = () => {
             </div>
             <h1 className="mt-4 text-2xl font-bold text-background">Admin Control Center</h1>
             <p className="mt-2 text-muted-foreground">
-              {isSignUp ? "Create your admin account" : "Secure access for Schedulr administrators"}
+              Secure access for Schedulr administrators
             </p>
             <p className="mt-1 text-sm text-muted-foreground/70">
               Manage users, view analytics, and configure system settings
@@ -261,11 +194,6 @@ const AdminLogin = () => {
             >
               {isLoading ? (
                 "Please wait..."
-              ) : isSignUp ? (
-                <>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Create Admin Account
-                </>
               ) : (
                 <>
                   <LogIn className="w-4 h-4 mr-2" />
@@ -273,16 +201,6 @@ const AdminLogin = () => {
                 </>
               )}
             </Button>
-
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {isSignUp ? "Already have an admin account? Sign in" : "Need an admin account? Sign up"}
-              </button>
-            </div>
           </form>
         </div>
       </div>
