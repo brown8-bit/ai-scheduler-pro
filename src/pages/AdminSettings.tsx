@@ -21,6 +21,17 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+const SETTINGS_KEYS = {
+  appName: "app_name",
+  supportEmail: "support_email",
+  maintenanceMode: "maintenance_mode",
+  allowSignups: "allow_signups",
+  trialDays: "trial_days",
+  monthlyPrice: "monthly_price",
+  emailNotifications: "email_notifications",
+  welcomeMessage: "welcome_message",
+};
+
 const AdminSettings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -35,7 +46,7 @@ const AdminSettings = () => {
   const [trialDays, setTrialDays] = useState("7");
   const [monthlyPrice, setMonthlyPrice] = useState("29");
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [welcomeMessage, setWelcomeMessage] = useState("Welcome to Schedulr! 👋");
+  const [welcomeMessage, setWelcomeMessage] = useState("Welcome to Schedulr!");
 
   useEffect(() => {
     checkAdminAccess();
@@ -61,6 +72,7 @@ const AdminSettings = () => {
       }
 
       setIsAdmin(true);
+      await loadSettings();
     } catch (error) {
       navigate("/admin-login");
     } finally {
@@ -68,15 +80,89 @@ const AdminSettings = () => {
     }
   };
 
+  const loadSettings = async () => {
+    const { data: settings, error } = await supabase
+      .from("admin_settings")
+      .select("key, value");
+
+    if (error) {
+      console.error("Error loading settings:", error);
+      return;
+    }
+
+    if (settings) {
+      settings.forEach((setting) => {
+        switch (setting.key) {
+          case SETTINGS_KEYS.appName:
+            setAppName(setting.value || "Schedulr");
+            break;
+          case SETTINGS_KEYS.supportEmail:
+            setSupportEmail(setting.value || "support@schedulr.app");
+            break;
+          case SETTINGS_KEYS.maintenanceMode:
+            setMaintenanceMode(setting.value === "true");
+            break;
+          case SETTINGS_KEYS.allowSignups:
+            setAllowSignups(setting.value !== "false");
+            break;
+          case SETTINGS_KEYS.trialDays:
+            setTrialDays(setting.value || "7");
+            break;
+          case SETTINGS_KEYS.monthlyPrice:
+            setMonthlyPrice(setting.value || "29");
+            break;
+          case SETTINGS_KEYS.emailNotifications:
+            setEmailNotifications(setting.value !== "false");
+            break;
+          case SETTINGS_KEYS.welcomeMessage:
+            setWelcomeMessage(setting.value || "Welcome to Schedulr!");
+            break;
+        }
+      });
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
-    // Simulate saving - in production, you'd save to database
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast({
-      title: "Settings saved!",
-      description: "Your app settings have been updated.",
-    });
-    setSaving(false);
+    
+    try {
+      const settingsToSave = [
+        { key: SETTINGS_KEYS.appName, value: appName },
+        { key: SETTINGS_KEYS.supportEmail, value: supportEmail },
+        { key: SETTINGS_KEYS.maintenanceMode, value: String(maintenanceMode) },
+        { key: SETTINGS_KEYS.allowSignups, value: String(allowSignups) },
+        { key: SETTINGS_KEYS.trialDays, value: trialDays },
+        { key: SETTINGS_KEYS.monthlyPrice, value: monthlyPrice },
+        { key: SETTINGS_KEYS.emailNotifications, value: String(emailNotifications) },
+        { key: SETTINGS_KEYS.welcomeMessage, value: welcomeMessage },
+      ];
+
+      // Upsert each setting
+      for (const setting of settingsToSave) {
+        const { error } = await supabase
+          .from("admin_settings")
+          .upsert(
+            { key: setting.key, value: setting.value },
+            { onConflict: "key" }
+          );
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Settings saved!",
+        description: "Your app settings have been updated.",
+      });
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleLogout = async () => {
