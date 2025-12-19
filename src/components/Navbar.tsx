@@ -316,69 +316,85 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+            className="md:hidden p-3 -mr-2 rounded-xl hover:bg-accent active:scale-95 transition-all duration-200 touch-manipulation"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <div className="relative w-6 h-6">
+              <Menu className={`w-6 h-6 absolute inset-0 transition-all duration-300 ${mobileMenuOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'}`} />
+              <X className={`w-6 h-6 absolute inset-0 transition-all duration-300 ${mobileMenuOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'}`} />
+            </div>
           </button>
         </div>
       </div>
     </nav>
 
-    {mobileMenuOpen && (
-      <div className="md:hidden fixed inset-x-0 top-16 bottom-0 z-[110] bg-background border-t border-border overflow-y-auto overscroll-contain">
-        <div className="flex flex-col gap-2 py-4 px-4 max-w-7xl mx-auto">
-              {navLinks.map((link) => (
+    {/* Mobile Menu Overlay */}
+    <div 
+      className={`md:hidden fixed inset-0 z-[105] bg-black/50 transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      onClick={() => setMobileMenuOpen(false)}
+    />
+    
+    {/* Mobile Menu Panel */}
+    <div className={`md:hidden fixed inset-x-0 top-16 bottom-0 z-[110] bg-background border-t border-border overflow-y-auto overscroll-contain transition-all duration-300 ease-out ${mobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0 pointer-events-none'}`}>
+      <div className="flex flex-col gap-1 py-4 px-4 max-w-7xl mx-auto">
+            {navLinks.map((link, index) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                onClick={() => setMobileMenuOpen(false)}
+                style={{ animationDelay: `${index * 50}ms` }}
+                className={`animate-fade-in ${mobileMenuOpen ? '' : 'opacity-0'}`}
+              >
+                <Button
+                  variant="ghost"
+                  className={`w-full justify-start h-12 text-base ${link.icon ? "gap-3" : ""} ${isActive(link.path) ? "bg-accent" : ""} active:scale-[0.98] transition-transform touch-manipulation`}
+                >
+                  {link.icon && <link.icon className="w-5 h-5" />}
+                  {link.label}
+                </Button>
+              </Link>
+            ))}
+              
+              <div className="px-4 py-3 mt-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Features</p>
+              </div>
+              
+              {featureLinks.map((link, index) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   onClick={() => setMobileMenuOpen(false)}
+                  style={{ animationDelay: `${(navLinks.length + index) * 40}ms` }}
+                  className={`animate-fade-in ${mobileMenuOpen ? '' : 'opacity-0'}`}
                 >
                   <Button
                     variant="ghost"
-                    className={`w-full justify-start ${link.icon ? "gap-2" : ""} ${isActive(link.path) ? "bg-accent" : ""}`}
+                    className={`w-full justify-start gap-3 h-11 ${isActive(link.path) ? "bg-accent" : ""} active:scale-[0.98] transition-transform touch-manipulation`}
                   >
-                    {link.icon && <link.icon className="w-4 h-4" />}
+                    <link.icon className="w-5 h-5" />
                     {link.label}
                   </Button>
                 </Link>
               ))}
               
-              <div className="px-4 py-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Features</p>
+              <div className="px-4 py-3 mt-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Business</p>
               </div>
               
-              {featureLinks.map((link) => (
+              {businessLinks.map((link, index) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   onClick={() => setMobileMenuOpen(false)}
+                  style={{ animationDelay: `${(navLinks.length + featureLinks.length + index) * 40}ms` }}
+                  className={`animate-fade-in ${mobileMenuOpen ? '' : 'opacity-0'}`}
                 >
                   <Button
                     variant="ghost"
-                    className={`w-full justify-start gap-2 ${isActive(link.path) ? "bg-accent" : ""}`}
+                    className={`w-full justify-start gap-3 h-11 ${isActive(link.path) ? "bg-accent" : ""} active:scale-[0.98] transition-transform touch-manipulation`}
                   >
-                    <link.icon className="w-4 h-4" />
-                    {link.label}
-                  </Button>
-                </Link>
-              ))}
-              
-              <div className="px-4 py-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Business</p>
-              </div>
-              
-              {businessLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start gap-2 ${isActive(link.path) ? "bg-accent" : ""}`}
-                  >
-                    <link.icon className="w-4 h-4" />
+                    <link.icon className="w-5 h-5" />
                     {link.label}
                   </Button>
                 </Link>
@@ -444,8 +460,8 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
               )}
           </div>
         </div>
-      )}
     </>
+
 
   );
 });
