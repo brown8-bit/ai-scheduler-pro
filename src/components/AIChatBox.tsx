@@ -36,15 +36,15 @@ const decrementGuestCredits = (): number => {
   return newValue;
 };
 
-// Scheddy's personality phrases - more natural and varied
+// Scheddy's personality phrases - creator-focused
 const SCHEDDY_GREETINGS = [
-  "Hey there! 👋 I'm Scheddy - your personal scheduling sidekick. What's on your mind today?",
-  "Oh hi! Ready to help you conquer your schedule. What would you like to organize?",
-  "Hey! Scheddy here. Whether it's a quick reminder or a complex recurring event, I've got you. What do you need?",
-  "Hello! 🗓️ I'm basically obsessed with helping people get organized. What can I help you schedule?",
-  "Hey friend! Tell me what's on your plate and let's get it organized together.",
-  "Hi! I'm Scheddy, and honestly? Helping with schedules is my favorite thing. What's up?",
-  "Hey! Got meetings to schedule? Reminders to set? Focus time to block? I'm your assistant!",
+  "Hey creator! 👋 I'm Scheddy - your AI scheduling sidekick. Ready to help you ship consistently?",
+  "Oh hi! Ready to help you block focus time and stay consistent. What are you building today?",
+  "Hey! Scheddy here. Content to batch? Clients to schedule? Deep work to protect? I've got you.",
+  "Hello! 🎬 I'm here to help creators and builders stay organized. What can I help you schedule?",
+  "Hey solopreneur! Tell me what's on your plate and let's make time for what matters.",
+  "Hi! I'm Scheddy - I help creators stay consistent without burning out. What's up?",
+  "Hey! Need to block time for recording? Schedule newsletter writing? Let's do it!",
 ];
 
 const SCHEDDY_STATUS_PHRASES = [
@@ -77,11 +77,11 @@ const EVENT_CREATED_PHRASES = [
 ];
 
 const SUGGESTION_PROMPTS = [
-  "Schedule a meeting tomorrow at 2pm",
-  "Remind me to call mom on Sunday",
-  "Block 2 hours for focus time",
-  "Add a weekly team standup",
-  "What's on my schedule today?",
+  "Block 3 hours for content creation",
+  "Schedule time to record videos tomorrow",
+  "Block deep work for my side project",
+  "Set up a weekly newsletter writing block",
+  "Schedule client calls for Thursday afternoon",
 ];
 
 interface AIChatBoxProps {

@@ -1264,10 +1264,10 @@ const Community = () => {
             <div className="mb-4">
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Sparkles className="w-6 h-6 text-primary" />
-                Community
+                Creator Community
               </h1>
               <p className="text-muted-foreground text-sm">
-                Connect with fellow Schedulrs 🎓
+                Get feedback from fellow creators & share schedule previews for accountability 🚀
               </p>
             </div>
 
@@ -1288,21 +1288,21 @@ const Community = () => {
                     </div>
                     <div className="flex-1 pr-6">
                       <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
-                        Welcome to the Community! 
-                        <span className="text-xl">👋</span>
+                        Welcome to the Creator Community! 
+                        <span className="text-xl">🚀</span>
                       </h3>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Join the creator community – like, comment, and get feedback on your scheduled previews from fellow Schedulrs!
+                        Share your schedule previews, get feedback from fellow creators, and build in public with accountability partners!
                       </p>
                       <div className="flex flex-wrap gap-2 mb-3">
                         <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                          <Heart className="w-3 h-3" /> Like posts
+                          <Heart className="w-3 h-3" /> Support creators
                         </span>
                         <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                          <MessageCircle className="w-3 h-3" /> Comment & discuss
+                          <MessageCircle className="w-3 h-3" /> Give feedback
                         </span>
                         <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                          <UserPlus className="w-3 h-3" /> Follow creators
+                          <UserPlus className="w-3 h-3" /> Find accountability partners
                         </span>
                       </div>
                       <Button 
@@ -1376,7 +1376,7 @@ const Community = () => {
               <Card className="mb-4 bg-primary/5 border-primary/20">
                 <CardContent className="py-4">
                   <p className="text-sm text-center text-muted-foreground">
-                    Follow some Schedulrs to see their posts here!
+                    Follow some creators to see their posts here and stay accountable together!
                   </p>
                 </CardContent>
               </Card>
