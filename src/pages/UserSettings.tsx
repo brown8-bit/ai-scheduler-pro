@@ -451,7 +451,7 @@ const UserSettings = () => {
               </h2>
               <div className="space-y-4">
                 {/* Avatar Upload */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4">
                   <div className="relative">
                     <Avatar className="w-20 h-20 cursor-pointer" onClick={handleAvatarClick}>
                       <AvatarImage src={avatarUrl || undefined} alt="Profile" />
@@ -462,7 +462,7 @@ const UserSettings = () => {
                     <button
                       onClick={handleAvatarClick}
                       disabled={uploadingAvatar}
-                      className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+                      className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors active:scale-95 touch-manipulation"
                     >
                       {uploadingAvatar ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -470,18 +470,18 @@ const UserSettings = () => {
                         <Camera className="w-4 h-4" />
                       )}
                     </button>
+                    {/* File input - NO capture attribute to allow photo library on mobile */}
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
-                      capture="user"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       onChange={handleAvatarUpload}
                       className="hidden"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 text-center sm:text-left">
                     <p className="text-sm font-medium">Profile Picture</p>
-                    <p className="text-xs text-muted-foreground">Click to upload a new photo (max 2MB)</p>
+                    <p className="text-xs text-muted-foreground">Tap to choose from photo library or take a new photo</p>
                   </div>
                 </div>
 
