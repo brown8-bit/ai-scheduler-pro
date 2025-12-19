@@ -38,6 +38,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_settings_changelog: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          setting_key: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          setting_key: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          setting_key?: string
+        }
+        Relationships: []
+      }
       booking_slots: {
         Row: {
           available_days: number[] | null

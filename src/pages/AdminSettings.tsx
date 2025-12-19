@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +16,13 @@ import {
   Users,
   Loader2,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  History,
+  Clock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
 const SETTINGS_KEYS = {
   appName: "app_name",
@@ -32,11 +35,36 @@ const SETTINGS_KEYS = {
   welcomeMessage: "welcome_message",
 };
 
+const SETTINGS_LABELS: Record<string, string> = {
+  app_name: "App Name",
+  support_email: "Support Email",
+  maintenance_mode: "Maintenance Mode",
+  allow_signups: "Allow Signups",
+  trial_days: "Trial Days",
+  monthly_price: "Monthly Price",
+  email_notifications: "Email Notifications",
+  welcome_message: "Welcome Message",
+};
+
+interface ChangelogEntry {
+  id: string;
+  setting_key: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_at: string;
+}
+
+interface StoredSettings {
+  [key: string]: string | undefined;
+}
+
 const AdminSettings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [changelog, setChangelog] = useState<ChangelogEntry[]>([]);
+  const [storedSettings, setStoredSettings] = useState<StoredSettings>({});
 
   // App Settings State
   const [appName, setAppName] = useState("Schedulr");
@@ -72,11 +100,23 @@ const AdminSettings = () => {
       }
 
       setIsAdmin(true);
-      await loadSettings();
+      await Promise.all([loadSettings(), loadChangelog()]);
     } catch (error) {
       navigate("/admin-login");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadChangelog = async () => {
+    const { data, error } = await supabase
+      .from("admin_settings_changelog")
+      .select("id, setting_key, old_value, new_value, changed_at")
+      .order("changed_at", { ascending: false })
+      .limit(20);
+
+    if (!error && data) {
+      setChangelog(data);
     }
   };
 
@@ -90,8 +130,10 @@ const AdminSettings = () => {
       return;
     }
 
+    const stored: StoredSettings = {};
     if (settings) {
       settings.forEach((setting) => {
+        stored[setting.key] = setting.value || undefined;
         switch (setting.key) {
           case SETTINGS_KEYS.appName:
             setAppName(setting.value || "Schedulr");
@@ -120,12 +162,16 @@ const AdminSettings = () => {
         }
       });
     }
+    setStoredSettings(stored);
   };
 
   const handleSave = async () => {
     setSaving(true);
     
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       const settingsToSave = [
         { key: SETTINGS_KEYS.appName, value: appName },
         { key: SETTINGS_KEYS.supportEmail, value: supportEmail },
@@ -137,8 +183,24 @@ const AdminSettings = () => {
         { key: SETTINGS_KEYS.welcomeMessage, value: welcomeMessage },
       ];
 
-      // Upsert each setting
+      // Track changes and save
       for (const setting of settingsToSave) {
+        const oldValue = storedSettings[setting.key];
+        
+        // Only log if value changed
+        if (oldValue !== setting.value) {
+          // Insert changelog entry
+          await supabase
+            .from("admin_settings_changelog")
+            .insert({
+              setting_key: setting.key,
+              old_value: oldValue || null,
+              new_value: setting.value,
+              changed_by: user.id,
+            });
+        }
+
+        // Upsert the setting
         const { error } = await supabase
           .from("admin_settings")
           .upsert(
@@ -148,6 +210,9 @@ const AdminSettings = () => {
 
         if (error) throw error;
       }
+
+      // Reload settings and changelog
+      await Promise.all([loadSettings(), loadChangelog()]);
 
       toast({
         title: "Settings saved!",
@@ -172,6 +237,14 @@ const AdminSettings = () => {
       description: "You have been logged out of the admin panel.",
     });
     navigate("/admin-login");
+  };
+
+  const formatValue = (value: string | null) => {
+    if (value === null || value === undefined) return "Not set";
+    if (value === "true") return "Enabled";
+    if (value === "false") return "Disabled";
+    if (value.length > 30) return value.substring(0, 30) + "...";
+    return value;
   };
 
   if (loading) {
@@ -325,7 +398,7 @@ const AdminSettings = () => {
               </div>
               <div className="p-4 bg-secondary/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  💳 Stripe integration not yet configured. <span className="text-primary cursor-pointer hover:underline">Set up payments</span>
+                  Stripe integration is configured for payments.
                 </p>
               </div>
             </div>
@@ -378,6 +451,45 @@ const AdminSettings = () => {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Settings Changelog */}
+          <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <History className="w-5 h-5 text-primary" />
+              Settings Changelog
+            </h2>
+            {changelog.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No changes recorded yet. Changes will appear here after you save settings.
+              </p>
+            ) : (
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {changelog.map((entry) => (
+                  <div 
+                    key={entry.id} 
+                    className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border/50"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <Clock className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">
+                        {SETTINGS_LABELS[entry.setting_key] || entry.setting_key}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <span className="text-destructive/70">{formatValue(entry.old_value)}</span>
+                        {" → "}
+                        <span className="text-green-600 dark:text-green-400">{formatValue(entry.new_value)}</span>
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground shrink-0">
+                      {formatDistanceToNow(new Date(entry.changed_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
