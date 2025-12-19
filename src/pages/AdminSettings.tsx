@@ -6,16 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  Shield, 
+  Settings, 
   ArrowLeft,
   Save,
   Mail,
-  Bell,
   CreditCard,
   Globe,
   Lock,
   Users,
-  Loader2
+  Loader2,
+  LogOut,
+  LayoutDashboard
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -72,10 +73,19 @@ const AdminSettings = () => {
     // Simulate saving - in production, you'd save to database
     await new Promise(resolve => setTimeout(resolve, 1000));
     toast({
-      title: "Settings saved! ✅",
+      title: "Settings saved!",
       description: "Your app settings have been updated.",
     });
     setSaving(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been logged out of the admin panel.",
+    });
+    navigate("/admin-login");
   };
 
   if (loading) {
@@ -94,14 +104,17 @@ const AdminSettings = () => {
       <header className="bg-card border-b border-border px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/admin">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate("/admin")}
+              className="shrink-0"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-destructive flex items-center justify-center">
-                <Shield className="w-5 h-5 text-destructive-foreground" />
+                <Settings className="w-5 h-5 text-destructive-foreground" />
               </div>
               <div>
                 <h1 className="font-bold text-lg">Admin Settings</h1>
@@ -109,10 +122,34 @@ const AdminSettings = () => {
               </div>
             </div>
           </div>
-          <Button onClick={handleSave} disabled={saving} className="gap-2">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Changes
-          </Button>
+          <div className="flex items-center gap-4">
+            {/* View Toggle */}
+            <div className="hidden sm:flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
+              <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+              <Label htmlFor="view-toggle" className="text-sm text-muted-foreground cursor-pointer">
+                User View
+              </Label>
+              <Switch 
+                id="view-toggle" 
+                onCheckedChange={(checked) => {
+                  if (checked) navigate("/dashboard");
+                }}
+              />
+            </div>
+            <Button onClick={handleSave} disabled={saving} className="gap-2">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span className="hidden sm:inline">Save Changes</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-destructive gap-2"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </div>
         </div>
       </header>
 

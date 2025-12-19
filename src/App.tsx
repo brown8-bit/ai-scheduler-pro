@@ -98,6 +98,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
+              <Route path="/admin-settings" element={<AdminSettings />} />
               <Route path="/settings" element={<UserSettings />} />
               <Route path="/timer" element={<Timer />} />
               <Route path="/clients" element={<Clients />} />
