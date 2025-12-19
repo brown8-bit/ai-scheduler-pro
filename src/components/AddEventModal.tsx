@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, Plus, Users, MessageCircle, AlertTriangle } from "lucide-react";
+import { CalendarIcon, Clock, Plus, Users, MessageCircle, AlertTriangle, Sparkles, Zap } from "lucide-react";
 import { useConflictDetection, ConflictingEvent, AlternativeSlot } from "@/hooks/useConflictDetection";
+import { useSmartScheduling, TimeSlotSuggestion } from "@/hooks/useSmartScheduling";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -74,8 +75,11 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
   const [conflicts, setConflicts] = useState<ConflictingEvent[]>([]);
   const [alternatives, setAlternatives] = useState<AlternativeSlot[]>([]);
   const [showConflictWarning, setShowConflictWarning] = useState(false);
+  const [smartSuggestions, setSmartSuggestions] = useState<TimeSlotSuggestion[]>([]);
+  const [showSmartSuggestions, setShowSmartSuggestions] = useState(false);
   
   const { checkForConflicts, checking } = useConflictDetection();
+  const { findBestTimeSlots, finding } = useSmartScheduling();
 
   const resetForm = () => {
     setTitle("");
@@ -90,6 +94,8 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
     setConflicts([]);
     setAlternatives([]);
     setShowConflictWarning(false);
+    setSmartSuggestions([]);
+    setShowSmartSuggestions(false);
   };
 
   const selectAlternativeTime = (slot: AlternativeSlot) => {
@@ -105,6 +111,36 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
       title: "Time updated!",
       description: `Changed to ${slot.label}`,
     });
+  };
+
+  const selectSmartSlot = (slot: TimeSlotSuggestion) => {
+    const newDate = new Date(slot.start);
+    setDate(newDate);
+    setTime(
+      `${String(newDate.getHours()).padStart(2, '0')}:${String(newDate.getMinutes()).padStart(2, '0')}`
+    );
+    setShowSmartSuggestions(false);
+    setSmartSuggestions([]);
+    toast({
+      title: "Smart time selected!",
+      description: `${format(slot.start, "h:mm a")} - ${slot.reason}`,
+    });
+  };
+
+  const handleFindBestTime = async () => {
+    if (!date) return;
+    
+    const suggestions = await findBestTimeSlots(userId, date);
+    if (suggestions.length > 0) {
+      setSmartSuggestions(suggestions);
+      setShowSmartSuggestions(true);
+    } else {
+      toast({
+        title: "No available slots",
+        description: "Try selecting a different day or adjust your working hours.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent, forceCreate = false) => {
@@ -278,6 +314,72 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
               </div>
             </div>
           </div>
+
+          {/* Smart Scheduling Button */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40"
+            onClick={handleFindBestTime}
+            disabled={finding || !date}
+          >
+            {finding ? (
+              <>
+                <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                Finding best times...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 text-primary" />
+                Find best time for this day
+              </>
+            )}
+          </Button>
+
+          {/* Smart Suggestions */}
+          {showSmartSuggestions && smartSuggestions.length > 0 && (
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Zap className="h-4 w-4" />
+                <span className="font-medium text-sm">Best available times</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {smartSuggestions.map((slot, index) => (
+                  <Button
+                    key={index}
+                    type="button"
+                    variant={index === 0 ? "default" : "secondary"}
+                    size="sm"
+                    className={cn(
+                      "flex flex-col items-start h-auto py-2 px-3",
+                      index === 0 && "col-span-2 bg-gradient-to-r from-primary to-accent"
+                    )}
+                    onClick={() => selectSmartSlot(slot)}
+                  >
+                    <span className="font-medium">
+                      {format(slot.start, "h:mm a")}
+                    </span>
+                    <span className={cn(
+                      "text-xs",
+                      index === 0 ? "text-primary-foreground/80" : "text-muted-foreground"
+                    )}>
+                      {slot.reason}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => setShowSmartSuggestions(false)}
+              >
+                Dismiss
+              </Button>
+            </div>
+          )}
 
           {/* Category */}
           <div className="space-y-2">
