@@ -1,4 +1,4 @@
-import scheddyAvatar from "@/assets/scheddy-avatar.svg";
+import scheddyAvatar from "@/assets/scheddy-avatar.png";
 
 const LOADING_PHRASES = [
   "Checking your schedule...",

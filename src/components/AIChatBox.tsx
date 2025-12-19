@@ -4,7 +4,7 @@ import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn } from "luci
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
-import scheddyAvatar from "@/assets/scheddy-friendly.svg";
+import scheddyAvatar from "@/assets/scheddy-friendly.png";
 
 interface Message {
   role: "user" | "assistant";
