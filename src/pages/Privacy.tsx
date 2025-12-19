@@ -165,7 +165,7 @@ const Privacy = () => {
               </p>
               <div className="mt-3 p-4 bg-secondary rounded-lg">
                 <p className="font-medium text-foreground">Schedulr AI</p>
-                <p>Email: <span className="text-foreground">Support@schedulrai.com</span></p>
+                <p>Email: <span className="text-foreground">Support@schedulr.com</span></p>
               </div>
             </div>
 
