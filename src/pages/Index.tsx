@@ -113,22 +113,19 @@ const Index = () => {
       icon: Flame,
       title: "7-Day Streak Master",
       description: "Complete habits for 7 days straight",
-      reward: "+50 XP",
-      progress: 85
+      reward: "+50 XP"
     },
     {
       icon: Trophy,
       title: "Productivity Champion",
       description: "Balance 50 work and personal tasks",
-      reward: "+200 XP",
-      progress: 62
+      reward: "+200 XP"
     },
     {
       icon: Timer,
       title: "Focus Champion",
       description: "Complete 20 focus sessions",
-      reward: "+100 XP",
-      progress: 45
+      reward: "+100 XP"
     }
   ];
 
@@ -358,27 +355,15 @@ const Index = () => {
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-                      <achievement.icon className="w-6 h-6 text-primary-foreground" />
+                    <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center">
+                      <achievement.icon className="w-6 h-6 text-foreground" />
                     </div>
-                    <span className="px-2 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold">
+                    <span className="px-2 py-1 rounded-full bg-secondary text-foreground text-xs font-semibold">
                       {achievement.reward}
                     </span>
                   </div>
                   <h3 className="mt-4 font-semibold text-lg">{achievement.title}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">{achievement.description}</p>
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-semibold">{achievement.progress}%</span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div 
-                        className="h-full gradient-primary rounded-full transition-all duration-500"
-                        style={{ width: `${achievement.progress}%` }}
-                      />
-                    </div>
-                  </div>
                 </div>
               ))}
             </div>
