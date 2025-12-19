@@ -29,7 +29,8 @@ import {
   Users,
   Shield,
   Link2,
-  BarChart3
+  BarChart3,
+  Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +40,7 @@ import Navbar from "@/components/Navbar";
 import NotificationToggle from "@/components/NotificationToggle";
 import ImageCropper from "@/components/ImageCropper";
 import CalendarConnections from "@/components/CalendarConnections";
+import QuickActionsSettings from "@/components/QuickActionsSettings";
 import { formatDistanceToNow } from "date-fns";
 
 interface ActivityNotification {
@@ -793,6 +795,15 @@ const UserSettings = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-primary" />
+                Quick Actions
+              </h2>
+              <QuickActionsSettings />
             </div>
 
             {/* Appearance */}
