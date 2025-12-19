@@ -37,7 +37,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from "date-fns";
-import scheddyAvatar from "@/assets/scheddy-avatar.png";
+import scheddyModern from "@/assets/scheddy-modern.png";
 import { ReferralCard } from "@/components/ReferralCard";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { AISuggestions } from "@/components/AISuggestions";
@@ -481,8 +481,8 @@ const Dashboard = () => {
                   </div>
                 ) : events.length === 0 ? (
                   <div className="text-center py-8">
-                    <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4 border-2 border-primary/20">
-                      <img src={scheddyAvatar} alt="Scheddy" className="w-full h-full object-cover" />
+                    <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4 border-2 border-primary/20 shadow-lg">
+                      <img src={scheddyModern} alt="Scheddy" className="w-full h-full object-cover" />
                     </div>
                     <p className="text-muted-foreground mb-2">No upcoming events!</p>
                     <p className="text-sm text-muted-foreground mb-4">Chat with Scheddy to get started</p>
