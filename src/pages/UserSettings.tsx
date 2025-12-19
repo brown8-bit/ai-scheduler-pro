@@ -32,6 +32,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import NotificationToggle from "@/components/NotificationToggle";
+import ImageCropper from "@/components/ImageCropper";
 import { formatDistanceToNow } from "date-fns";
 
 interface ActivityNotification {
@@ -54,6 +55,8 @@ const UserSettings = () => {
   const { theme, setTheme } = useTheme();
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Subscription State
@@ -308,21 +311,36 @@ const UserSettings = () => {
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (max 5MB for initial upload, will compress after crop)
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Please upload an image smaller than 2MB.",
+        description: "Please upload an image smaller than 5MB.",
         variant: "destructive",
       });
       return;
     }
 
+    // Create object URL for cropping
+    const imageUrl = URL.createObjectURL(file);
+    setImageToCrop(imageUrl);
+    setCropperOpen(true);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleCroppedImage = async (croppedBlob: Blob) => {
+    if (!user) return;
+    
     setUploadingAvatar(true);
 
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
+      // Create file from blob
+      const file = new File([croppedBlob], "avatar.jpg", { type: "image/jpeg" });
+      const fileName = `${user.id}/avatar.jpg`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
@@ -364,6 +382,11 @@ const UserSettings = () => {
       });
     } finally {
       setUploadingAvatar(false);
+      // Clean up object URL
+      if (imageToCrop) {
+        URL.revokeObjectURL(imageToCrop);
+        setImageToCrop(null);
+      }
     }
   };
 
@@ -777,6 +800,26 @@ const UserSettings = () => {
           </div>
         </div>
       </main>
+
+      {/* Image Cropper Modal */}
+      {imageToCrop && (
+        <ImageCropper
+          open={cropperOpen}
+          onClose={() => {
+            setCropperOpen(false);
+            if (imageToCrop) {
+              URL.revokeObjectURL(imageToCrop);
+              setImageToCrop(null);
+            }
+          }}
+          imageSrc={imageToCrop}
+          onCropComplete={handleCroppedImage}
+          aspectRatio={1}
+          cropShape="round"
+          title="Crop Profile Picture"
+          description="Adjust and crop your profile picture"
+        />
+      )}
     </div>
   );
 };
