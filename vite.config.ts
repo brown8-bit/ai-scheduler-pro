@@ -15,11 +15,17 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "pwa-192x192.png", "pwa-512x512.png"],
+      includeAssets: [
+        "favicon.ico",
+        "favicon-schedulr.png",
+        "pwa-192x192-schedulr.png",
+        "pwa-512x512-schedulr.png",
+      ],
       manifest: {
         name: "Schedulr - AI Scheduling Assistant",
         short_name: "Schedulr",
-        description: "AI-powered scheduling that understands you. Book meetings, set reminders, and manage your time effortlessly.",
+        description:
+          "AI-powered scheduling that understands you. Book meetings, set reminders, and manage your time effortlessly.",
         theme_color: "#f97316",
         background_color: "#fffbf5",
         display: "standalone",
@@ -28,17 +34,17 @@ export default defineConfig(({ mode }) => ({
         start_url: "/",
         icons: [
           {
-            src: "pwa-192x192.png",
+            src: "pwa-192x192-schedulr.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "pwa-512x512.png",
+            src: "pwa-512x512-schedulr.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "pwa-512x512.png",
+            src: "pwa-512x512-schedulr.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
