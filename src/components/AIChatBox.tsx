@@ -15,6 +15,26 @@ interface Message {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
+// Guest credits system
+const GUEST_CREDITS_KEY = "schedulr_guest_credits";
+const INITIAL_GUEST_CREDITS = 350;
+
+const getGuestCredits = (): number => {
+  const stored = localStorage.getItem(GUEST_CREDITS_KEY);
+  if (stored === null) {
+    localStorage.setItem(GUEST_CREDITS_KEY, String(INITIAL_GUEST_CREDITS));
+    return INITIAL_GUEST_CREDITS;
+  }
+  return parseInt(stored, 10);
+};
+
+const decrementGuestCredits = (): number => {
+  const current = getGuestCredits();
+  const newValue = Math.max(0, current - 1);
+  localStorage.setItem(GUEST_CREDITS_KEY, String(newValue));
+  return newValue;
+};
+
 // Scheddy's personality phrases - more natural and varied
 const SCHEDDY_GREETINGS = [
   "Hey there! 👋 I'm Scheddy - your personal scheduling sidekick. What's on your mind today?",
@@ -81,6 +101,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [guestCredits, setGuestCredits] = useState(() => getGuestCredits());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -173,6 +194,20 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const handleSend = async () => {
     if ((!input.trim() && !attachedImage) || isLoading) return;
 
+    // Check guest credits
+    if (!user && guestCredits <= 0) {
+      toast({
+        title: "Credits exhausted",
+        description: "Sign up for free to continue using Scheddy!",
+        variant: "destructive",
+      });
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: "You've used all your free credits! 🎉 Sign up for a free account to keep chatting with me and save your events." 
+      }]);
+      return;
+    }
+
     const userMessage: Message = { 
       role: "user", 
       content: input || (attachedImage ? "📷 [Photo attached]" : ""),
@@ -183,6 +218,12 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     setInput("");
     clearAttachment();
     setIsLoading(true);
+
+    // Decrement guest credits before sending
+    if (!user) {
+      const remaining = decrementGuestCredits();
+      setGuestCredits(remaining);
+    }
 
     try {
       const response = await fetch(CHAT_URL, {
@@ -278,7 +319,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             <div className="min-w-0">
               <h3 className="font-semibold text-sm sm:text-base">Scheddy</h3>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                {user ? statusPhrase : "Try me out - unlimited!"}
+                {user ? statusPhrase : `${guestCredits} credits remaining`}
               </p>
             </div>
           </div>
