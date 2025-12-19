@@ -69,7 +69,7 @@ const AdminSettings = () => {
 
   // App Settings State
   const [appName, setAppName] = useState("Schedulr");
-  const [supportEmail, setSupportEmail] = useState("support@schedulr.app");
+  const [supportEmail, setSupportEmail] = useState("Support@schedulr.com");
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [allowSignups, setAllowSignups] = useState(true);
   const [trialDays, setTrialDays] = useState("7");
@@ -140,7 +140,7 @@ const AdminSettings = () => {
             setAppName(setting.value || "Schedulr");
             break;
           case SETTINGS_KEYS.supportEmail:
-            setSupportEmail(setting.value || "support@schedulr.app");
+            setSupportEmail(setting.value || "Support@schedulr.com");
             break;
           case SETTINGS_KEYS.maintenanceMode:
             setMaintenanceMode(setting.value === "true");

@@ -25,7 +25,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
       Authorization: `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: "Schedulr <onboarding@resend.dev>",
+      from: "Schedulr <Support@schedulr.com>",
       to: [to],
       subject,
       html,

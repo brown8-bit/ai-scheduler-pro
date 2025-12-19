@@ -126,7 +126,7 @@ const Terms = () => {
               <p>
                 For questions regarding these Terms, please contact:
                 <br />
-                <span className="font-medium text-foreground">support@schedulr.ai</span>
+                <span className="font-medium text-foreground">Support@schedulr.com</span>
               </p>
             </div>
 
