@@ -9,7 +9,11 @@ import {
   Loader2,
   ArrowLeft,
   LayoutDashboard,
-  Gift
+  Gift,
+  Calendar,
+  CheckCircle,
+  Crown,
+  TrendingUp
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -17,14 +21,96 @@ import ManageOffers from "@/components/admin/ManageOffers";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
+interface Stats {
+  totalUsers: number;
+  lifetimeUsers: number;
+  verifiedUsers: number;
+  totalEvents: number;
+  completedEvents: number;
+  totalTasks: number;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [stats, setStats] = useState<Stats>({
+    totalUsers: 0,
+    lifetimeUsers: 0,
+    verifiedUsers: 0,
+    totalEvents: 0,
+    completedEvents: 0,
+    totalTasks: 0,
+  });
 
   useEffect(() => {
     checkAdminAccess();
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    // Set up real-time subscription for profiles
+    const channel = supabase
+      .channel('admin-stats')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => fetchStats()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'scheduled_events' },
+        () => fetchStats()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks' },
+        () => fetchStats()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin]);
+
+  const fetchStats = async () => {
+    // Fetch user stats
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("is_lifetime, is_verified");
+
+    if (!profilesError && profiles) {
+      const totalUsers = profiles.length;
+      const lifetimeUsers = profiles.filter(p => p.is_lifetime).length;
+      const verifiedUsers = profiles.filter(p => p.is_verified).length;
+
+      // Fetch event stats
+      const { count: totalEvents } = await supabase
+        .from("scheduled_events")
+        .select("*", { count: "exact", head: true });
+
+      const { count: completedEvents } = await supabase
+        .from("scheduled_events")
+        .select("*", { count: "exact", head: true })
+        .eq("is_completed", true);
+
+      // Fetch task stats
+      const { count: totalTasks } = await supabase
+        .from("tasks")
+        .select("*", { count: "exact", head: true });
+
+      setStats({
+        totalUsers,
+        lifetimeUsers,
+        verifiedUsers,
+        totalEvents: totalEvents || 0,
+        completedEvents: completedEvents || 0,
+        totalTasks: totalTasks || 0,
+      });
+    }
+  };
 
   const checkAdminAccess = async () => {
     try {
@@ -57,6 +143,7 @@ const Admin = () => {
       }
 
       setIsAdmin(true);
+      await fetchStats();
     } catch (error) {
       console.error("Admin access check failed:", error);
       navigate("/admin-login");
@@ -85,6 +172,45 @@ const Admin = () => {
   if (!isAdmin) {
     return null;
   }
+
+  const statCards = [
+    { 
+      label: "Total Users", 
+      value: stats.totalUsers, 
+      icon: Users, 
+      color: "bg-blue-500/10 text-blue-500" 
+    },
+    { 
+      label: "Lifetime Members", 
+      value: stats.lifetimeUsers, 
+      icon: Crown, 
+      color: "bg-amber-500/10 text-amber-500" 
+    },
+    { 
+      label: "Verified Users", 
+      value: stats.verifiedUsers, 
+      icon: CheckCircle, 
+      color: "bg-green-500/10 text-green-500" 
+    },
+    { 
+      label: "Total Events", 
+      value: stats.totalEvents, 
+      icon: Calendar, 
+      color: "bg-purple-500/10 text-purple-500" 
+    },
+    { 
+      label: "Completed Events", 
+      value: stats.completedEvents, 
+      icon: TrendingUp, 
+      color: "bg-emerald-500/10 text-emerald-500" 
+    },
+    { 
+      label: "Total Tasks", 
+      value: stats.totalTasks, 
+      icon: CheckCircle, 
+      color: "bg-cyan-500/10 text-cyan-500" 
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -144,6 +270,22 @@ const Admin = () => {
 
       <main className="p-6">
         <div className="max-w-7xl mx-auto">
+          {/* Real-time Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            {statCards.map((stat) => (
+              <div 
+                key={stat.label} 
+                className="bg-card rounded-xl border border-border p-4 shadow-card"
+              >
+                <div className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center mb-3`}>
+                  <stat.icon className="w-5 h-5" />
+                </div>
+                <p className="text-2xl font-bold">{stat.value.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
           {/* Quick Navigation Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             <button 
