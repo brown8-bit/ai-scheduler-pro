@@ -759,6 +759,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          gamification_enabled: boolean | null
           id: string
           is_lifetime: boolean | null
           is_verified: boolean | null
@@ -771,6 +772,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          gamification_enabled?: boolean | null
           id?: string
           is_lifetime?: boolean | null
           is_verified?: boolean | null
@@ -783,6 +785,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          gamification_enabled?: boolean | null
           id?: string
           is_lifetime?: boolean | null
           is_verified?: boolean | null

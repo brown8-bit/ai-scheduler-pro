@@ -24,7 +24,9 @@ import {
   Heart,
   MessageCircle,
   Repeat2,
-  UserPlus
+  UserPlus,
+  Trophy,
+  Users
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -76,6 +78,7 @@ const UserSettings = () => {
   const [workdayEnd, setWorkdayEnd] = useState("17:00");
   const [soundNotifications, setSoundNotifications] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [gamificationEnabled, setGamificationEnabled] = useState(true);
   
   // Activity Notifications State
   const [activityNotifications, setActivityNotifications] = useState<ActivityNotification[]>([]);
@@ -227,6 +230,7 @@ const UserSettings = () => {
       setDisplayName(name);
       setOriginalName(name);
       setAvatarUrl(data.avatar_url);
+      setGamificationEnabled(data.gamification_enabled ?? true);
     }
   };
 
@@ -412,6 +416,7 @@ const UserSettings = () => {
           user_id: user.id,
           display_name: displayName.trim(),
           avatar_url: avatarUrl,
+          gamification_enabled: gamificationEnabled,
         }, { onConflict: "user_id" });
 
       if (error) throw error;
@@ -784,6 +789,31 @@ const UserSettings = () => {
                   checked={isDarkMode} 
                   onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} 
                 />
+              </div>
+            </div>
+
+            {/* Gamification & Community */}
+            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-primary" />
+                XP, Achievements & Community
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Enable Gamification Features</Label>
+                    <p className="text-sm text-muted-foreground">Show XP, achievements, leaderboard & community</p>
+                  </div>
+                  <Switch 
+                    checked={gamificationEnabled} 
+                    onCheckedChange={setGamificationEnabled} 
+                  />
+                </div>
+                {!gamificationEnabled && (
+                  <p className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
+                    When disabled, you won't see XP progress, achievements, leaderboards, or the community feed.
+                  </p>
+                )}
               </div>
             </div>
 

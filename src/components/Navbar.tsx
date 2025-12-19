@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users, User, ChevronDown, MessageSquare, Timer, BarChart3, Sparkles, Clock, BookTemplate, Briefcase, Receipt, UserPlus, Mic, ListTodo, GraduationCap, Mail, Shield, DollarSign } from "lucide-react";
 import schedulrLogo from "@/assets/schedulr-logo.png";
-import { useState, useEffect, forwardRef } from "react";
+import { useState, useEffect, forwardRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +39,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [gamificationEnabled, setGamificationEnabled] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -56,13 +57,14 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     
     const { data } = await supabase
       .from("profiles")
-      .select("avatar_url, display_name")
+      .select("avatar_url, display_name, gamification_enabled")
       .eq("user_id", user.id)
       .single();
     
     if (data) {
       setAvatarUrl(data.avatar_url);
       setDisplayName(data.display_name || user.email?.split("@")[0] || "");
+      setGamificationEnabled(data.gamification_enabled ?? true);
     } else {
       setDisplayName(user.email?.split("@")[0] || "");
     }
@@ -92,29 +94,38 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const navLinks = [
-    { path: "/", label: "Home", icon: null },
-    { path: "/chat", label: "AI Chat", icon: null },
-    { path: isAdmin ? "/admin" : "/dashboard", label: "Dashboard", icon: null },
-    { path: "/calendar", label: "Calendar", icon: CalendarDays },
-    { path: "/community", label: "Community", icon: Users, highlight: true },
-    { path: "/pricing", label: "Pricing", icon: null },
-  ];
+  const navLinks = useMemo(() => {
+    const links: { path: string; label: string; icon: any; highlight?: boolean }[] = [
+      { path: "/", label: "Home", icon: null },
+      { path: "/chat", label: "AI Chat", icon: null },
+      { path: isAdmin ? "/admin" : "/dashboard", label: "Dashboard", icon: null },
+      { path: "/calendar", label: "Calendar", icon: CalendarDays },
+      { path: "/pricing", label: "Pricing", icon: null },
+    ];
+    if (gamificationEnabled) {
+      links.splice(4, 0, { path: "/community", label: "Community", icon: Users, highlight: true });
+    }
+    return links;
+  }, [isAdmin, gamificationEnabled]);
 
-  const featureLinks = [
-    { path: "/calendar", label: "Calendar", icon: CalendarDays },
-    { path: "/tasks", label: "Tasks", icon: ListTodo },
-    { path: "/habits", label: "Daily Habits", icon: Target },
-    
-    { path: "/timer", label: "Pomodoro Timer", icon: Timer },
-    { path: "/grades", label: "Grade Tracker", icon: GraduationCap },
-    { path: "/voice-notes", label: "Voice Notes", icon: Mic },
-    { path: "/templates", label: "Templates", icon: BookTemplate },
-    { path: "/progress", label: "Progress", icon: TrendingUp },
-    { path: "/achievements", label: "Achievements", icon: Trophy },
-    { path: "/analytics", label: "Analytics", icon: BarChart3 },
-    { path: "/community", label: "Community", icon: Users },
-  ];
+  const featureLinks = useMemo(() => {
+    const links = [
+      { path: "/calendar", label: "Calendar", icon: CalendarDays },
+      { path: "/tasks", label: "Tasks", icon: ListTodo },
+      { path: "/habits", label: "Daily Habits", icon: Target },
+      { path: "/timer", label: "Pomodoro Timer", icon: Timer },
+      { path: "/grades", label: "Grade Tracker", icon: GraduationCap },
+      { path: "/voice-notes", label: "Voice Notes", icon: Mic },
+      { path: "/templates", label: "Templates", icon: BookTemplate },
+      { path: "/progress", label: "Progress", icon: TrendingUp },
+      { path: "/analytics", label: "Analytics", icon: BarChart3 },
+    ];
+    if (gamificationEnabled) {
+      links.push({ path: "/achievements", label: "Achievements", icon: Trophy });
+      links.push({ path: "/community", label: "Community", icon: Users });
+    }
+    return links;
+  }, [gamificationEnabled]);
 
   const businessLinks = [
     { path: "/clients", label: "Clients", icon: UserPlus },
@@ -261,10 +272,12 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                       <TrendingUp className="mr-2 h-4 w-4" />
                       Progress
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/achievements")} className="cursor-pointer">
-                      <Trophy className="mr-2 h-4 w-4" />
-                      Achievements
-                    </DropdownMenuItem>
+                    {gamificationEnabled && (
+                      <DropdownMenuItem onClick={() => navigate("/achievements")} className="cursor-pointer">
+                        <Trophy className="mr-2 h-4 w-4" />
+                        Achievements
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
