@@ -7,7 +7,7 @@ import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, S
 import { supabase } from "@/integrations/supabase/client";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
-import scheddyAvatar from "@/assets/scheddy-friendly.png";
+import scheddyModern from "@/assets/scheddy-modern.png";
 import WaitlistModal from "@/components/WaitlistModal";
 interface Offer {
   id: string;
@@ -164,12 +164,24 @@ const Index = () => {
           ) : (
             <>
               {/* Scheddy Mascot */}
-              <div className="mb-6 animate-fade-in">
-                <img 
-                  src={scheddyAvatar} 
-                  alt="Scheddy - Your AI Assistant" 
-                  className="w-24 h-24 sm:w-32 sm:h-32 mx-auto drop-shadow-lg animate-bounce-slow"
-                />
+              <div className="mb-6 animate-fade-in flex justify-center">
+                <div className="relative">
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/30 via-purple-500/30 to-cyan-500/30 blur-2xl scale-110" />
+                  
+                  {/* Rotating border - properly sized */}
+                  <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary via-purple-500 to-cyan-500 animate-spin-slow opacity-60" />
+                  
+                  {/* Inner background to cover the rotating border */}
+                  <div className="absolute inset-0 rounded-full bg-background" />
+                  
+                  {/* Avatar */}
+                  <img 
+                    src={scheddyModern} 
+                    alt="Scheddy - Your AI Assistant" 
+                    className="relative z-10 w-24 h-24 sm:w-32 sm:h-32 rounded-full shadow-2xl animate-float border-2 border-background"
+                  />
+                </div>
               </div>
               
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
