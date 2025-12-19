@@ -321,11 +321,12 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
+      </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border animate-slide-in-right fixed inset-x-0 top-16 bottom-0 bg-background overflow-y-auto z-40">
-            <div className="flex flex-col gap-2">
+      {/* Mobile Menu - Outside container for proper z-index stacking */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-x-0 top-16 bottom-0 z-[60] bg-background border-t border-border overflow-y-auto animate-slide-in-right">
+          <div className="flex flex-col gap-2 py-4 px-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -440,10 +441,9 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                   </Link>
                 </>
               )}
-            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </nav>
   );
 });
