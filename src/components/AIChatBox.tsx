@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn } from "lucide-react";
+import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn, Mic, MicOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import scheddyAvatar from "@/assets/scheddy-modern.png";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 interface Message {
   role: "user" | "assistant";
@@ -84,6 +85,19 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const loadingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Voice input hook
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    setInput(prev => prev ? `${prev} ${transcript}` : transcript);
+    toast({
+      title: "Got it! 🎤",
+      description: "Your voice has been transcribed.",
+    });
+  }, []);
+
+  const { isListening, isSupported: isVoiceSupported, toggleListening } = useVoiceInput({
+    onTranscript: handleVoiceTranscript,
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -406,7 +420,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
         
         
         <div className="flex gap-2 sm:gap-3">
-          {/* Photo Buttons */}
+          {/* Photo & Voice Buttons */}
           <div className="flex gap-1">
             <Button
               variant="ghost"
@@ -428,6 +442,18 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             >
               <ImageIcon className="w-4 h-4" />
             </Button>
+            {isVoiceSupported && (
+              <Button
+                variant={isListening ? "destructive" : "ghost"}
+                size="icon"
+                className={`h-10 w-10 sm:h-11 sm:w-11 transition-all ${isListening ? "animate-pulse" : ""}`}
+                onClick={toggleListening}
+                disabled={isLoading}
+                title={isListening ? "Stop listening" : "Voice input"}
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </Button>
+            )}
           </div>
           
           {/* Hidden file inputs */}
