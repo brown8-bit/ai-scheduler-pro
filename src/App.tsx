@@ -20,6 +20,7 @@ import AdminLogin from "./pages/AdminLogin";
 import Dashboard from "./pages/Dashboard";
 import Pricing from "./pages/Pricing";
 import Admin from "./pages/Admin";
+import AdminUsers from "./pages/AdminUsers";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Install from "./pages/Install";
@@ -81,6 +82,7 @@ const App = () => (
               />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/install" element={<Install />} />
