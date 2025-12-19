@@ -12,6 +12,22 @@ import AddEventModal from "@/components/AddEventModal";
 import CalendarExport from "@/components/CalendarExport";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ScheduledEvent {
   id: string;
@@ -22,49 +38,78 @@ interface ScheduledEvent {
   is_completed: boolean | null;
 }
 
-// Demo events for guest users
-const DEMO_EVENTS: ScheduledEvent[] = [
-  {
-    id: "demo-1",
-    title: "Morning Workout",
-    event_date: new Date(new Date().setHours(7, 0, 0, 0)).toISOString(),
-    description: "30 min cardio + stretching",
-    category: "health",
-    is_completed: true,
-  },
-  {
-    id: "demo-2",
-    title: "Team Standup",
-    event_date: new Date(new Date().setHours(10, 0, 0, 0)).toISOString(),
-    description: "Daily sync with the team",
-    category: "work",
-    is_completed: false,
-  },
-  {
-    id: "demo-3",
-    title: "Focus Time - Project Work",
-    event_date: new Date(new Date().setHours(14, 0, 0, 0)).toISOString(),
-    description: "Deep work session",
-    category: "work",
-    is_completed: false,
-  },
-  {
-    id: "demo-4",
-    title: "Coffee with Sarah",
-    event_date: new Date(new Date().setHours(16, 30, 0, 0)).toISOString(),
-    description: "Catch up at the usual spot",
-    category: "social",
-    is_completed: false,
-  },
-  {
-    id: "demo-5",
-    title: "Yoga Class",
-    event_date: new Date(Date.now() + 86400000).setHours(18, 0, 0, 0) as unknown as string,
-    description: "Evening yoga session",
-    category: "health",
-    is_completed: false,
-  },
-];
+// Simple add event component for guests
+const GuestAddEventButton = ({ 
+  selectedDate, 
+  onAdd, 
+  variant = "hero",
+  size = "default"
+}: { 
+  selectedDate?: Date; 
+  onAdd: (title: string, date: Date, category: string) => void;
+  variant?: "hero" | "ghost" | "outline";
+  size?: "default" | "sm";
+}) => {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("general");
+
+  const handleSubmit = () => {
+    if (!title.trim() || !selectedDate) return;
+    onAdd(title, selectedDate, category);
+    setTitle("");
+    setCategory("general");
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant={variant} size={size} className="gap-1">
+          <Plus className="h-4 w-4" />
+          {size === "sm" ? "Add" : "Add Event"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Event</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label>Event Title</Label>
+            <Input 
+              value={title} 
+              onChange={(e) => setTitle(e.target.value)} 
+              placeholder="e.g., Team meeting"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="work">Work</SelectItem>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="health">Health</SelectItem>
+                <SelectItem value="social">Social</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Date: {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
+          </p>
+          <Button onClick={handleSubmit} className="w-full" disabled={!title.trim()}>
+            Add Event
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 
 const CalendarPage = () => {
   const navigate = useNavigate();
@@ -72,6 +117,7 @@ const CalendarPage = () => {
   const [isGuest, setIsGuest] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [events, setEvents] = useState<ScheduledEvent[]>([]);
+  const [guestEvents, setGuestEvents] = useState<ScheduledEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -106,7 +152,37 @@ const CalendarPage = () => {
     setLoading(false);
   };
 
+  // Guest event management (local only)
+  const addGuestEvent = (title: string, date: Date, category: string) => {
+    const newEvent: ScheduledEvent = {
+      id: `guest-${Date.now()}`,
+      title,
+      event_date: date.toISOString(),
+      description: null,
+      category,
+      is_completed: false,
+    };
+    setGuestEvents(prev => [...prev, newEvent]);
+    toast({
+      title: "Event added! 🎉",
+      description: "Sign up to save your events permanently.",
+    });
+  };
+
   const handleToggleComplete = async (event: ScheduledEvent) => {
+    if (isGuest) {
+      setGuestEvents(prev => prev.map(e => 
+        e.id === event.id ? { ...e, is_completed: !e.is_completed } : e
+      ));
+      toast({
+        title: event.is_completed ? "Marked as incomplete" : "Nice work! ✅",
+        description: event.is_completed 
+          ? `"${event.title}" is back on your list.`
+          : `"${event.title}" completed!`,
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from("scheduled_events")
       .update({ is_completed: !event.is_completed })
@@ -124,6 +200,15 @@ const CalendarPage = () => {
   };
 
   const handleDeleteEvent = async (event: ScheduledEvent) => {
+    if (isGuest) {
+      setGuestEvents(prev => prev.filter(e => e.id !== event.id));
+      toast({
+        title: "Event removed",
+        description: `"${event.title}" has been deleted.`,
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from("scheduled_events")
       .delete()
@@ -138,11 +223,12 @@ const CalendarPage = () => {
     }
   };
 
-  const eventsForSelectedDate = events.filter((event) =>
+  const activeEvents = isGuest ? guestEvents : events;
+  const eventsForSelectedDate = activeEvents.filter((event) =>
     selectedDate && isSameDay(new Date(event.event_date), selectedDate)
   );
 
-  const datesWithEvents = events.map((e) => new Date(e.event_date));
+  const datesWithEvents = activeEvents.map((e) => new Date(e.event_date));
 
   const getCategoryColor = (category: string | null) => {
     const colors: Record<string, string> = {
@@ -159,42 +245,30 @@ const CalendarPage = () => {
     return <ScheddyLoader message="Loading your calendar..." />;
   }
 
-  // Guest view - simple prompt to sign up
-  if (isGuest) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="container mx-auto px-4 pt-24 pb-8">
-          <div className="max-w-md mx-auto text-center py-16">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              <CalendarDays className="w-10 h-10 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold mb-3">Your Calendar Awaits</h1>
-            <p className="text-muted-foreground mb-8">
-              Sign up to create events, track your schedule, and let Scheddy help you stay organized.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/register">
-                <Button variant="hero" size="lg" className="w-full sm:w-auto">
-                  Sign up free
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Log in
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-24 pb-8">
+        {/* Guest Banner */}
+        {isGuest && (
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+            <div className="flex items-center gap-3 flex-wrap justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Try out the calendar!</p>
+                  <p className="text-xs text-muted-foreground">Events you add here won't be saved. Sign up to keep them.</p>
+                </div>
+              </div>
+              <Link to="/register">
+                <Button size="sm" variant="hero">Sign up free</Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
@@ -202,17 +276,25 @@ const CalendarPage = () => {
               Calendar View
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-2">
-              See all your scheduled events at a glance 📅
+              {isGuest ? "Try adding events - sign up to save them! 📅" : "See all your scheduled events at a glance 📅"}
             </p>
           </div>
           
           <div className="flex items-center gap-2">
-            <CalendarExport events={events} />
-            <AddEventModal 
-              userId={user.id} 
-              selectedDate={selectedDate}
-              onEventAdded={fetchEvents}
-            />
+            {!isGuest && <CalendarExport events={events} />}
+            {user && (
+              <AddEventModal 
+                userId={user.id} 
+                selectedDate={selectedDate}
+                onEventAdded={fetchEvents}
+              />
+            )}
+            {isGuest && (
+              <GuestAddEventButton 
+                selectedDate={selectedDate} 
+                onAdd={addGuestEvent} 
+              />
+            )}
           </div>
         </div>
 
@@ -246,7 +328,7 @@ const CalendarPage = () => {
                 <Clock className="h-5 w-5 text-primary" />
                 {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "Select a date"}
               </CardTitle>
-              {selectedDate && (
+              {selectedDate && user && (
                 <AddEventModal 
                   userId={user.id} 
                   selectedDate={selectedDate}
@@ -259,6 +341,14 @@ const CalendarPage = () => {
                   }
                 />
               )}
+              {selectedDate && isGuest && (
+                <GuestAddEventButton 
+                  selectedDate={selectedDate} 
+                  onAdd={addGuestEvent}
+                  variant="ghost"
+                  size="sm"
+                />
+              )}
             </CardHeader>
             <CardContent>
               {eventsForSelectedDate.length === 0 ? (
@@ -266,17 +356,26 @@ const CalendarPage = () => {
                   <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No events scheduled for this day</p>
                   <p className="text-sm mt-2 mb-4">Click the button below to add one!</p>
-                  <AddEventModal 
-                    userId={user.id} 
-                    selectedDate={selectedDate}
-                    onEventAdded={fetchEvents}
-                    trigger={
-                      <Button variant="outline" className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add Event
-                      </Button>
-                    }
-                  />
+                  {user && (
+                    <AddEventModal 
+                      userId={user.id} 
+                      selectedDate={selectedDate}
+                      onEventAdded={fetchEvents}
+                      trigger={
+                        <Button variant="outline" className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add Event
+                        </Button>
+                      }
+                    />
+                  )}
+                  {isGuest && (
+                    <GuestAddEventButton 
+                      selectedDate={selectedDate} 
+                      onAdd={addGuestEvent}
+                      variant="outline"
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
