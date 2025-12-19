@@ -394,6 +394,64 @@ Remember: You're Scheddy - helpful, organized, warm, and genuinely invested in h
         console.log("Creating event with args:", args);
 
         if (userId) {
+          const eventStart = new Date(args.event_date);
+          const eventEnd = new Date(eventStart.getTime() + 60 * 60 * 1000); // 1 hour default
+          
+          // Check for conflicts with scheduled_events
+          const windowStart = new Date(eventStart.getTime() - 2 * 60 * 60 * 1000);
+          const windowEnd = new Date(eventEnd.getTime() + 2 * 60 * 60 * 1000);
+          
+          const { data: existingEvents } = await supabase
+            .from("scheduled_events")
+            .select("id, title, event_date")
+            .eq("user_id", userId)
+            .gte("event_date", windowStart.toISOString())
+            .lte("event_date", windowEnd.toISOString())
+            .eq("is_completed", false);
+
+          const conflicts: Array<{ title: string; event_date: string }> = [];
+          
+          if (existingEvents) {
+            for (const event of existingEvents) {
+              const existingStart = new Date(event.event_date);
+              const existingEnd = new Date(existingStart.getTime() + 60 * 60 * 1000);
+              
+              if (eventStart < existingEnd && eventEnd > existingStart) {
+                conflicts.push({ title: event.title, event_date: event.event_date });
+              }
+            }
+          }
+
+          // Also check synced events (Google Calendar)
+          const { data: syncedEvents } = await supabase
+            .from("synced_events")
+            .select("id, title, start_time, end_time")
+            .eq("user_id", userId)
+            .gte("start_time", windowStart.toISOString())
+            .lte("start_time", windowEnd.toISOString())
+            .eq("is_busy", true);
+
+          if (syncedEvents) {
+            for (const event of syncedEvents) {
+              const existingStart = new Date(event.start_time);
+              const existingEnd = new Date(event.end_time);
+              
+              if (eventStart < existingEnd && eventEnd > existingStart) {
+                conflicts.push({ title: event.title, event_date: event.start_time });
+              }
+            }
+          }
+
+          // If there are conflicts, warn the user but still create the event
+          let conflictWarning = "";
+          if (conflicts.length > 0) {
+            const conflictList = conflicts.map(c => {
+              const time = new Date(c.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+              return `"${c.title}" at ${time}`;
+            }).join(", ");
+            conflictWarning = ` ⚠️ Heads up: this overlaps with ${conflictList}. You might want to reschedule one of them!`;
+          }
+
           // Insert the event into the database
           const { data: eventData, error: insertError } = await supabase
             .from("scheduled_events")
@@ -449,6 +507,11 @@ Remember: You're Scheddy - helpful, organized, warm, and genuinely invested in h
           });
 
           let confirmationMessage = `${randomPhrase} I've scheduled "${args.title}" for ${formattedDate} at ${formattedTime}. 📅`;
+          
+          // Add conflict warning if there are conflicts
+          if (conflictWarning) {
+            confirmationMessage += conflictWarning;
+          }
           
           if (args.is_recurring && args.recurrence_pattern) {
             confirmationMessage += ` This will repeat ${args.recurrence_pattern} - I love consistency!`;
