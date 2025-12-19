@@ -78,14 +78,7 @@ const CalendarPage = () => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        // Guest mode - show demo data
         setIsGuest(true);
-        setEvents(DEMO_EVENTS.map(e => ({
-          ...e,
-          event_date: e.id === "demo-5" 
-            ? new Date(Date.now() + 86400000).toISOString().replace(/T.*/, 'T18:00:00.000Z')
-            : e.event_date
-        })));
         setLoading(false);
         return;
       }
@@ -114,20 +107,6 @@ const CalendarPage = () => {
   };
 
   const handleToggleComplete = async (event: ScheduledEvent) => {
-    if (isGuest) {
-      // Demo mode - just toggle locally
-      setEvents(prev => prev.map(e => 
-        e.id === event.id ? { ...e, is_completed: !e.is_completed } : e
-      ));
-      toast({
-        title: event.is_completed ? "Marked as incomplete" : "Nice work! ✅",
-        description: event.is_completed 
-          ? `"${event.title}" is back on your list.`
-          : `"${event.title}" completed!`,
-      });
-      return;
-    }
-    
     const { error } = await supabase
       .from("scheduled_events")
       .update({ is_completed: !event.is_completed })
@@ -145,16 +124,6 @@ const CalendarPage = () => {
   };
 
   const handleDeleteEvent = async (event: ScheduledEvent) => {
-    if (isGuest) {
-      // Demo mode - just remove locally
-      setEvents(prev => prev.filter(e => e.id !== event.id));
-      toast({
-        title: "Event removed",
-        description: `"${event.title}" has been deleted.`,
-      });
-      return;
-    }
-    
     const { error } = await supabase
       .from("scheduled_events")
       .delete()
@@ -190,30 +159,42 @@ const CalendarPage = () => {
     return <ScheddyLoader message="Loading your calendar..." />;
   }
 
+  // Guest view - simple prompt to sign up
+  if (isGuest) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 pt-24 pb-8">
+          <div className="max-w-md mx-auto text-center py-16">
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <CalendarDays className="w-10 h-10 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold mb-3">Your Calendar Awaits</h1>
+            <p className="text-muted-foreground mb-8">
+              Sign up to create events, track your schedule, and let Scheddy help you stay organized.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/register">
+                <Button variant="hero" size="lg" className="w-full sm:w-auto">
+                  Sign up free
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  Log in
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-24 pb-8">
-        {/* Guest Demo Banner */}
-        {isGuest && (
-          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
-            <div className="flex items-center gap-3 flex-wrap justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">You're exploring demo mode!</p>
-                  <p className="text-xs text-muted-foreground">Sign up to save your own events and unlock all features.</p>
-                </div>
-              </div>
-              <Link to="/register">
-                <Button size="sm" variant="hero">Sign up free</Button>
-              </Link>
-            </div>
-          </div>
-        )}
-        
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
@@ -221,19 +202,17 @@ const CalendarPage = () => {
               Calendar View
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-2">
-              {isGuest ? "Try out the calendar - this is sample data! 📅" : "See all your scheduled events at a glance 📅"}
+              See all your scheduled events at a glance 📅
             </p>
           </div>
           
           <div className="flex items-center gap-2">
             <CalendarExport events={events} />
-            {user && (
-              <AddEventModal 
-                userId={user.id} 
-                selectedDate={selectedDate}
-                onEventAdded={fetchEvents}
-              />
-            )}
+            <AddEventModal 
+              userId={user.id} 
+              selectedDate={selectedDate}
+              onEventAdded={fetchEvents}
+            />
           </div>
         </div>
 
@@ -267,7 +246,7 @@ const CalendarPage = () => {
                 <Clock className="h-5 w-5 text-primary" />
                 {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "Select a date"}
               </CardTitle>
-              {user && selectedDate && (
+              {selectedDate && (
                 <AddEventModal 
                   userId={user.id} 
                   selectedDate={selectedDate}
@@ -287,19 +266,17 @@ const CalendarPage = () => {
                   <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No events scheduled for this day</p>
                   <p className="text-sm mt-2 mb-4">Click the button below to add one!</p>
-                  {user && (
-                    <AddEventModal 
-                      userId={user.id} 
-                      selectedDate={selectedDate}
-                      onEventAdded={fetchEvents}
-                      trigger={
-                        <Button variant="outline" className="gap-2">
-                          <Plus className="h-4 w-4" />
-                          Add Event
-                        </Button>
-                      }
-                    />
-                  )}
+                  <AddEventModal 
+                    userId={user.id} 
+                    selectedDate={selectedDate}
+                    onEventAdded={fetchEvents}
+                    trigger={
+                      <Button variant="outline" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Event
+                      </Button>
+                    }
+                  />
                 </div>
               ) : (
                 <div className="space-y-4">
