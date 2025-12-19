@@ -88,23 +88,23 @@ const Index = () => {
   const features = [
     {
       icon: MessageSquare,
-      title: "AI Scheduling",
-      description: "Schedule meetings, tasks, appointments, and activities with natural language."
+      title: "Content Batching Days",
+      description: "Block dedicated time for creating content — videos, podcasts, newsletters. AI helps you batch similar work for maximum creative flow."
     },
     {
       icon: Clock,
-      title: "Balance Everything",
-      description: "Smart scheduling that works around your work, personal life, and commitments."
+      title: "Deep Work Blocks",
+      description: "Auto-block focus time for building and making. Protect your creative hours from meetings and distractions."
+    },
+    {
+      icon: Calendar,
+      title: "Client Meeting Scheduling",
+      description: "Share booking links for client calls. Let your audience and clients book time without the back-and-forth."
     },
     {
       icon: Brain,
-      title: "Smart Habit Tracking",
-      description: "Integrated habit tracking with AI insights — no app switching. Schedulr analyzes your habits and auto-suggests schedule adjustments for better productivity."
-    },
-    {
-      icon: Shield,
-      title: "Privacy First",
-      description: "Your data stays private — we never sell it. Optional gamification features are just that: optional."
+      title: "Habit Tracking for Creators",
+      description: "Track creative habits — writing streaks, workout routines, side hustle progress. AI insights help you stay consistent without burning out."
     }
   ];
 
@@ -186,18 +186,18 @@ const Index = () => {
               
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
                 <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                Your AI Scheduling Assistant ✨
+                Built for Creators & Solopreneurs ✨
               </div>
               
               <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight animate-fade-in delay-100">
-                Master Your
+                The AI Scheduler for
                 <br />
-                <span className="text-gradient">Busy Life</span>
+                <span className="text-gradient">Creators Who Ship</span>
               </h1>
 
               <p className="mt-4 sm:mt-6 text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200 px-2">
-                The AI-powered app to manage your schedule, track daily habits, 
-                and crush your goals. Stay organized, earn points, and level up your productivity! 💪
+                Auto-block focus time, track creative habits, share previews with fellow creators, 
+                and build better routines — stay consistent without burning out. 🚀
               </p>
             </>
           )}
@@ -401,9 +401,9 @@ const Index = () => {
 
           <div className="mt-10 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { step: "1", emoji: "📅", title: "Schedule with AI", desc: "Tell Scheddy what you need — meetings, tasks, reminders. Done in seconds." },
-              { step: "2", emoji: "✅", title: "Track Your Habits", desc: "Built-in habit tracking with AI insights to optimize your schedule." },
-              { step: "3", emoji: "🎯", title: "Stay Focused", desc: "Block focus time, set reminders, and optionally earn XP for motivation." }
+              { step: "1", emoji: "🎬", title: "Block Creative Time", desc: "Tell Scheddy to block time for content creation, building, or deep work. Done in seconds." },
+              { step: "2", emoji: "📈", title: "Track Your Progress", desc: "Monitor creative habits, shipping streaks, and side hustle consistency with AI insights." },
+              { step: "3", emoji: "🤝", title: "Build in Public", desc: "Share schedule previews with our creator community for accountability and feedback." }
             ].map((item, index) => (
               <div key={item.step} className="animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-card border border-border shadow-card text-2xl sm:text-3xl flex items-center justify-center mx-auto">
@@ -470,10 +470,10 @@ const Index = () => {
         <div className="max-w-4xl mx-auto text-center">
           <div className="p-6 sm:p-12 rounded-2xl sm:rounded-3xl gradient-primary shadow-glow">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary-foreground">
-              Ready to level up your productivity? 🏆
+              Ready to ship more consistently? 🚀
             </h2>
             <p className="mt-3 sm:mt-4 text-primary-foreground/80 text-sm sm:text-lg px-2">
-              Stay organized, track your habits, and crush your goals — try it free today!
+              Join creators and solopreneurs who stay consistent without burning out — try it free today!
             </p>
             <Link to="/chat" className="mt-6 sm:mt-8 inline-block w-full sm:w-auto">
               <Button variant="glass" size="xl" className="w-full sm:w-auto bg-background/20 text-primary-foreground border-primary-foreground/20 hover:bg-background/30">

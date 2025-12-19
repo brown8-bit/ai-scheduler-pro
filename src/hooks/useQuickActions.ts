@@ -11,22 +11,22 @@ const QUICK_ACTIONS_KEY = "schedulr_quick_actions";
 
 export const DEFAULT_QUICK_ACTIONS: QuickAction[] = [
   {
-    id: "focus-time",
-    label: "Block focus time",
-    prompt: "Block 2 hours of focus time tomorrow morning. No meetings, just deep work.",
-    icon: "🎯"
-  },
-  {
-    id: "morning-routine",
-    label: "Morning routine",
-    prompt: "Schedule my morning routine: 30 min exercise at 7am, then breakfast and planning at 8am.",
-    icon: "🌅"
-  },
-  {
     id: "content-creation",
     label: "Content creation block",
-    prompt: "Block 3 hours this afternoon for content creation - writing, editing, and brainstorming.",
-    icon: "✏️"
+    prompt: "Block 3 hours tomorrow morning for content creation - recording videos, writing newsletter, and brainstorming ideas.",
+    icon: "🎬"
+  },
+  {
+    id: "client-calls",
+    label: "Client calls day",
+    prompt: "Block 2pm-5pm on Thursday for client calls. Leave 15 min buffers between each call.",
+    icon: "📞"
+  },
+  {
+    id: "build-session",
+    label: "Build in public session",
+    prompt: "Schedule a 4-hour deep work block this weekend for building my side project. No distractions.",
+    icon: "🚀"
   }
 ];
 

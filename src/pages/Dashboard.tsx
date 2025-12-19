@@ -313,11 +313,11 @@ const Dashboard = () => {
   };
 
   const productivityTips = [
-    "🎯 Try batching similar tasks together for better focus!",
-    "☕ Take a 5-minute break every 25 minutes to stay fresh.",
-    "📝 Start your day by reviewing your top 3 priorities.",
-    "🧘 Schedule focus blocks to protect your deep work time.",
-    "✨ Celebrate small wins to build momentum!"
+    "🎬 Batch your content creation days for maximum creative flow!",
+    "🚀 Build in public - share your progress for accountability!",
+    "📝 Block your most creative hours for deep work, not meetings.",
+    "💡 Schedule newsletter writing at the same time each week.",
+    "✨ Protect your mornings for creating, afternoons for calls!"
   ];
 
   const randomTip = productivityTips[Math.floor(Math.random() * productivityTips.length)];
@@ -342,12 +342,12 @@ const Dashboard = () => {
         <PullToRefresh onRefresh={handleRefresh} className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Welcome back! 👋</h1>
+          <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Ready to create? 🚀</h1>
               <p className="text-sm sm:text-base text-muted-foreground mt-1">
                 {stats.todayCount > 0 
-                  ? `You have ${stats.todayCount} event${stats.todayCount > 1 ? 's' : ''} today. Let's crush it!`
-                  : "Your schedule is clear today. Time to plan ahead!"
+                  ? `You have ${stats.todayCount} block${stats.todayCount > 1 ? 's' : ''} scheduled today. Let's ship!`
+                  : "Your schedule is clear today. Time to block some creative work!"
                 }
               </p>
             </div>
