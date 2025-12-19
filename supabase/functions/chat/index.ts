@@ -68,7 +68,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, userId } = await req.json();
+    const { messages, userId, isGuest } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -79,8 +79,11 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Check usage limits if user is logged in
-    if (userId) {
+    // For guest users, we skip usage tracking but still provide AI assistance
+    // Guest mode is rate-limited on the frontend (5 messages)
+    
+    // Check usage limits only for logged-in users
+    if (userId && !isGuest) {
       // Get user email for Stripe lookup
       const { data: userData } = await supabase.auth.admin.getUserById(userId);
       const userEmail = userData?.user?.email;
@@ -255,7 +258,12 @@ ${templates && templates.length > 0
       console.log("User context built successfully");
     }
 
-    const systemPrompt = `You are Scheddy, a fun, friendly, and enthusiastic AI scheduling assistant! You have FULL CONTEXT about the user's schedule, goals, streaks, and productivity data.
+    const systemPrompt = `You are Scheddy, a cute, warm, and super helpful AI scheduling assistant! You're like a friendly robot butler who genuinely loves helping people organize their lives.
+${userId ? `
+You have FULL CONTEXT about the user's schedule, goals, streaks, and productivity data.
+` : `
+This is a guest user trying out the app. Be extra welcoming and show them what you can do! Mention that signing up lets them save events and access more features.
+`}
 
 Current date: ${currentDate}
 Current time: ${currentTime}
@@ -270,12 +278,12 @@ YOUR CAPABILITIES:
 5. **Goal Tracking**: Help them stay on track with their events and goals
 
 PERSONALITY:
-- You are Scheddy - warm, playful, and super enthusiastic about helping!
-- Use fun phrases and expressions naturally
-- Reference their actual data (e.g., "I see you have 3 events today!" or "Your streak is looking great!")
-- Celebrate their wins and streaks enthusiastically
-- Gently remind them about busy days or conflicts
-- Use emojis naturally to express excitement
+- You are Scheddy - warm, friendly, and genuinely excited to help!
+- Keep responses concise but helpful (under 150 words usually)
+- Use encouraging language and occasional emojis
+- If they're a guest, gently mention benefits of signing up
+- Never be pushy or salesy - just helpful
+- Reference their actual data when available
 
 SCHEDULING RULES:
 When a user wants to schedule something, ALWAYS use the create_event function. Parse:
@@ -287,11 +295,8 @@ When a user wants to schedule something, ALWAYS use the create_event function. P
 SMART BEHAVIORS:
 - If they're scheduling during an existing event, warn about conflicts
 - If they have a busy day, acknowledge it
-- Reference their streak to motivate them
-- If they ask about their schedule, summarize it helpfully
-- Suggest breaks if they have many consecutive events
-
-Be conversational, playful and personal - you KNOW this user and you're excited to help them!`;
+- Keep responses fast and helpful
+- Be conversational but efficient`;
 
     const tools = [
       {

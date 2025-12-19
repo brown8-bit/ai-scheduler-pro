@@ -3,11 +3,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2, Rocket, Target } from "lucide-react";
+import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2, Rocket, Target, Lock, Brain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
-import scheddyAvatar from "@/assets/scheddy-avatar.png";
+import scheddyAvatar from "@/assets/scheddy-friendly.png";
 import WaitlistModal from "@/components/WaitlistModal";
 interface Offer {
   id: string;
@@ -97,14 +97,14 @@ const Index = () => {
       description: "Smart scheduling that works around your work, personal life, and commitments."
     },
     {
-      icon: Zap,
-      title: "Daily Habit Tracking",
-      description: "Track water intake, sleep, exercise, focus time, and self-care goals."
+      icon: Brain,
+      title: "Smart Habit Tracking",
+      description: "Integrated habit tracking with AI insights — no app switching. Schedulr analyzes your habits and auto-suggests schedule adjustments for better productivity."
     },
     {
       icon: Shield,
-      title: "Stay Accountable",
-      description: "Earn XP, level up, and compete with others on the leaderboard."
+      title: "Privacy First",
+      description: "Your data stays private — we never sell it. Optional gamification features are just that: optional."
     }
   ];
 
@@ -389,9 +389,9 @@ const Index = () => {
 
           <div className="mt-10 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { step: "1", emoji: "📅", title: "Schedule Everything", desc: "AI helps you plan meetings, tasks, and personal time" },
-              { step: "2", emoji: "✅", title: "Track Daily Habits", desc: "Complete health, work, and self-care goals" },
-              { step: "3", emoji: "🏆", title: "Earn & Compete", desc: "Get XP, level up, and climb the leaderboard" }
+              { step: "1", emoji: "📅", title: "Schedule with AI", desc: "Tell Scheddy what you need — meetings, tasks, reminders. Done in seconds." },
+              { step: "2", emoji: "✅", title: "Track Your Habits", desc: "Built-in habit tracking with AI insights to optimize your schedule." },
+              { step: "3", emoji: "🎯", title: "Stay Focused", desc: "Block focus time, set reminders, and optionally earn XP for motivation." }
             ].map((item, index) => (
               <div key={item.step} className="animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-card border border-border shadow-card text-2xl sm:text-3xl flex items-center justify-center mx-auto">
@@ -433,6 +433,26 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Privacy Reassurance */}
+      <section className="py-8 sm:py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 p-4 sm:p-6 rounded-2xl bg-secondary/30 border border-border">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="font-medium text-sm sm:text-base">Your data is private</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">We never sell your information</p>
+              </div>
+            </div>
+            <Link to="/privacy" className="text-xs sm:text-sm text-primary hover:underline">
+              Read our Privacy Policy →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-12 sm:py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
@@ -441,11 +461,11 @@ const Index = () => {
               Ready to level up your productivity? 🏆
             </h2>
             <p className="mt-3 sm:mt-4 text-primary-foreground/80 text-sm sm:text-lg px-2">
-              Join thousands of people who stay organized and crush their goals every day!
+              Stay organized, track your habits, and crush your goals — try it free today!
             </p>
-            <Link to="/register" className="mt-6 sm:mt-8 inline-block w-full sm:w-auto">
+            <Link to="/chat" className="mt-6 sm:mt-8 inline-block w-full sm:w-auto">
               <Button variant="glass" size="xl" className="w-full sm:w-auto bg-background/20 text-primary-foreground border-primary-foreground/20 hover:bg-background/30">
-                🎁 Start Free Today
+                🚀 Try Free — No Signup Required
               </Button>
             </Link>
           </div>

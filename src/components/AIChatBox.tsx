@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, User, Loader2, Camera, ImageIcon, X } from "lucide-react";
+import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import scheddyAvatar from "@/assets/scheddy-avatar.png";
+import { Link } from "react-router-dom";
+import scheddyAvatar from "@/assets/scheddy-friendly.png";
 
 interface Message {
   role: "user" | "assistant";
@@ -12,6 +13,8 @@ interface Message {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+const GUEST_DEMO_LIMIT = 5;
+const GUEST_USAGE_KEY = "schedulr_guest_demo_count";
 
 // Scheddy's personality phrases
 const SCHEDDY_GREETINGS = [
@@ -30,6 +33,14 @@ const SCHEDDY_STATUS_PHRASES = [
   "Here to help!",
   "Feeling productive!",
   "Let's do this!"
+];
+
+const LOADING_MESSAGES = [
+  "Checking your schedule...",
+  "Thinking about the best time...",
+  "Organizing your calendar...",
+  "Finding the perfect slot...",
+  "Almost there..."
 ];
 
 const EVENT_CREATED_PHRASES = [
@@ -65,11 +76,18 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     { role: "assistant", content: SCHEDDY_GREETINGS[Math.floor(Math.random() * SCHEDDY_GREETINGS.length)] }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [guestUsageCount, setGuestUsageCount] = useState(() => {
+    const stored = localStorage.getItem(GUEST_USAGE_KEY);
+    return stored ? parseInt(stored, 10) : 0;
+  });
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const loadingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -78,6 +96,27 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Cycle through loading messages
+  useEffect(() => {
+    if (isLoading) {
+      let index = 0;
+      setLoadingMessage(LOADING_MESSAGES[0]);
+      loadingIntervalRef.current = setInterval(() => {
+        index = (index + 1) % LOADING_MESSAGES.length;
+        setLoadingMessage(LOADING_MESSAGES[index]);
+      }, 2000);
+    } else {
+      if (loadingIntervalRef.current) {
+        clearInterval(loadingIntervalRef.current);
+      }
+    }
+    return () => {
+      if (loadingIntervalRef.current) {
+        clearInterval(loadingIntervalRef.current);
+      }
+    };
+  }, [isLoading]);
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -124,6 +163,16 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const handleSend = async () => {
     if ((!input.trim() && !attachedImage) || isLoading) return;
 
+    // Check guest usage limit
+    if (!user && guestUsageCount >= GUEST_DEMO_LIMIT) {
+      setShowSignupPrompt(true);
+      toast({
+        title: "Demo limit reached",
+        description: "Sign up for unlimited access!",
+      });
+      return;
+    }
+
     const userMessage: Message = { 
       role: "user", 
       content: input || (attachedImage ? "📷 [Photo attached]" : ""),
@@ -135,6 +184,13 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     clearAttachment();
     setIsLoading(true);
 
+    // Increment guest usage
+    if (!user) {
+      const newCount = guestUsageCount + 1;
+      setGuestUsageCount(newCount);
+      localStorage.setItem(GUEST_USAGE_KEY, newCount.toString());
+    }
+
     try {
       const response = await fetch(CHAT_URL, {
         method: "POST",
@@ -144,7 +200,8 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
         },
         body: JSON.stringify({ 
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-          userId: user?.id || null
+          userId: user?.id || null,
+          isGuest: !user
         }),
       });
 
@@ -186,6 +243,11 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
         });
       }
 
+      // Show signup prompt after a few messages for guests
+      if (!user && guestUsageCount + 1 >= GUEST_DEMO_LIMIT - 1) {
+        setShowSignupPrompt(true);
+      }
+
     } catch (error) {
       console.error("Chat error:", error);
       toast({
@@ -209,20 +271,32 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     setInput(suggestion);
   };
 
+  const remainingDemoMessages = GUEST_DEMO_LIMIT - guestUsageCount;
+
   return (
     <div className="w-full max-w-3xl bg-card rounded-2xl shadow-card border border-border overflow-hidden">
       {/* Chat Header */}
       <div className="p-3 sm:p-4 border-b border-border bg-secondary/30">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary/20">
-            <img src={scheddyAvatar} alt="Scheddy" className="w-full h-full object-cover" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary/20">
+              <img src={scheddyAvatar} alt="Scheddy" className="w-full h-full object-cover" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-sm sm:text-base">Scheddy</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                {user ? statusPhrase : `${remainingDemoMessages} free messages left`}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h3 className="font-semibold text-sm sm:text-base">Scheddy</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">
-              {user ? statusPhrase : "Sign in to save events"}
-            </p>
-          </div>
+          {!user && (
+            <Link to="/register">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                <LogIn className="w-3.5 h-3.5" />
+                Sign up
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -264,13 +338,49 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             </div>
           </div>
         ))}
+        
+        {/* Loading State with Friendly Message */}
         {isLoading && (
           <div className="flex gap-2 sm:gap-3 animate-fade-in">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-primary/20">
               <img src={scheddyAvatar} alt="Scheddy" className="w-full h-full object-cover" />
             </div>
             <div className="bg-secondary p-2.5 sm:p-3 rounded-2xl rounded-bl-md">
-              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-muted-foreground" />
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-primary" />
+                <span className="text-xs sm:text-sm text-muted-foreground animate-pulse">
+                  {loadingMessage}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Signup Prompt for Guests */}
+        {showSignupPrompt && !user && (
+          <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-sm">Enjoying Scheddy?</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sign up for free to save your events, track habits, and get unlimited AI scheduling!
+                </p>
+                <div className="flex gap-2 mt-3">
+                  <Link to="/register">
+                    <Button size="sm" variant="hero" className="text-xs">
+                      Sign up free
+                    </Button>
+                  </Link>
+                  <Link to="/login">
+                    <Button size="sm" variant="outline" className="text-xs">
+                      Log in
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -315,6 +425,15 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
           </div>
         )}
         
+        {/* Demo limit reached message */}
+        {!user && guestUsageCount >= GUEST_DEMO_LIMIT && (
+          <div className="mb-3 p-3 rounded-lg bg-primary/10 border border-primary/20 text-center">
+            <p className="text-xs text-muted-foreground">
+              Demo limit reached. <Link to="/register" className="text-primary font-medium hover:underline">Sign up for unlimited access →</Link>
+            </p>
+          </div>
+        )}
+        
         <div className="flex gap-2 sm:gap-3">
           {/* Photo Buttons */}
           <div className="flex gap-1">
@@ -323,7 +442,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
               size="icon"
               className="h-10 w-10 sm:h-11 sm:w-11"
               onClick={() => cameraInputRef.current?.click()}
-              disabled={isLoading}
+              disabled={isLoading || (!user && guestUsageCount >= GUEST_DEMO_LIMIT)}
               title="Take Photo"
             >
               <Camera className="w-4 h-4" />
@@ -333,7 +452,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
               size="icon"
               className="h-10 w-10 sm:h-11 sm:w-11"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading}
+              disabled={isLoading || (!user && guestUsageCount >= GUEST_DEMO_LIMIT)}
               title="Photo Library"
             >
               <ImageIcon className="w-4 h-4" />
@@ -361,13 +480,19 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={user ? "What do you want to schedule?" : "Sign in to save events..."}
+            placeholder={
+              !user && guestUsageCount >= GUEST_DEMO_LIMIT 
+                ? "Sign up to continue..." 
+                : user 
+                  ? "What do you want to schedule?" 
+                  : "Try asking anything..."
+            }
             className="flex-1 bg-secondary rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-muted-foreground"
-            disabled={isLoading}
+            disabled={isLoading || (!user && guestUsageCount >= GUEST_DEMO_LIMIT)}
           />
           <Button
             onClick={handleSend}
-            disabled={(!input.trim() && !attachedImage) || isLoading}
+            disabled={(!input.trim() && !attachedImage) || isLoading || (!user && guestUsageCount >= GUEST_DEMO_LIMIT)}
             variant="hero"
             size="default"
             className="px-4 sm:px-6"
