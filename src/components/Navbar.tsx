@@ -24,6 +24,18 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -312,7 +324,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border animate-fade-in">
+          <div className="md:hidden py-4 border-t border-border animate-fade-in fixed inset-x-0 top-16 bottom-0 bg-background overflow-y-auto z-40">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
