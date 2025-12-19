@@ -32,3 +32,9 @@ verify_jwt = false
 
 [functions.create-verified-checkout]
 verify_jwt = true
+
+[functions.google-calendar-auth]
+verify_jwt = true
+
+[functions.google-calendar-callback]
+verify_jwt = false
