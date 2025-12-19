@@ -83,7 +83,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const navLinks = [
     { path: "/", label: "Home", icon: null },
     { path: "/chat", label: "AI Chat", icon: null },
-    { path: "/dashboard", label: "Dashboard", icon: null },
+    { path: isAdmin ? "/admin" : "/dashboard", label: "Dashboard", icon: null },
     { path: "/calendar", label: "Calendar", icon: CalendarDays },
     { path: "/community", label: "Community", icon: Users, highlight: true },
     { path: "/pricing", label: "Pricing", icon: null },
@@ -201,7 +201,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                     </Button>
                   }
                 />
-                <Link to="/dashboard">
+                <Link to={isAdmin ? "/admin" : "/dashboard"}>
                   <Button variant="hero" size="default">
                     Dashboard
                   </Button>
@@ -400,7 +400,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                       </Button>
                     }
                   />
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to={isAdmin ? "/admin" : "/dashboard"} onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="hero" className="w-full">
                       Dashboard
                     </Button>
