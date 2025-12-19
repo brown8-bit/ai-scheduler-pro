@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Clock, Plus, Users, MessageCircle, AlertTriangle } from "lucide-react";
-import { useConflictDetection, ConflictingEvent } from "@/hooks/useConflictDetection";
+import { useConflictDetection, ConflictingEvent, AlternativeSlot } from "@/hooks/useConflictDetection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,6 +72,7 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
   const [reminder, setReminder] = useState(false);
   const [shareToCommunity, setShareToCommunity] = useState(false);
   const [conflicts, setConflicts] = useState<ConflictingEvent[]>([]);
+  const [alternatives, setAlternatives] = useState<AlternativeSlot[]>([]);
   const [showConflictWarning, setShowConflictWarning] = useState(false);
   
   const { checkForConflicts, checking } = useConflictDetection();
@@ -87,7 +88,23 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
     setReminder(false);
     setShareToCommunity(false);
     setConflicts([]);
+    setAlternatives([]);
     setShowConflictWarning(false);
+  };
+
+  const selectAlternativeTime = (slot: AlternativeSlot) => {
+    const newDate = new Date(slot.start);
+    setDate(newDate);
+    setTime(
+      `${String(newDate.getHours()).padStart(2, '0')}:${String(newDate.getMinutes()).padStart(2, '0')}`
+    );
+    setShowConflictWarning(false);
+    setConflicts([]);
+    setAlternatives([]);
+    toast({
+      title: "Time updated!",
+      description: `Changed to ${slot.label}`,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent, forceCreate = false) => {
@@ -121,6 +138,7 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
       const result = await checkForConflicts(userId, eventDate);
       if (result.hasConflict) {
         setConflicts(result.conflicts);
+        setAlternatives(result.alternatives);
         setShowConflictWarning(true);
         return;
       }
@@ -358,7 +376,7 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
 
           {/* Conflict Warning */}
           {showConflictWarning && conflicts.length > 0 && (
-            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 space-y-2">
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 space-y-3">
               <div className="flex items-center gap-2 text-destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <span className="font-medium text-sm">Scheduling Conflict</span>
@@ -380,6 +398,31 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
                   </li>
                 ))}
               </ul>
+
+              {/* Alternative Times */}
+              {alternatives.length > 0 && (
+                <div className="pt-2 border-t border-border/50">
+                  <p className="text-xs font-medium text-foreground mb-2">
+                    Available nearby times:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {alternatives.map((slot, index) => (
+                      <Button
+                        key={index}
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="text-xs h-7"
+                        onClick={() => selectAlternativeTime(slot)}
+                      >
+                        <Clock className="h-3 w-3 mr-1" />
+                        {slot.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2">
                 <Button
                   type="button"
@@ -388,7 +431,7 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
                   className="flex-1"
                   onClick={() => setShowConflictWarning(false)}
                 >
-                  Cancel
+                  Edit Time
                 </Button>
                 <Button
                   type="button"
