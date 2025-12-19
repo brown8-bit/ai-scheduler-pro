@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { PresenceProvider } from "@/contexts/PresenceContext";
 import ScheddyLoader from "@/components/ScheddyLoader";
+import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 
 // Regular imports for most pages (no loading animation)
 import Index from "./pages/Index";
@@ -63,6 +64,7 @@ const App = () => (
             <ThemeInitializer />
             <Toaster />
             <Sonner />
+            <InstallPromptBanner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
