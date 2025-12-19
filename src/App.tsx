@@ -24,6 +24,7 @@ import Admin from "./pages/Admin";
 import AdminUsers from "./pages/AdminUsers";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Contact from "./pages/Contact";
 import Install from "./pages/Install";
 import Analytics from "./pages/Analytics";
 import BookingSettings from "./pages/BookingSettings";
@@ -87,6 +88,7 @@ const App = () => (
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/install" element={<Install />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/booking-settings" element={<BookingSettings />} />
