@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -525,6 +526,16 @@ const Community = () => {
     fetchSuggestedUsers();
     setLoading(false);
   };
+
+  const handleRefresh = useCallback(async () => {
+    if (!user) return;
+    await Promise.all([
+      fetchPosts(),
+      fetchFollowing(),
+      fetchSuggestedUsers(),
+    ]);
+    toast({ title: "Feed refreshed!" });
+  }, [user]);
 
   const fetchSuggestedUsers = async () => {
     if (!user) return;
@@ -1173,7 +1184,7 @@ const Community = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-4 pt-20 pb-8">
+      <PullToRefresh onRefresh={handleRefresh} className="container mx-auto px-4 pt-20 pb-8 min-h-[calc(100vh-64px)]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
           {/* Left Sidebar - Navigation */}
           <aside className="hidden lg:block lg:col-span-3">
@@ -2055,7 +2066,7 @@ const Community = () => {
             </div>
           </aside>
         </div>
-      </main>
+      </PullToRefresh>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
