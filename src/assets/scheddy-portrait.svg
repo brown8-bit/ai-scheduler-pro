@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Scheddy portrait">
+  <rect width="512" height="512" fill="#FFFFFF"/>
+
+  <!-- Coat (orange) -->
+  <path d="M144 456V328c0-56.9 46.1-103 103-103h18c56.9 0 103 46.1 103 103v128H144z" fill="#FF6B35"/>
+
+  <!-- Shirt (white) -->
+  <path d="M208 456V344c0-30.9 25.1-56 56-56h-16c30.9 0 56 25.1 56 56v112H208z" fill="#FFFFFF"/>
+
+  <!-- Lapels (white) -->
+  <path d="M192 310l54 66-44 54h-10c0-45.2 0-82.3 0-120z" fill="#FFFFFF"/>
+  <path d="M320 310l-54 66 44 54h10c0-45.2 0-82.3 0-120z" fill="#FFFFFF"/>
+
+  <!-- Head (white) -->
+  <circle cx="256" cy="166" r="96" fill="#FFFFFF"/>
+
+  <!-- Neck (orange) -->
+  <rect x="232" y="246" width="48" height="46" rx="18" fill="#FF6B35"/>
+
+  <!-- Eyes (orange) -->
+  <circle cx="220" cy="156" r="14" fill="#FF6B35"/>
+  <circle cx="292" cy="156" r="14" fill="#FF6B35"/>
+
+  <!-- Smile (orange) -->
+  <path d="M214 196c14 18 30 26 42 26s28-8 42-26" fill="none" stroke="#FF6B35" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Cap (orange) -->
+  <path d="M230 78h52a10 10 0 0 1 10 10v18H220V88a10 10 0 0 1 10-10z" fill="#FF6B35"/>
+</svg>

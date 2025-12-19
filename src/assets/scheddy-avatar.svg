@@ -1,0 +1,30 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Scheddy avatar">
+  <defs>
+    <clipPath id="clip">
+      <circle cx="256" cy="256" r="256" />
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#clip)">
+    <rect width="512" height="512" fill="#FFFFFF"/>
+
+    <!-- Coat (orange) -->
+    <path d="M120 512V346c0-54 43.8-98 98-98h76c54 0 98 44 98 98v166H120z" fill="#FF6B35"/>
+
+    <!-- Head (white) -->
+    <circle cx="256" cy="214" r="108" fill="#FFFFFF"/>
+
+    <!-- Neck (orange) -->
+    <rect x="226" y="310" width="60" height="54" rx="22" fill="#FF6B35"/>
+
+    <!-- Eyes (orange) -->
+    <circle cx="214" cy="206" r="16" fill="#FF6B35"/>
+    <circle cx="298" cy="206" r="16" fill="#FF6B35"/>
+
+    <!-- Smile (orange) -->
+    <path d="M200 250c16 22 34 32 56 32s40-10 56-32" fill="none" stroke="#FF6B35" stroke-width="12" stroke-linecap="round"/>
+
+    <!-- Cap (orange) -->
+    <path d="M224 96h64a12 12 0 0 1 12 12v20H212v-20a12 12 0 0 1 12-12z" fill="#FF6B35"/>
+  </g>
+</svg>
