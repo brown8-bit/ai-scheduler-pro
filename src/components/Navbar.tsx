@@ -324,7 +324,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border animate-fade-in fixed inset-x-0 top-16 bottom-0 bg-background overflow-y-auto z-40">
+          <div className="md:hidden py-4 border-t border-border animate-slide-in-right fixed inset-x-0 top-16 bottom-0 bg-background overflow-y-auto z-40">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
