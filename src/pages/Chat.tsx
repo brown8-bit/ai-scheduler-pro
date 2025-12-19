@@ -1,8 +1,17 @@
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import AIChatBox from "@/components/AIChatBox";
 import { Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Chat = () => {
+  const navigate = useNavigate();
+  
+  const handleEventCreated = () => {
+    // Optionally navigate to calendar or show additional feedback
+    console.log("Event created via AI chat");
+  };
+
   return (
     <div className="min-h-screen gradient-hero">
       <Navbar />
@@ -23,27 +32,7 @@ const Chat = () => {
 
           {/* Chat Box */}
           <div className="flex justify-center animate-slide-up delay-100">
-            <AIChatBox />
-          </div>
-
-          {/* Suggestions */}
-          <div className="mt-6 sm:mt-8 text-center animate-fade-in delay-300">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Try asking:</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {[
-                "Schedule a meeting tomorrow",
-                "Remind me to call mom",
-                "Block time for focus",
-                "Weekly team standup"
-              ].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-secondary text-secondary-foreground text-xs sm:text-sm hover:bg-secondary/80 transition-colors"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
+            <AIChatBox onEventCreated={handleEventCreated} />
           </div>
         </div>
       </main>
