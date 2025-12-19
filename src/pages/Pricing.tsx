@@ -540,8 +540,8 @@ const Pricing = () => {
             <h3 className="text-xl font-semibold mb-4">Questions?</h3>
             <p className="text-muted-foreground">
               Contact us at{" "}
-              <a href="mailto:support@schedulr.com" className="text-primary hover:underline">
-                support@schedulr.com
+              <a href="mailto:Support@schedulr.com" className="text-primary hover:underline">
+                Support@schedulr.com
               </a>
             </p>
           </div>
