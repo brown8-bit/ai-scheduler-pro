@@ -59,6 +59,19 @@ const Gamification = () => {
         navigate("/login");
         return;
       }
+      
+      // Check if gamification is enabled
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("gamification_enabled")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (profile && profile.gamification_enabled === false) {
+        navigate("/dashboard");
+        return;
+      }
+      
       setUser(user);
     };
     checkUser();

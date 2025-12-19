@@ -332,7 +332,24 @@ const Community = () => {
       navigate("/login");
       return;
     }
-    checkLifetimeAccess();
+    
+    // Check if gamification is enabled
+    const checkGamification = async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("gamification_enabled")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (profile && profile.gamification_enabled === false) {
+        navigate("/dashboard");
+        return;
+      }
+      
+      checkLifetimeAccess();
+    };
+    
+    checkGamification();
   }, [user, navigate]);
 
   // Real-time presence for typing indicators
