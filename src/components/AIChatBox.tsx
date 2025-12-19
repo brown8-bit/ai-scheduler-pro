@@ -13,53 +13,53 @@ interface Message {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-const GUEST_DEMO_LIMIT = 5;
-const GUEST_USAGE_KEY = "schedulr_guest_demo_count";
 
-// Scheddy's personality phrases
+// Scheddy's personality phrases - more natural and varied
 const SCHEDDY_GREETINGS = [
-  "Hey there! I'm Scheddy, your friendly scheduling buddy. 👋 What can I help you organize today?",
-  "Hi! Scheddy here, ready to make your schedule sparkle! ✨ What are we planning?",
-  "Hello friend! I'm Scheddy, and I absolutely LOVE helping with schedules. What's on your mind?",
-  "Hey! It's me, Scheddy! 🗓️ Let's turn that chaos into a beautiful calendar. What do you need?",
-  "Greetings! Scheddy at your service! I'm practically buzzing with excitement to help you schedule something. What'll it be?"
+  "Hey there! 👋 I'm Scheddy - your personal scheduling sidekick. What's on your mind today?",
+  "Oh hi! Ready to help you conquer your schedule. What would you like to organize?",
+  "Hey! Scheddy here. Whether it's a quick reminder or a complex recurring event, I've got you. What do you need?",
+  "Hello! 🗓️ I'm basically obsessed with helping people get organized. What can I help you schedule?",
+  "Hey friend! Tell me what's on your plate and let's get it organized together.",
+  "Hi! I'm Scheddy, and honestly? Helping with schedules is my favorite thing. What's up?",
+  "Hey! Got meetings to schedule? Reminders to set? Focus time to block? I'm your assistant!",
 ];
 
 const SCHEDDY_STATUS_PHRASES = [
-  "Excited to help you!",
-  "Let's get organized!",
-  "Ready when you are!",
-  "At your service!",
-  "Here to help!",
-  "Feeling productive!",
-  "Let's do this!"
+  "Ready to help! ✨",
+  "Let's get organized",
+  "At your service",
+  "Feeling productive",
+  "Schedule mode: ON",
+  "Here for you",
 ];
 
 const LOADING_MESSAGES = [
+  "Let me think about that...",
   "Checking your schedule...",
-  "Thinking about the best time...",
-  "Organizing your calendar...",
-  "Finding the perfect slot...",
-  "Almost there..."
+  "Finding the perfect time...",
+  "Working on it...",
+  "Almost there...",
+  "One moment...",
 ];
 
 const EVENT_CREATED_PHRASES = [
-  "Boom! Done! 💥",
-  "Consider it scheduled! ✨",
-  "You got it! 🎯",
+  "Done! 💥",
+  "Scheduled! ✨",
+  "Got it! 🎯",
   "Locked in! 🔒",
-  "Easy peasy! 🌟",
+  "All set! 🌟",
   "Ta-da! 🎉",
-  "All set! ✅",
-  "Nailed it! 🚀"
+  "Perfect! ✅",
+  "On your calendar! 🚀"
 ];
 
 const SUGGESTION_PROMPTS = [
   "Schedule a meeting tomorrow at 2pm",
-  "Add a workout session this evening",
   "Remind me to call mom on Sunday",
-  "Block focus time for 2 hours",
-  "Create a weekly team standup",
+  "Block 2 hours for focus time",
+  "Add a weekly team standup",
+  "What's on my schedule today?",
 ];
 
 interface AIChatBoxProps {
@@ -79,10 +79,6 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
-  const [guestUsageCount, setGuestUsageCount] = useState(() => {
-    const stored = localStorage.getItem(GUEST_USAGE_KEY);
-    return stored ? parseInt(stored, 10) : 0;
-  });
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -163,16 +159,6 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const handleSend = async () => {
     if ((!input.trim() && !attachedImage) || isLoading) return;
 
-    // Check guest usage limit
-    if (!user && guestUsageCount >= GUEST_DEMO_LIMIT) {
-      setShowSignupPrompt(true);
-      toast({
-        title: "Demo limit reached",
-        description: "Sign up for unlimited access!",
-      });
-      return;
-    }
-
     const userMessage: Message = { 
       role: "user", 
       content: input || (attachedImage ? "📷 [Photo attached]" : ""),
@@ -183,13 +169,6 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     setInput("");
     clearAttachment();
     setIsLoading(true);
-
-    // Increment guest usage
-    if (!user) {
-      const newCount = guestUsageCount + 1;
-      setGuestUsageCount(newCount);
-      localStorage.setItem(GUEST_USAGE_KEY, newCount.toString());
-    }
 
     try {
       const response = await fetch(CHAT_URL, {
@@ -243,8 +222,8 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
         });
       }
 
-      // Show signup prompt after a few messages for guests
-      if (!user && guestUsageCount + 1 >= GUEST_DEMO_LIMIT - 1) {
+      // Show signup prompt after several messages for guests
+      if (!user && messages.length >= 6) {
         setShowSignupPrompt(true);
       }
 
@@ -271,7 +250,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     setInput(suggestion);
   };
 
-  const remainingDemoMessages = GUEST_DEMO_LIMIT - guestUsageCount;
+  
 
   return (
     <div className="w-full max-w-3xl bg-card rounded-2xl shadow-card border border-border overflow-hidden">
@@ -285,7 +264,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             <div className="min-w-0">
               <h3 className="font-semibold text-sm sm:text-base">Scheddy</h3>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                {user ? statusPhrase : `${remainingDemoMessages} free messages left`}
+                {user ? statusPhrase : "Try me out - unlimited!"}
               </p>
             </div>
           </div>
@@ -425,14 +404,6 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
           </div>
         )}
         
-        {/* Demo limit reached message */}
-        {!user && guestUsageCount >= GUEST_DEMO_LIMIT && (
-          <div className="mb-3 p-3 rounded-lg bg-primary/10 border border-primary/20 text-center">
-            <p className="text-xs text-muted-foreground">
-              Demo limit reached. <Link to="/register" className="text-primary font-medium hover:underline">Sign up for unlimited access →</Link>
-            </p>
-          </div>
-        )}
         
         <div className="flex gap-2 sm:gap-3">
           {/* Photo Buttons */}
@@ -442,7 +413,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
               size="icon"
               className="h-10 w-10 sm:h-11 sm:w-11"
               onClick={() => cameraInputRef.current?.click()}
-              disabled={isLoading || (!user && guestUsageCount >= GUEST_DEMO_LIMIT)}
+              disabled={isLoading}
               title="Take Photo"
             >
               <Camera className="w-4 h-4" />
@@ -452,7 +423,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
               size="icon"
               className="h-10 w-10 sm:h-11 sm:w-11"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading || (!user && guestUsageCount >= GUEST_DEMO_LIMIT)}
+              disabled={isLoading}
               title="Photo Library"
             >
               <ImageIcon className="w-4 h-4" />
@@ -480,19 +451,13 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={
-              !user && guestUsageCount >= GUEST_DEMO_LIMIT 
-                ? "Sign up to continue..." 
-                : user 
-                  ? "What do you want to schedule?" 
-                  : "Try asking anything..."
-            }
+            placeholder={user ? "What do you want to schedule?" : "Try asking anything..."}
             className="flex-1 bg-secondary rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-muted-foreground"
-            disabled={isLoading || (!user && guestUsageCount >= GUEST_DEMO_LIMIT)}
+            disabled={isLoading}
           />
           <Button
             onClick={handleSend}
-            disabled={(!input.trim() && !attachedImage) || isLoading || (!user && guestUsageCount >= GUEST_DEMO_LIMIT)}
+            disabled={(!input.trim() && !attachedImage) || isLoading}
             variant="hero"
             size="default"
             className="px-4 sm:px-6"
