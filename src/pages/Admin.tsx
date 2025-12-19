@@ -12,11 +12,15 @@ import {
   Settings,
   LogOut,
   BarChart3,
-  Loader2
+  Loader2,
+  ArrowLeft,
+  LayoutDashboard
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ManageOffers from "@/components/admin/ManageOffers";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -107,17 +111,42 @@ const Admin = () => {
       {/* Admin Header */}
       <header className="bg-card border-b border-border px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-destructive flex items-center justify-center">
-              <Shield className="w-5 h-5 text-destructive-foreground" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg">Schedulr Admin</h1>
-              <p className="text-xs text-muted-foreground">Control Panel</p>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate("/")}
+              className="shrink-0"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-destructive flex items-center justify-center">
+                <Shield className="w-5 h-5 text-destructive-foreground" />
+              </div>
+              <div>
+                <h1 className="font-bold text-lg">Schedulr Admin</h1>
+                <p className="text-xs text-muted-foreground">Control Panel</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/settings")}>
+          <div className="flex items-center gap-4">
+            {/* View Toggle */}
+            <div className="hidden sm:flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
+              <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+              <Label htmlFor="view-toggle" className="text-sm text-muted-foreground cursor-pointer">
+                User View
+              </Label>
+              <Switch 
+                id="view-toggle" 
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    navigate("/dashboard");
+                  }
+                }}
+              />
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin-settings")}>
               <Settings className="w-4 h-4" />
             </Button>
             <Button 
