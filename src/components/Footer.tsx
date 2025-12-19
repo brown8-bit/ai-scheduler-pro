@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { forwardRef } from "react";
 import { Shield } from "lucide-react";
-import scheddyAvatar from "@/assets/scheddy-avatar.svg";
+import scheddyAvatar from "@/assets/scheddy-avatar.png";
 
 const Footer = forwardRef<HTMLElement>((_, ref) => {
   return (
