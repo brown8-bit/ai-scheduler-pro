@@ -325,8 +325,8 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
 
       {/* Mobile Menu - Outside container for proper z-index stacking */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-16 bottom-0 z-[60] bg-background border-t border-border overflow-y-auto animate-slide-in-right">
-          <div className="flex flex-col gap-2 py-4 px-4">
+        <div className="md:hidden fixed inset-x-0 top-16 bottom-0 z-[60] bg-background border-t border-border overflow-y-auto">
+          <div className="flex flex-col gap-2 py-4 px-4 max-w-7xl mx-auto">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
