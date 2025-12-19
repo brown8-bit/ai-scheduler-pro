@@ -16,24 +16,27 @@ interface Message {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
-// Guest credits system
-const GUEST_CREDITS_KEY = "schedulr_guest_credits";
-const INITIAL_GUEST_CREDITS = 350;
+// Guest demo mode - 5 free prompts without signup
+const GUEST_PROMPTS_KEY = "schedulr_guest_prompts";
+const MAX_GUEST_PROMPTS = 5;
 
-const getGuestCredits = (): number => {
-  const stored = localStorage.getItem(GUEST_CREDITS_KEY);
+const getGuestPromptsUsed = (): number => {
+  const stored = localStorage.getItem(GUEST_PROMPTS_KEY);
   if (stored === null) {
-    localStorage.setItem(GUEST_CREDITS_KEY, String(INITIAL_GUEST_CREDITS));
-    return INITIAL_GUEST_CREDITS;
+    return 0;
   }
   return parseInt(stored, 10);
 };
 
-const decrementGuestCredits = (): number => {
-  const current = getGuestCredits();
-  const newValue = Math.max(0, current - 1);
-  localStorage.setItem(GUEST_CREDITS_KEY, String(newValue));
+const incrementGuestPrompts = (): number => {
+  const current = getGuestPromptsUsed();
+  const newValue = Math.min(MAX_GUEST_PROMPTS, current + 1);
+  localStorage.setItem(GUEST_PROMPTS_KEY, String(newValue));
   return newValue;
+};
+
+const getRemainingGuestPrompts = (): number => {
+  return MAX_GUEST_PROMPTS - getGuestPromptsUsed();
 };
 
 // Scheddy's personality phrases - creator-focused
@@ -103,7 +106,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
-  const [guestCredits, setGuestCredits] = useState(() => getGuestCredits());
+  const [guestPromptsRemaining, setGuestPromptsRemaining] = useState(() => getRemainingGuestPrompts());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -196,17 +199,17 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const handleSend = async () => {
     if ((!input.trim() && !attachedImage) || isLoading) return;
 
-    // Check guest credits
-    if (!user && guestCredits <= 0) {
+    // Check guest demo prompts
+    if (!user && guestPromptsRemaining <= 0) {
       toast({
-        title: "Credits exhausted",
+        title: "Demo complete!",
         description: "Sign up for free to continue using Scheddy!",
-        variant: "destructive",
       });
       setMessages(prev => [...prev, { 
         role: "assistant", 
-        content: "You've used all your free credits! 🎉 Sign up for a free account to keep chatting with me and save your events." 
+        content: "You've tried all 5 demo prompts! 🎉 I hope you got a feel for how I can help. Sign up for a free account to unlock unlimited AI scheduling and save your events!" 
       }]);
+      setShowSignupPrompt(true);
       return;
     }
 
@@ -221,10 +224,10 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     clearAttachment();
     setIsLoading(true);
 
-    // Decrement guest credits before sending
+    // Increment guest prompts used before sending
     if (!user) {
-      const remaining = decrementGuestCredits();
-      setGuestCredits(remaining);
+      incrementGuestPrompts();
+      setGuestPromptsRemaining(getRemainingGuestPrompts());
     }
 
     try {
@@ -279,8 +282,8 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
         });
       }
 
-      // Show signup prompt after several messages for guests
-      if (!user && messages.length >= 6) {
+      // Show signup prompt when guest prompts are low or exhausted
+      if (!user && guestPromptsRemaining <= 1) {
         setShowSignupPrompt(true);
       }
 
@@ -309,19 +312,33 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
 
   
 
-  const isLowCredits = !user && guestCredits > 0 && guestCredits <= 50;
+  const isLowPrompts = !user && guestPromptsRemaining > 0 && guestPromptsRemaining <= 2;
+  const isGuestMode = !user;
 
   return (
     <div className="w-full max-w-3xl bg-card rounded-2xl shadow-card border border-border overflow-hidden">
-      {/* Low Credits Warning */}
-      {isLowCredits && (
-        <div className="px-3 py-2 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between gap-2">
-          <p className="text-xs text-amber-600 dark:text-amber-400">
-            ⚠️ Only {guestCredits} credits left! Sign up to continue using Scheddy.
-          </p>
+      {/* Guest Demo Mode Banner */}
+      {isGuestMode && guestPromptsRemaining > 0 && (
+        <div className={`px-3 py-2 border-b flex items-center justify-between gap-2 ${
+          isLowPrompts 
+            ? "bg-amber-500/10 border-amber-500/20" 
+            : "bg-primary/5 border-primary/20"
+        }`}>
+          <div className="flex items-center gap-2">
+            <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+              isLowPrompts 
+                ? "bg-amber-500/20 text-amber-600 dark:text-amber-400" 
+                : "bg-primary/20 text-primary"
+            }`}>
+              Demo Mode
+            </div>
+            <p className={`text-xs ${isLowPrompts ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+              {guestPromptsRemaining} of {MAX_GUEST_PROMPTS} prompts left
+            </p>
+          </div>
           <Link to="/register">
-            <Button size="sm" variant="outline" className="text-xs h-7 border-amber-500/30 hover:bg-amber-500/10">
-              Sign up
+            <Button size="sm" variant="outline" className="text-xs h-7">
+              Sign up free
             </Button>
           </Link>
         </div>
@@ -336,12 +353,12 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-sm sm:text-base">Scheddy</h3>
-              <p className={`text-xs sm:text-sm truncate ${isLowCredits ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
-                {user ? statusPhrase : `${guestCredits} credits remaining`}
+              <p className={`text-xs sm:text-sm truncate ${isLowPrompts ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                {user ? statusPhrase : (guestPromptsRemaining > 0 ? `Try ${guestPromptsRemaining} prompts free` : "Demo complete")}
               </p>
             </div>
           </div>
-          {!user && !isLowCredits && (
+          {!user && !isLowPrompts && guestPromptsRemaining > 0 && (
             <Link to="/register">
               <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                 <LogIn className="w-3.5 h-3.5" />

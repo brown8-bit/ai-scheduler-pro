@@ -233,9 +233,14 @@ const Index = () => {
           </div>
 
           {!user && (
-            <p className="mt-4 text-sm sm:text-base text-muted-foreground animate-fade-in delay-400">
-              ✨ <span className="font-semibold text-foreground">Try free</span> — no signup required • <span className="font-semibold text-foreground">$29/month</span> after trial
-            </p>
+            <div className="mt-4 animate-fade-in delay-400">
+              <p className="text-sm sm:text-base text-muted-foreground">
+                ✨ <span className="font-semibold text-foreground">Try 5 prompts free</span> — no signup required
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Then <span className="font-semibold text-foreground">$29/month</span> for unlimited access
+              </p>
+            </div>
           )}
         </div>
       </section>
