@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Calendar, 
@@ -7,36 +7,26 @@ import {
   Loader2, 
   RefreshCw,
   Trash2,
-  ChevronRight
+  ChevronRight,
+  Clock,
+  Settings2,
+  Zap
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
-
-interface CalendarConnection {
-  id: string;
-  provider: string;
-  provider_email: string | null;
-  sync_enabled: boolean;
-  sync_status: string;
-  last_synced_at: string | null;
-  settings: {
-    working_hours_start: number;
-    working_hours_end: number;
-    buffer_minutes: number;
-    no_meeting_days: number[];
-  } | null;
-}
-
-interface CalendarConnectionRow {
-  id: string;
-  provider: string;
-  provider_email: string | null;
-  sync_enabled: boolean | null;
-  sync_status: string | null;
-  last_synced_at: string | null;
-  settings: unknown;
-}
+import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const PROVIDERS = [
   {
@@ -51,7 +41,7 @@ const PROVIDERS = [
     name: "Outlook / Office 365",
     icon: "https://img.icons8.com/color/48/microsoft-outlook-2019.png",
     color: "bg-blue-600",
-    available: true,
+    available: false,
   },
   {
     id: "apple",
@@ -63,159 +53,18 @@ const PROVIDERS = [
 ];
 
 const CalendarConnections = () => {
-  const { user } = useAuth();
-  const [connections, setConnections] = useState<CalendarConnection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [connecting, setConnecting] = useState<string | null>(null);
+  const {
+    connections,
+    loading,
+    syncing,
+    connecting,
+    connect,
+    disconnect,
+    syncCalendar,
+    updateSettings,
+  } = useGoogleCalendar();
 
-  useEffect(() => {
-    if (user) {
-      fetchConnections();
-    }
-  }, [user]);
-
-  const fetchConnections = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from("calendar_connections")
-        .select("id, provider, provider_email, sync_enabled, sync_status, last_synced_at, settings")
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-      
-      // Map the data to our interface
-      const mappedConnections: CalendarConnection[] = (data || []).map((row) => ({
-        id: row.id,
-        provider: row.provider,
-        provider_email: row.provider_email,
-        sync_enabled: row.sync_enabled ?? true,
-        sync_status: row.sync_status ?? "pending",
-        last_synced_at: row.last_synced_at,
-        settings: row.settings as CalendarConnection["settings"],
-      }));
-      
-      setConnections(mappedConnections);
-    } catch (error) {
-      console.error("Error fetching connections:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Listen for OAuth popup messages
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === "google-calendar-success") {
-        toast({
-          title: "Calendar Connected!",
-          description: "Your Google Calendar has been successfully connected.",
-        });
-        fetchConnections();
-        setConnecting(null);
-      } else if (event.data?.type === "google-calendar-error") {
-        toast({
-          title: "Connection Failed",
-          description: event.data.error || "Failed to connect calendar. Please try again.",
-          variant: "destructive",
-        });
-        setConnecting(null);
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
-  const handleConnect = async (providerId: string) => {
-    if (providerId !== "google") {
-      toast({
-        title: "Coming Soon!",
-        description: `${PROVIDERS.find(p => p.id === providerId)?.name} integration is coming soon.`,
-      });
-      return;
-    }
-
-    setConnecting(providerId);
-
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        toast({
-          title: "Not authenticated",
-          description: "Please log in to connect your calendar.",
-          variant: "destructive",
-        });
-        setConnecting(null);
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke("google-calendar-auth", {
-        body: { redirectUrl: window.location.origin + "/settings" },
-      });
-
-      if (error) {
-        console.error("OAuth error:", error);
-        throw error;
-      }
-
-      if (data?.url) {
-        // Open OAuth popup
-        const width = 500;
-        const height = 600;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        window.open(
-          data.url,
-          "google-oauth",
-          `width=${width},height=${height},left=${left},top=${top},popup=1`
-        );
-      } else {
-        throw new Error("No OAuth URL received");
-      }
-    } catch (error) {
-      console.error("Connect error:", error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to start OAuth flow. Please try again.",
-        variant: "destructive",
-      });
-      setConnecting(null);
-    }
-  };
-
-  const handleDisconnect = async (connectionId: string) => {
-    try {
-      const { error } = await supabase
-        .from("calendar_connections")
-        .delete()
-        .eq("id", connectionId);
-
-      if (error) throw error;
-
-      setConnections(prev => prev.filter(c => c.id !== connectionId));
-      toast({
-        title: "Calendar disconnected",
-        description: "Your calendar has been disconnected.",
-      });
-    } catch (error) {
-      console.error("Error disconnecting:", error);
-      toast({
-        title: "Error",
-        description: "Failed to disconnect calendar.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSync = async (connectionId: string) => {
-    toast({
-      title: "Syncing...",
-      description: "Calendar sync is in progress.",
-    });
-    // Sync logic would be implemented via edge function
-  };
+  const [expandedConnection, setExpandedConnection] = useState<string | null>(null);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -249,6 +98,19 @@ const CalendarConnections = () => {
     }
   };
 
+  const formatLastSynced = (lastSynced: string | null) => {
+    if (!lastSynced) return "Never";
+    const date = new Date(lastSynced);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+    return date.toLocaleDateString();
+  };
+
   const connectedProviders = connections.map(c => c.provider);
 
   if (loading) {
@@ -267,49 +129,139 @@ const CalendarConnections = () => {
           <h3 className="text-sm font-medium text-muted-foreground">Connected</h3>
           {connections.map((connection) => {
             const provider = PROVIDERS.find(p => p.id === connection.provider);
+            const isExpanded = expandedConnection === connection.id;
+            
             return (
-              <div
+              <Collapsible
                 key={connection.id}
-                className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 border border-border"
+                open={isExpanded}
+                onOpenChange={() => setExpandedConnection(isExpanded ? null : connection.id)}
               >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg ${provider?.color} flex items-center justify-center`}>
-                    <img 
-                      src={provider?.icon} 
-                      alt={provider?.name} 
-                      className="w-6 h-6"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
+                <div className="rounded-xl bg-secondary/50 border border-border overflow-hidden">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg ${provider?.color} flex items-center justify-center`}>
+                        <img 
+                          src={provider?.icon} 
+                          alt={provider?.name} 
+                          className="w-6 h-6"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{provider?.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {connection.provider_email || "Connected"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(connection.sync_status)}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => syncCalendar(connection.id)}
+                        disabled={syncing}
+                      >
+                        <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                      </Button>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Settings2 className="w-4 h-4" />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => disconnect(connection.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{provider?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {connection.provider_email || "Connected"}
-                    </p>
-                  </div>
+
+                  <CollapsibleContent>
+                    <div className="px-4 pb-4 pt-2 border-t border-border/50 space-y-4">
+                      {/* Sync Info */}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        Last synced: {formatLastSynced(connection.last_synced_at)}
+                        {connection.settings?.timezone && (
+                          <span className="ml-2">• {connection.settings.timezone}</span>
+                        )}
+                      </div>
+
+                      {/* Smart Features */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-yellow-500" />
+                          Smart Features
+                        </h4>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={`focus-${connection.id}`} className="text-sm">
+                            Auto-block focus time
+                          </Label>
+                          <Switch
+                            id={`focus-${connection.id}`}
+                            checked={connection.settings?.auto_block_focus || false}
+                            onCheckedChange={(checked) => 
+                              updateSettings(connection.id, { auto_block_focus: checked })
+                            }
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Buffer between meetings</Label>
+                          <Select
+                            value={String(connection.settings?.buffer_minutes || 0)}
+                            onValueChange={(value) => 
+                              updateSettings(connection.id, { buffer_minutes: parseInt(value) })
+                            }
+                          >
+                            <SelectTrigger className="w-24 h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">None</SelectItem>
+                              <SelectItem value="5">5 min</SelectItem>
+                              <SelectItem value="10">10 min</SelectItem>
+                              <SelectItem value="15">15 min</SelectItem>
+                              <SelectItem value="30">30 min</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Connected Calendars */}
+                      {connection.settings?.calendars && connection.settings.calendars.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium">Synced Calendars</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {connection.settings.calendars.map((cal) => (
+                              <span
+                                key={cal.id}
+                                className={`text-xs px-2 py-1 rounded-full ${
+                                  cal.primary 
+                                    ? 'bg-primary/10 text-primary' 
+                                    : 'bg-secondary text-secondary-foreground'
+                                }`}
+                              >
+                                {cal.name}
+                                {cal.primary && ' (Primary)'}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleContent>
                 </div>
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(connection.sync_status)}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleSync(connection.id)}
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => handleDisconnect(connection.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+              </Collapsible>
             );
           })}
         </div>
@@ -323,8 +275,8 @@ const CalendarConnections = () => {
         {PROVIDERS.filter(p => !connectedProviders.includes(p.id)).map((provider) => (
           <button
             key={provider.id}
-            onClick={() => provider.available && handleConnect(provider.id)}
-            disabled={connecting === provider.id || !provider.available}
+            onClick={() => provider.available && provider.id === "google" && connect()}
+            disabled={connecting || !provider.available}
             className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${
               provider.available 
                 ? "bg-card border-border hover:border-primary/50 hover:shadow-sm cursor-pointer" 
@@ -349,7 +301,7 @@ const CalendarConnections = () => {
                 </p>
               </div>
             </div>
-            {connecting === provider.id ? (
+            {connecting && provider.id === "google" ? (
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
             ) : provider.available ? (
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
