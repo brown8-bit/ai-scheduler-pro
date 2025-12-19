@@ -18,7 +18,8 @@ import {
   LogOut,
   LayoutDashboard,
   History,
-  Clock
+  Clock,
+  RotateCcw
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -245,6 +246,60 @@ const AdminSettings = () => {
     if (value === "false") return "Disabled";
     if (value.length > 30) return value.substring(0, 30) + "...";
     return value;
+  };
+
+  const handleRestore = async (entry: ChangelogEntry) => {
+    if (entry.old_value === null) {
+      toast({
+        title: "Cannot restore",
+        description: "The previous value was not set.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Log the restore action
+      await supabase
+        .from("admin_settings_changelog")
+        .insert({
+          setting_key: entry.setting_key,
+          old_value: storedSettings[entry.setting_key] || null,
+          new_value: entry.old_value,
+          changed_by: user.id,
+        });
+
+      // Update the setting
+      const { error } = await supabase
+        .from("admin_settings")
+        .upsert(
+          { key: entry.setting_key, value: entry.old_value },
+          { onConflict: "key" }
+        );
+
+      if (error) throw error;
+
+      // Reload settings and changelog
+      await Promise.all([loadSettings(), loadChangelog()]);
+
+      toast({
+        title: "Setting restored",
+        description: `${SETTINGS_LABELS[entry.setting_key] || entry.setting_key} has been restored.`,
+      });
+    } catch (error) {
+      console.error("Error restoring setting:", error);
+      toast({
+        title: "Error",
+        description: "Failed to restore setting. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -483,9 +538,23 @@ const AdminSettings = () => {
                         <span className="text-green-600 dark:text-green-400">{formatValue(entry.new_value)}</span>
                       </p>
                     </div>
-                    <p className="text-xs text-muted-foreground shrink-0">
-                      {formatDistanceToNow(new Date(entry.changed_at), { addSuffix: true })}
-                    </p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(entry.changed_at), { addSuffix: true })}
+                      </p>
+                      {entry.old_value !== null && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs gap-1"
+                          onClick={() => handleRestore(entry)}
+                          disabled={saving}
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          Restore
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
