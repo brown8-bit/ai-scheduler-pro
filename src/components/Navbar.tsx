@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, Share2, LogOut, Settings, LayoutDashboard, Trophy, CalendarDays, Target, TrendingUp, Users, User, ChevronDown, MessageSquare, Timer, BarChart3, Sparkles, Clock, BookTemplate, Briefcase, Receipt, UserPlus, Mic, ListTodo, GraduationCap, Mail, Shield, DollarSign } from "lucide-react";
-import scheddyModern from "@/assets/scheddy-modern.png";
+import schedulrLogo from "@/assets/schedulr-logo.png";
 import { useState, useEffect, forwardRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -145,9 +145,9 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative inline-flex flex-shrink-0">
               <img 
-                src={scheddyModern} 
+                src={schedulrLogo} 
                 alt="Schedulr" 
-                className="h-9 w-9 object-contain rounded-full shadow-elegant group-hover:shadow-glow group-hover:scale-110 transition-all duration-300 ease-out"
+                className="h-9 w-auto max-w-none object-contain rounded-lg shadow-elegant group-hover:shadow-glow group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 ease-out"
               />
               <div className="absolute inset-0 rounded-lg bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md -z-10" />
             </div>
