@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import scheddyAvatar from "@/assets/scheddy-modern.png";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useQuickActions } from "@/hooks/useQuickActions";
+import { trackDemoReset } from "@/hooks/useDemoAnalytics";
 
 interface Message {
   role: "user" | "assistant";
@@ -314,7 +315,12 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     setInput(suggestion);
   };
 
-  const handleResetDemo = () => {
+  const handleResetDemo = async () => {
+    const promptsUsed = getGuestPromptsUsed();
+    
+    // Track the reset event before clearing
+    await trackDemoReset(promptsUsed);
+    
     resetGuestPrompts();
     setGuestPromptsRemaining(MAX_GUEST_PROMPTS);
     setShowSignupPrompt(false);

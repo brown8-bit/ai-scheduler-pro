@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { trackDemoSignupConversion } from "@/hooks/useDemoAnalytics";
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +29,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Track demo signup conversion when user signs up
+        if (event === "SIGNED_IN" && session?.user) {
+          // Use setTimeout to avoid blocking the auth flow
+          setTimeout(() => {
+            trackDemoSignupConversion();
+          }, 0);
+        }
       }
     );
 
