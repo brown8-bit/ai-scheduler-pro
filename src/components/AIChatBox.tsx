@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn, Mic, MicOff } from "lucide-react";
+import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn, Mic, MicOff, RotateCcw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
@@ -37,6 +37,10 @@ const incrementGuestPrompts = (): number => {
 
 const getRemainingGuestPrompts = (): number => {
   return MAX_GUEST_PROMPTS - getGuestPromptsUsed();
+};
+
+const resetGuestPrompts = (): void => {
+  localStorage.removeItem(GUEST_PROMPTS_KEY);
 };
 
 // Scheddy's personality phrases - creator-focused
@@ -310,6 +314,19 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     setInput(suggestion);
   };
 
+  const handleResetDemo = () => {
+    resetGuestPrompts();
+    setGuestPromptsRemaining(MAX_GUEST_PROMPTS);
+    setShowSignupPrompt(false);
+    setMessages([
+      { role: "assistant", content: SCHEDDY_GREETINGS[Math.floor(Math.random() * SCHEDDY_GREETINGS.length)] }
+    ]);
+    toast({
+      title: "Demo reset! 🔄",
+      description: `You have ${MAX_GUEST_PROMPTS} fresh prompts to try.`,
+    });
+  };
+
   
 
   const isLowPrompts = !user && guestPromptsRemaining > 0 && guestPromptsRemaining <= 2;
@@ -358,14 +375,27 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
               </p>
             </div>
           </div>
-          {!user && !isLowPrompts && guestPromptsRemaining > 0 && (
-            <Link to="/register">
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                <LogIn className="w-3.5 h-3.5" />
-                Sign up
+          <div className="flex items-center gap-2">
+            {isGuestMode && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleResetDemo}
+                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset Demo
               </Button>
-            </Link>
-          )}
+            )}
+            {!user && !isLowPrompts && guestPromptsRemaining > 0 && (
+              <Link to="/register">
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                  <LogIn className="w-3.5 h-3.5" />
+                  Sign up
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
