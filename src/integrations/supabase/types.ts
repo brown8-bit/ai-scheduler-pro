@@ -396,6 +396,33 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_analytics: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          prompts_used: number | null
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          prompts_used?: number | null
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          prompts_used?: number | null
+          session_id?: string
+        }
+        Relationships: []
+      }
       direct_messages: {
         Row: {
           content: string
