@@ -40,6 +40,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const [displayName, setDisplayName] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [gamificationEnabled, setGamificationEnabled] = useState(false); // Default off
+  const [dailyHabitsEnabled, setDailyHabitsEnabled] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -50,6 +51,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
       setDisplayName("");
       setIsAdmin(false);
       setGamificationEnabled(false); // Ensure off for guests
+      setDailyHabitsEnabled(true);
     }
   }, [user]);
 
@@ -58,7 +60,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     
     const { data } = await supabase
       .from("profiles")
-      .select("avatar_url, display_name, gamification_enabled")
+      .select("avatar_url, display_name, gamification_enabled, daily_habits_enabled")
       .eq("user_id", user.id)
       .single();
     
@@ -66,6 +68,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
       setAvatarUrl(data.avatar_url);
       setDisplayName(data.display_name || user.email?.split("@")[0] || "");
       setGamificationEnabled(data.gamification_enabled ?? true);
+      setDailyHabitsEnabled(data.daily_habits_enabled ?? true);
     } else {
       setDisplayName(user.email?.split("@")[0] || "");
     }
@@ -113,19 +116,21 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
     const links = [
       { path: "/calendar", label: "Calendar", icon: CalendarDays },
       { path: "/tasks", label: "Tasks", icon: ListTodo },
-      { path: "/habits", label: "Daily Habits", icon: Target },
       { path: "/timer", label: "Pomodoro Timer", icon: Timer },
       { path: "/voice-notes", label: "Voice Notes", icon: Mic },
       { path: "/templates", label: "Templates", icon: BookTemplate },
       { path: "/progress", label: "Progress", icon: TrendingUp },
       { path: "/analytics", label: "Analytics", icon: BarChart3 },
     ];
+    if (dailyHabitsEnabled) {
+      links.splice(2, 0, { path: "/habits", label: "Daily Habits", icon: Target });
+    }
     if (gamificationEnabled) {
       links.push({ path: "/achievements", label: "Achievements", icon: Trophy });
       links.push({ path: "/community", label: "Community", icon: Users });
     }
     return links;
-  }, [gamificationEnabled]);
+  }, [gamificationEnabled, dailyHabitsEnabled]);
 
   const businessLinks = [
     { path: "/clients", label: "Clients", icon: UserPlus },
