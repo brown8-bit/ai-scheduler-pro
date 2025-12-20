@@ -15,6 +15,12 @@ const getOrCreateSessionId = (): string => {
 export const useVisitorTracking = () => {
   useEffect(() => {
     const trackPageVisit = async () => {
+      // Check if user is authenticated - skip tracking if logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        return; // Don't track authenticated users
+      }
+
       const sessionId = getOrCreateSessionId();
       const pagePath = window.location.pathname;
       const referrer = document.referrer || null;
