@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Users, Eye, Globe, TrendingUp } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { Users, Eye, Globe, TrendingUp, Smartphone, Monitor, Tablet } from 'lucide-react';
 import { format, subDays, startOfDay } from 'date-fns';
 
 interface VisitorData {
@@ -25,10 +25,54 @@ interface PageStats {
   visits: number;
 }
 
+interface DeviceStats {
+  name: string;
+  value: number;
+  icon: typeof Monitor;
+}
+
+interface BrowserStats {
+  name: string;
+  value: number;
+}
+
+const DEVICE_COLORS = ['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)'];
+const BROWSER_COLORS = ['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(280, 65%, 60%)', 'hsl(200, 80%, 50%)'];
+
+const parseUserAgent = (ua: string | null): { device: string; browser: string } => {
+  if (!ua) return { device: 'Unknown', browser: 'Unknown' };
+  
+  // Device detection
+  let device = 'Desktop';
+  if (/Mobile|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+    device = 'Mobile';
+  } else if (/iPad|Tablet|PlayBook/i.test(ua)) {
+    device = 'Tablet';
+  }
+  
+  // Browser detection
+  let browser = 'Other';
+  if (/Chrome/i.test(ua) && !/Edge|Edg/i.test(ua)) {
+    browser = 'Chrome';
+  } else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) {
+    browser = 'Safari';
+  } else if (/Firefox/i.test(ua)) {
+    browser = 'Firefox';
+  } else if (/Edge|Edg/i.test(ua)) {
+    browser = 'Edge';
+  } else if (/Opera|OPR/i.test(ua)) {
+    browser = 'Opera';
+  }
+  
+  return { device, browser };
+};
+
 export const VisitorAnalyticsWidget = () => {
   const [visitorData, setVisitorData] = useState<VisitorData[]>([]);
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [pageStats, setPageStats] = useState<PageStats[]>([]);
+  const [deviceStats, setDeviceStats] = useState<DeviceStats[]>([]);
+  const [browserStats, setBrowserStats] = useState<BrowserStats[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,6 +109,10 @@ export const VisitorAnalyticsWidget = () => {
       dailyMap.set(date, { visits: 0, sessions: new Set() });
     }
 
+    // Device and browser maps
+    const deviceMap = new Map<string, number>();
+    const browserMap = new Map<string, number>();
+
     data.forEach((visit) => {
       const date = format(new Date(visit.created_at), 'yyyy-MM-dd');
       if (dailyMap.has(date)) {
@@ -72,6 +120,11 @@ export const VisitorAnalyticsWidget = () => {
         stats.visits++;
         stats.sessions.add(visit.session_id);
       }
+
+      // Parse user agent for device and browser
+      const { device, browser } = parseUserAgent(visit.user_agent);
+      deviceMap.set(device, (deviceMap.get(device) || 0) + 1);
+      browserMap.set(browser, (browserMap.get(browser) || 0) + 1);
     });
 
     const daily: DailyStats[] = [];
@@ -97,6 +150,27 @@ export const VisitorAnalyticsWidget = () => {
     });
     pages.sort((a, b) => b.visits - a.visits);
     setPageStats(pages.slice(0, 5));
+
+    // Device stats
+    const deviceIconMap: Record<string, typeof Monitor> = {
+      Desktop: Monitor,
+      Mobile: Smartphone,
+      Tablet: Tablet,
+    };
+    const devices: DeviceStats[] = [];
+    deviceMap.forEach((value, name) => {
+      devices.push({ name, value, icon: deviceIconMap[name] || Monitor });
+    });
+    devices.sort((a, b) => b.value - a.value);
+    setDeviceStats(devices);
+
+    // Browser stats
+    const browsers: BrowserStats[] = [];
+    browserMap.forEach((value, name) => {
+      browsers.push({ name, value });
+    });
+    browsers.sort((a, b) => b.value - a.value);
+    setBrowserStats(browsers.slice(0, 5));
   };
 
   const totalVisits = visitorData.length;
@@ -182,7 +256,7 @@ export const VisitorAnalyticsWidget = () => {
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Time and Page Charts */}
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -256,6 +330,119 @@ export const VisitorAnalyticsWidget = () => {
                   />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Device and Browser Charts */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Monitor className="h-5 w-5" />
+              Device Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 flex items-center">
+              <div className="w-1/2 h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={deviceStats}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {deviceStats.map((_, index) => (
+                        <Cell key={`device-cell-${index}`} fill={DEVICE_COLORS[index % DEVICE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-1/2 space-y-3">
+                {deviceStats.map((device, index) => {
+                  const Icon = device.icon;
+                  const percentage = totalVisits > 0 ? Math.round((device.value / totalVisits) * 100) : 0;
+                  return (
+                    <div key={device.name} className="flex items-center gap-3">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: DEVICE_COLORS[index % DEVICE_COLORS.length] }}
+                      />
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm flex-1">{device.name}</span>
+                      <span className="text-sm font-medium">{percentage}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Browser Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 flex items-center">
+              <div className="w-1/2 h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={browserStats}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {browserStats.map((_, index) => (
+                        <Cell key={`browser-cell-${index}`} fill={BROWSER_COLORS[index % BROWSER_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-1/2 space-y-3">
+                {browserStats.map((browser, index) => {
+                  const percentage = totalVisits > 0 ? Math.round((browser.value / totalVisits) * 100) : 0;
+                  return (
+                    <div key={browser.name} className="flex items-center gap-3">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: BROWSER_COLORS[index % BROWSER_COLORS.length] }}
+                      />
+                      <span className="text-sm flex-1">{browser.name}</span>
+                      <span className="text-sm font-medium">{percentage}%</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </CardContent>
         </Card>
