@@ -115,7 +115,6 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
       { path: "/tasks", label: "Tasks", icon: ListTodo },
       { path: "/habits", label: "Daily Habits", icon: Target },
       { path: "/timer", label: "Pomodoro Timer", icon: Timer },
-      { path: "/grades", label: "Grade Tracker", icon: GraduationCap },
       { path: "/voice-notes", label: "Voice Notes", icon: Mic },
       { path: "/templates", label: "Templates", icon: BookTemplate },
       { path: "/progress", label: "Progress", icon: TrendingUp },
