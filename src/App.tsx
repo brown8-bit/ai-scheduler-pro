@@ -10,6 +10,7 @@ import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { PresenceProvider } from "@/contexts/PresenceContext";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { InstallPromptBanner } from "@/components/InstallPromptBanner";
+import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 
 // Regular imports for most pages (no loading animation)
 import Index from "./pages/Index";
@@ -56,6 +57,11 @@ const Chat = lazy(() => import("./pages/Chat"));
 
 const queryClient = new QueryClient();
 
+const VisitorTracker = () => {
+  useVisitorTracking();
+  return null;
+};
+
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
@@ -67,6 +73,7 @@ const App = () => (
             <Sonner />
             <InstallPromptBanner />
           <BrowserRouter>
+            <VisitorTracker />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />

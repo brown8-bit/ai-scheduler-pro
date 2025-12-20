@@ -1345,6 +1345,33 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_analytics: {
+        Row: {
+          created_at: string
+          id: string
+          page_path: string
+          referrer: string | null
+          session_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_path: string
+          referrer?: string | null
+          session_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_path?: string
+          referrer?: string | null
+          session_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       voice_notes: {
         Row: {
           audio_url: string

@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ManageOffers from "@/components/admin/ManageOffers";
 import DemoAnalyticsWidget from "@/components/admin/DemoAnalyticsWidget";
+import { VisitorAnalyticsWidget } from "@/components/admin/VisitorAnalyticsWidget";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -326,6 +327,11 @@ const Admin = () => {
                 Manage promotional offers and deals
               </p>
             </button>
+          </div>
+
+          {/* Visitor Analytics Widget */}
+          <div className="mb-8">
+            <VisitorAnalyticsWidget />
           </div>
 
           {/* Demo Analytics Widget */}
