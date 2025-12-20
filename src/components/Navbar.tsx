@@ -269,10 +269,12 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                       <CalendarDays className="mr-2 h-4 w-4" />
                       Calendar
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/habits")} className="cursor-pointer">
-                      <Target className="mr-2 h-4 w-4" />
-                      Daily Habits
-                    </DropdownMenuItem>
+                    {dailyHabitsEnabled && (
+                      <DropdownMenuItem onClick={() => navigate("/habits")} className="cursor-pointer">
+                        <Target className="mr-2 h-4 w-4" />
+                        Daily Habits
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => navigate("/progress")} className="cursor-pointer">
                       <TrendingUp className="mr-2 h-4 w-4" />
                       Progress
