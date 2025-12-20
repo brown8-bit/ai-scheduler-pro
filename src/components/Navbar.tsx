@@ -40,7 +40,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const [displayName, setDisplayName] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [gamificationEnabled, setGamificationEnabled] = useState(false); // Default off
-  const [dailyHabitsEnabled, setDailyHabitsEnabled] = useState(true);
+  const [dailyHabitsEnabled, setDailyHabitsEnabled] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -51,7 +51,7 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
       setDisplayName("");
       setIsAdmin(false);
       setGamificationEnabled(false); // Ensure off for guests
-      setDailyHabitsEnabled(true);
+      setDailyHabitsEnabled(false);
     }
   }, [user]);
 
