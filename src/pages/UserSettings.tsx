@@ -86,7 +86,6 @@ const UserSettings = () => {
   const [soundNotifications, setSoundNotifications] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
   const [gamificationEnabled, setGamificationEnabled] = useState(true);
-  const [dailyHabitsEnabled, setDailyHabitsEnabled] = useState(true);
   // Activity Notifications State
   const [activityNotifications, setActivityNotifications] = useState<ActivityNotification[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
@@ -238,7 +237,6 @@ const UserSettings = () => {
       setOriginalName(name);
       setAvatarUrl(data.avatar_url);
       setGamificationEnabled(data.gamification_enabled ?? true);
-      setDailyHabitsEnabled(data.daily_habits_enabled ?? true);
     }
   };
 
@@ -425,7 +423,6 @@ const UserSettings = () => {
           display_name: displayName.trim(),
           avatar_url: avatarUrl,
           gamification_enabled: gamificationEnabled,
-          daily_habits_enabled: dailyHabitsEnabled,
         }, { onConflict: "user_id" });
 
       if (error) throw error;
@@ -824,33 +821,6 @@ const UserSettings = () => {
                   checked={isDarkMode} 
                   onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} 
                 />
-              </div>
-            </div>
-
-            {/* Daily Habits Toggle */}
-            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
-                Daily Habits
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Enable Daily Habits</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Track daily habits and build streaks
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={dailyHabitsEnabled} 
-                    onCheckedChange={setDailyHabitsEnabled} 
-                  />
-                </div>
-                {!dailyHabitsEnabled && (
-                  <p className="text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
-                    When disabled, Daily Habits will be hidden from the navigation.
-                  </p>
-                )}
               </div>
             </div>
 
