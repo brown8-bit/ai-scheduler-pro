@@ -217,9 +217,9 @@ const Pricing = () => {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-7xl mx-auto animate-slide-up delay-100">
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto animate-slide-up delay-100">
             {/* Free Plan */}
-            <div className="bg-card rounded-3xl shadow-card border border-border p-6 relative overflow-hidden">
+            <div className="bg-card rounded-3xl shadow-card border border-border p-8 relative overflow-hidden">
               <div className="relative">
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold">Free</h2>
@@ -265,22 +265,29 @@ const Pricing = () => {
               </div>
             </div>
 
-            {/* Monthly Plan */}
-            <div className="bg-card rounded-3xl shadow-card border border-border p-6 relative overflow-hidden">
+            {/* Pro Plan - Early Bird */}
+            <div className="bg-card rounded-3xl shadow-card border-2 border-primary p-8 relative overflow-hidden ring-4 ring-primary/20">
               <div className="absolute top-0 right-0 w-40 h-40 gradient-primary opacity-10 rounded-full blur-3xl" />
+              <div className="absolute top-4 right-4">
+                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                  <Sparkles className="w-3 h-3" />
+                  Early Bird
+                </div>
+              </div>
               
               <div className="relative">
-                <div className="text-center mb-6">
+                <div className="text-center mb-6 pt-4">
                   <h2 className="text-2xl font-bold">Pro</h2>
                   <p className="text-muted-foreground mt-2 text-sm">Full access to all features</p>
                   
                   <div className="mt-6">
-                    <span className="text-5xl font-bold">$29</span>
+                    <span className="text-lg text-muted-foreground line-through mr-2">$29</span>
+                    <span className="text-5xl font-bold text-primary">$10</span>
                     <span className="text-xl text-muted-foreground">/month</span>
                   </div>
                   
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Cancel anytime
+                  <p className="text-sm text-primary font-semibold mt-2">
+                    First 100 signups only!
                   </p>
                 </div>
 
@@ -323,7 +330,11 @@ const Pricing = () => {
                 </div>
               </div>
             </div>
+          </div>
 
+          {/* ARCHIVED PLANS - Keep code but don't render */}
+          {false && (
+            <>
             {/* 🔥 Holiday Special - VERY LIMITED */}
             <div className="bg-card rounded-3xl shadow-card border-2 border-red-500 p-6 relative overflow-hidden ring-4 ring-red-500/30 animate-pulse-soft">
               <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-red-500 to-orange-500 opacity-20 rounded-full blur-3xl" />
@@ -533,7 +544,8 @@ const Pricing = () => {
                 </div>
               </div>
             </div>
-          </div>
+            </>
+          )}
 
           {/* FAQ */}
           <div className="mt-16 text-center animate-fade-in delay-300">
