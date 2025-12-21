@@ -39,8 +39,6 @@ interface Suggestion {
 }
 
 interface WeeklySummary {
-  habitsCompleted: number;
-  totalHabits: number;
   eventsCompleted: number;
   focusMinutes: number;
   streak: number;
@@ -67,21 +65,9 @@ export function AISuggestions() {
     if (!user) return;
 
     try {
-      // Get habit completions for this week
       const startOfWeek = new Date();
       startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
-
-      const { data: habitCompletions } = await supabase
-        .from("habit_completions")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("completed_date", startOfWeek.toISOString().split("T")[0]);
-
-      const { data: habits } = await supabase
-        .from("daily_habits")
-        .select("*")
-        .eq("user_id", user.id);
 
       const { data: completedEvents } = await supabase
         .from("scheduled_events")
@@ -102,11 +88,10 @@ export function AISuggestions() {
         .eq("user_id", user.id)
         .single();
 
-      const focusMinutes = pomodoroSessions?.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) || 0;
+      const focusMinutes =
+        pomodoroSessions?.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) || 0;
 
       setWeeklySummary({
-        habitsCompleted: habitCompletions?.length || 0,
-        totalHabits: (habits?.length || 0) * 7,
         eventsCompleted: completedEvents?.length || 0,
         focusMinutes,
         streak: streak?.current_streak || 0,
@@ -150,37 +135,7 @@ export function AISuggestions() {
         }
       }
 
-      // 2. Check incomplete habits
-      const today = new Date().toISOString().split("T")[0];
-      const { data: habits } = await supabase
-        .from("daily_habits")
-        .select("id, habit_name, habit_icon")
-        .eq("user_id", user.id);
-
-      const { data: completions } = await supabase
-        .from("habit_completions")
-        .select("habit_id")
-        .eq("user_id", user.id)
-        .eq("completed_date", today);
-
-      const completedIds = new Set(completions?.map(c => c.habit_id) || []);
-      const incompleteHabits = habits?.filter(h => !completedIds.has(h.id)) || [];
-
-      if (incompleteHabits.length > 0 && new Date().getHours() >= 18) {
-        newSuggestions.push({
-          id: "habits-reminder",
-          type: "habit",
-          title: `${incompleteHabits.length} habit${incompleteHabits.length > 1 ? "s" : ""} remaining today`,
-          description: `Don't break your streak! Complete: ${incompleteHabits.slice(0, 2).map(h => h.habit_name).join(", ")}${incompleteHabits.length > 2 ? "..." : ""}`,
-          icon: ListTodo,
-          action: {
-            label: "Complete Habits",
-            onClick: () => navigate("/habits"),
-          },
-        });
-      }
-
-      // 3. Productivity insights
+      // 2. Productivity insights
       if (weeklySummary && weeklySummary.eventsCompleted >= 5) {
         newSuggestions.push({
           id: "productivity-insight",
@@ -380,7 +335,7 @@ export function AISuggestions() {
                 Weekly Summary
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                {weeklySummary.eventsCompleted} tasks done • {weeklySummary.habitsCompleted} habits completed • {formatDuration(weeklySummary.focusMinutes)} focused
+                {weeklySummary.eventsCompleted} tasks done • {formatDuration(weeklySummary.focusMinutes)} focused
               </p>
             </div>
             <Button 

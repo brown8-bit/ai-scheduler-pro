@@ -34,7 +34,6 @@ import CalendarPage from "./pages/Calendar";
 import Templates from "./pages/Templates";
 
 import Gamification from "./pages/Gamification";
-import DailyHabits from "./pages/DailyHabits";
 import Progress from "./pages/Progress";
 import Community from "./pages/Community";
 import Profile from "./pages/Profile";
@@ -103,7 +102,6 @@ const App = () => (
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/achievements" element={<Gamification />} />
-              <Route path="/habits" element={<DailyHabits />} />
               <Route path="/progress" element={<Progress />} />
               <Route path="/community" element={<Community />} />
               <Route path="/profile" element={<Profile />} />

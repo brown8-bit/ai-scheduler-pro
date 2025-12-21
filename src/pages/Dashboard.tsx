@@ -370,11 +370,10 @@ const Dashboard = () => {
                     View Calendar
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/habits")}>
-                    <ListTodo className="w-4 h-4 mr-2" />
-                    Daily Habits
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/timer")}>
+                    <Timer className="w-4 h-4 mr-2" />
+                    Focus Timer
+                  </DropdownMenuItem>
                     <Timer className="w-4 h-4 mr-2" />
                     Focus Timer
                   </DropdownMenuItem>

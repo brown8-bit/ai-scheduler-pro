@@ -40,7 +40,6 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
   const [displayName, setDisplayName] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [gamificationEnabled, setGamificationEnabled] = useState(false); // Default off
-  const [dailyHabitsEnabled, setDailyHabitsEnabled] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -51,24 +50,22 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
       setDisplayName("");
       setIsAdmin(false);
       setGamificationEnabled(false); // Ensure off for guests
-      setDailyHabitsEnabled(false);
     }
   }, [user]);
 
   const fetchProfile = async () => {
     if (!user) return;
-    
+
     const { data } = await supabase
       .from("profiles")
-      .select("avatar_url, display_name, gamification_enabled, daily_habits_enabled")
+      .select("avatar_url, display_name, gamification_enabled")
       .eq("user_id", user.id)
       .single();
-    
+
     if (data) {
       setAvatarUrl(data.avatar_url);
       setDisplayName(data.display_name || user.email?.split("@")[0] || "");
       setGamificationEnabled(data.gamification_enabled ?? true);
-      setDailyHabitsEnabled(data.daily_habits_enabled ?? true);
     } else {
       setDisplayName(user.email?.split("@")[0] || "");
     }
@@ -122,15 +119,12 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
       { path: "/progress", label: "Progress", icon: TrendingUp },
       { path: "/analytics", label: "Analytics", icon: BarChart3 },
     ];
-    if (dailyHabitsEnabled) {
-      links.splice(2, 0, { path: "/habits", label: "Daily Habits", icon: Target });
-    }
     if (gamificationEnabled) {
       links.push({ path: "/achievements", label: "Achievements", icon: Trophy });
       links.push({ path: "/community", label: "Community", icon: Users });
     }
     return links;
-  }, [gamificationEnabled, dailyHabitsEnabled]);
+  }, [gamificationEnabled]);
 
   const businessLinks = [
     { path: "/clients", label: "Clients", icon: UserPlus },
@@ -269,12 +263,6 @@ const Navbar = forwardRef<HTMLElement>((_, ref) => {
                       <CalendarDays className="mr-2 h-4 w-4" />
                       Calendar
                     </DropdownMenuItem>
-                    {dailyHabitsEnabled && (
-                      <DropdownMenuItem onClick={() => navigate("/habits")} className="cursor-pointer">
-                        <Target className="mr-2 h-4 w-4" />
-                        Daily Habits
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuItem onClick={() => navigate("/progress")} className="cursor-pointer">
                       <TrendingUp className="mr-2 h-4 w-4" />
                       Progress
