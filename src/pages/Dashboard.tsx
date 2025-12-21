@@ -374,9 +374,6 @@ const Dashboard = () => {
                     <Timer className="w-4 h-4 mr-2" />
                     Focus Timer
                   </DropdownMenuItem>
-                    <Timer className="w-4 h-4 mr-2" />
-                    Focus Timer
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/focus-blocks")}>
                     <Target className="w-4 h-4 mr-2" />
                     Focus Blocks
