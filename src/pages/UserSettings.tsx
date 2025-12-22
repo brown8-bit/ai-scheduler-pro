@@ -46,7 +46,7 @@ import NotificationToggle from "@/components/NotificationToggle";
 import ImageCropper from "@/components/ImageCropper";
 import CalendarConnections from "@/components/CalendarConnections";
 import QuickActionsSettings from "@/components/QuickActionsSettings";
-import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
+import { useKeyboardShortcutsContext } from "@/components/KeyboardShortcutsProvider";
 import { formatDistanceToNow } from "date-fns";
 
 interface ActivityNotification {
@@ -68,6 +68,7 @@ const UserSettings = () => {
   const { user, loading: authLoading } = useAuth();
   const { theme, setTheme } = useTheme();
   const { setTourActive, setCurrentTourStep } = useDemo();
+  const { openShortcutsModal } = useKeyboardShortcutsContext();
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -100,7 +101,6 @@ const UserSettings = () => {
   const [nameAvailable, setNameAvailable] = useState<boolean | null>(null);
   const [originalName, setOriginalName] = useState("");
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -873,18 +873,13 @@ const UserSettings = () => {
                 <Button 
                   variant="outline" 
                   className="w-full gap-2"
-                  onClick={() => setShortcutsModalOpen(true)}
+                  onClick={openShortcutsModal}
                 >
                   <Keyboard className="w-4 h-4" />
                   View Shortcuts Guide
                 </Button>
               </div>
             </div>
-
-            <KeyboardShortcutsModal 
-              open={shortcutsModalOpen} 
-              onOpenChange={setShortcutsModalOpen} 
-            />
 
             {/* Gamification & Community - renamed to Progress Tracking when enabled */}
             <div className="bg-card rounded-xl border border-border p-6 shadow-card">

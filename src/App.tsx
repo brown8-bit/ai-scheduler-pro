@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { PresenceProvider } from "@/contexts/PresenceContext";
 import { DemoProvider } from "@/contexts/DemoContext";
+import { KeyboardShortcutsProvider } from "@/components/KeyboardShortcutsProvider";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 import DemoBanner from "@/components/DemoBanner";
@@ -79,6 +80,7 @@ const App = () => (
               <Sonner />
               <InstallPromptBanner />
               <BrowserRouter>
+                <KeyboardShortcutsProvider>
                 <DemoBanner />
                 <GuidedTour />
                 <VisitorTracker />
@@ -133,6 +135,7 @@ const App = () => (
               <Route path="/demo/ai-scheduling" element={<DemoAIScheduling />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+                </KeyboardShortcutsProvider>
             </BrowserRouter>
             </TooltipProvider>
           </DemoProvider>
