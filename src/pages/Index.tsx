@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2, Rocket, Target, Lock, Brain, Play } from "lucide-react";
+import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2, Rocket, Target, Lock, Brain, Play, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
@@ -192,20 +192,19 @@ const Index = () => {
                 </div>
               </div>
               
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
-                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                Built for Creators & Solopreneurs ✨
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
+                <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                No signup required — try it now
               </div>
               
-              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight animate-fade-in delay-100">
-                The AI Scheduler for
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight animate-fade-in delay-100">
+                Try Schedulr AI instantly
                 <br />
-                <span className="text-gradient">Creators Who Ship</span>
+                <span className="text-gradient">— no signup required</span>
               </h1>
 
               <p className="mt-4 sm:mt-6 text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in delay-200 px-2">
-                Auto-block focus time, track creative habits, share previews with fellow creators, 
-                and build better routines — stay consistent without burning out. 🚀
+                Generate schedules, block focus time, and see the creator community — free demo
               </p>
             </>
           )}
@@ -227,13 +226,14 @@ const Index = () => {
             ) : isDemoMode ? (
               <>
                 <Link to="/dashboard" className="w-full sm:w-auto">
-                  <Button variant="hero" size="xl" className="w-full sm:w-auto">
-                    🎮 Continue Demo
+                  <Button variant="hero" size="xl" className="w-full sm:w-auto gap-2">
+                    <Play className="w-5 h-5" />
+                    Continue Demo
                   </Button>
                 </Link>
                 <Link to="/register" className="w-full sm:w-auto">
                   <Button variant="outline" size="xl" className="w-full sm:w-auto">
-                    Sign Up to Save
+                    Sign Up for Unlimited
                   </Button>
                 </Link>
               </>
@@ -242,15 +242,15 @@ const Index = () => {
                 <Button 
                   variant="hero" 
                   size="xl" 
-                  className="w-full sm:w-auto gap-2"
+                  className="w-full sm:w-auto gap-2 text-lg px-8 py-6"
                   onClick={handleStartDemo}
                 >
                   <Play className="w-5 h-5" />
-                  Try Demo
+                  Start Free Demo
                 </Button>
                 <Link to="/register" className="w-full sm:w-auto">
                   <Button variant="outline" size="xl" className="w-full sm:w-auto">
-                    Sign Up Free
+                    Sign Up for Unlimited
                   </Button>
                 </Link>
               </>
@@ -260,15 +260,95 @@ const Index = () => {
           {!user && !isDemoMode && (
             <div className="mt-4 animate-fade-in delay-400">
               <p className="text-sm sm:text-base text-muted-foreground">
-                ✨ <span className="font-semibold text-foreground">30-minute demo</span> — no signup required
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Then <span className="font-semibold text-foreground">$29/month</span> for unlimited access
+                ✨ <span className="font-semibold text-foreground">30-minute full demo</span> — explore everything free
               </p>
             </div>
           )}
         </div>
       </section>
+
+      {/* Demo Preview Screenshots */}
+      {!user && (
+        <section className="py-12 sm:py-16 px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">See What You'll Get 👀</h2>
+              <p className="mt-3 text-sm sm:text-lg text-muted-foreground">
+                Explore the full experience in just 30 minutes
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Demo Preview 1 - Dashboard */}
+              <div className="group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className="aspect-video bg-gradient-to-br from-primary/10 via-purple-500/10 to-cyan-500/10 flex items-center justify-center">
+                  <div className="text-center p-6">
+                    <div className="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-4">
+                      <BarChart3 className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <h4 className="font-semibold">Smart Dashboard</h4>
+                    <p className="text-sm text-muted-foreground mt-1">Track streaks, stats & progress</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-6">
+                  <Button size="sm" onClick={handleStartDemo} className="gap-1">
+                    <Play className="w-3 h-3" /> Try it
+                  </Button>
+                </div>
+              </div>
+
+              {/* Demo Preview 2 - AI Chat */}
+              <div className="group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className="aspect-video bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 flex items-center justify-center">
+                  <div className="text-center p-6">
+                    <div className="w-16 h-16 rounded-xl bg-blue-500 flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="w-8 h-8 text-white" />
+                    </div>
+                    <h4 className="font-semibold">AI Scheduling</h4>
+                    <p className="text-sm text-muted-foreground mt-1">Chat with Scheddy to plan your day</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-6">
+                  <Button size="sm" onClick={handleStartDemo} className="gap-1">
+                    <Play className="w-3 h-3" /> Try it
+                  </Button>
+                </div>
+              </div>
+
+              {/* Demo Preview 3 - Focus Blocks */}
+              <div className="group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className="aspect-video bg-gradient-to-br from-orange-500/10 via-red-500/10 to-pink-500/10 flex items-center justify-center">
+                  <div className="text-center p-6">
+                    <div className="w-16 h-16 rounded-xl bg-orange-500 flex items-center justify-center mx-auto mb-4">
+                      <Target className="w-8 h-8 text-white" />
+                    </div>
+                    <h4 className="font-semibold">Focus Blocks</h4>
+                    <p className="text-sm text-muted-foreground mt-1">Deep work sessions & task management</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-6">
+                  <Button size="sm" onClick={handleStartDemo} className="gap-1">
+                    <Play className="w-3 h-3" /> Try it
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA below previews */}
+            <div className="text-center mt-10">
+              <Button 
+                variant="hero" 
+                size="lg" 
+                className="gap-2"
+                onClick={handleStartDemo}
+              >
+                <Sparkles className="w-4 h-4" />
+                Start Exploring Now
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Limited Time Offers */}
       <section className="py-12 sm:py-16 px-4 bg-gradient-to-b from-primary/5 to-transparent">
