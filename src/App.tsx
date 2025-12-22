@@ -8,8 +8,10 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { PresenceProvider } from "@/contexts/PresenceContext";
+import { DemoProvider } from "@/contexts/DemoContext";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { InstallPromptBanner } from "@/components/InstallPromptBanner";
+import DemoBanner from "@/components/DemoBanner";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 
 // Regular imports for most pages (no loading animation)
@@ -66,13 +68,15 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <PresenceProvider>
-          <TooltipProvider>
-            <ThemeInitializer />
-            <Toaster />
-            <Sonner />
-            <InstallPromptBanner />
-          <BrowserRouter>
-            <VisitorTracker />
+          <DemoProvider>
+            <TooltipProvider>
+              <ThemeInitializer />
+              <Toaster />
+              <Sonner />
+              <InstallPromptBanner />
+              <BrowserRouter>
+                <DemoBanner />
+                <VisitorTracker />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -119,10 +123,11 @@ const App = () => (
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/discover" element={<Discover />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-          </TooltipProvider>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+            </TooltipProvider>
+          </DemoProvider>
         </PresenceProvider>
       </AuthProvider>
     </QueryClientProvider>

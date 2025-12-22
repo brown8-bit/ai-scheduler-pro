@@ -1,12 +1,13 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2, Rocket, Target, Lock, Brain } from "lucide-react";
+import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2, Rocket, Target, Lock, Brain, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
+import { useDemo } from "@/contexts/DemoContext";
 import scheddyModern from "@/assets/scheddy-modern.png";
 import WaitlistModal from "@/components/WaitlistModal";
 interface Offer {
@@ -31,10 +32,17 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const Index = () => {
   const { user } = useAuth();
+  const { startDemo, isDemoMode } = useDemo();
+  const navigate = useNavigate();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loadingOffers, setLoadingOffers] = useState(true);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [currentStreak, setCurrentStreak] = useState<number>(0);
+
+  const handleStartDemo = () => {
+    startDemo();
+    navigate("/dashboard");
+  };
 
   useEffect(() => {
     fetchOffers();
@@ -216,26 +224,43 @@ const Index = () => {
                   </Button>
                 </Link>
               </>
-            ) : (
+            ) : isDemoMode ? (
               <>
-                <Link to="/chat" className="w-full sm:w-auto">
+                <Link to="/dashboard" className="w-full sm:w-auto">
                   <Button variant="hero" size="xl" className="w-full sm:w-auto">
-                    🚀 Get Started Free
+                    🎮 Continue Demo
                   </Button>
                 </Link>
-                <Link to="/pricing" className="w-full sm:w-auto">
+                <Link to="/register" className="w-full sm:w-auto">
                   <Button variant="outline" size="xl" className="w-full sm:w-auto">
-                    See Plans
+                    Sign Up to Save
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="hero" 
+                  size="xl" 
+                  className="w-full sm:w-auto gap-2"
+                  onClick={handleStartDemo}
+                >
+                  <Play className="w-5 h-5" />
+                  Try Demo
+                </Button>
+                <Link to="/register" className="w-full sm:w-auto">
+                  <Button variant="outline" size="xl" className="w-full sm:w-auto">
+                    Sign Up Free
                   </Button>
                 </Link>
               </>
             )}
           </div>
 
-          {!user && (
+          {!user && !isDemoMode && (
             <div className="mt-4 animate-fade-in delay-400">
               <p className="text-sm sm:text-base text-muted-foreground">
-                ✨ <span className="font-semibold text-foreground">Try 5 prompts free</span> — no signup required
+                ✨ <span className="font-semibold text-foreground">30-minute demo</span> — no signup required
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Then <span className="font-semibold text-foreground">$29/month</span> for unlimited access
