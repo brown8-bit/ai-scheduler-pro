@@ -44,3 +44,9 @@ verify_jwt = true
 
 [functions.google-calendar-events]
 verify_jwt = true
+
+[functions.schedule-event-reminder]
+verify_jwt = true
+
+[functions.create-holiday-checkout]
+verify_jwt = true
