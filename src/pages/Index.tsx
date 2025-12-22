@@ -306,7 +306,10 @@ const Index = () => {
               </div>
 
               {/* Demo Preview 2 - AI Chat */}
-              <Link to="/demo/ai-scheduling" className="group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div 
+                onClick={() => { startDemo(); navigate("/chat"); }}
+                className="cursor-pointer group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+              >
                 <div className="aspect-video bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 flex items-center justify-center">
                   <div className="text-center p-6">
                     <div className="w-16 h-16 rounded-xl bg-blue-500 flex items-center justify-center mx-auto mb-4">
@@ -318,10 +321,10 @@ const Index = () => {
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-6">
                   <Button size="sm" className="gap-1">
-                    <ArrowRight className="w-3 h-3" /> Preview
+                    <Play className="w-3 h-3" /> Try it
                   </Button>
                 </div>
-              </Link>
+              </div>
 
               {/* Demo Preview 3 - Focus Blocks */}
               <Link to="/demo/focus-blocks" className="group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
