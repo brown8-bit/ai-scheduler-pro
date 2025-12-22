@@ -34,6 +34,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { useDemo } from "@/contexts/DemoContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from "date-fns";
@@ -90,6 +91,7 @@ type EventsFilterType = "all" | "completed" | "thisWeek";
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { isDemoMode, demoEvents, updateDemoEvent } = useDemo();
   const [events, setEvents] = useState<ScheduledEvent[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingSlot, setBookingSlot] = useState<BookingSlot | null>(null);
@@ -104,22 +106,58 @@ const Dashboard = () => {
     todayCount: 0
   });
 
+  // Allow access in demo mode without login
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !isDemoMode) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isDemoMode]);
+
+  // Load demo data when in demo mode
+  useEffect(() => {
+    if (isDemoMode) {
+      const now = new Date();
+      const weekStart = startOfWeek(now);
+      const weekEnd = endOfWeek(now);
+      
+      const completed = demoEvents.filter(e => e.is_completed).length;
+      const thisWeek = demoEvents.filter(e => {
+        const eventDate = new Date(e.event_date);
+        return eventDate >= weekStart && eventDate <= weekEnd;
+      }).length;
+      const todayCount = demoEvents.filter(e => isToday(new Date(e.event_date))).length;
+
+      setStats({
+        total: demoEvents.length,
+        completed,
+        thisWeek,
+        todayCount
+      });
+
+      const upcomingEvents = demoEvents
+        .filter(e => new Date(e.event_date) >= now && !e.is_completed)
+        .slice(0, 5);
+      
+      setEvents(upcomingEvents as ScheduledEvent[]);
+      setStreak({ current_streak: 3, longest_streak: 7, total_events_completed: 12 });
+      setEventsLoading(false);
+    }
+  }, [isDemoMode, demoEvents]);
 
   useEffect(() => {
-    if (user) {
+    if (user && !isDemoMode) {
       fetchEvents();
       fetchBookings();
       fetchBookingSlot();
       fetchStreak();
     }
-  }, [user]);
+  }, [user, isDemoMode]);
 
   const handleRefresh = useCallback(async () => {
+    if (isDemoMode) {
+      toast({ title: "Demo Refreshed!", description: "Demo data is always up to date" });
+      return;
+    }
     if (!user) return;
     await Promise.all([
       fetchEvents(),
@@ -128,7 +166,7 @@ const Dashboard = () => {
       fetchStreak(),
     ]);
     toast({ title: "Refreshed!", description: "Data updated" });
-  }, [user]);
+  }, [user, isDemoMode]);
 
   const fetchEvents = async () => {
     try {
@@ -251,6 +289,26 @@ const Dashboard = () => {
   };
 
   const markEventComplete = async (eventId: string) => {
+    // Handle demo mode
+    if (isDemoMode) {
+      updateDemoEvent(eventId, { is_completed: true });
+      setEvents(prev => prev.filter(e => e.id !== eventId));
+      setStats(prev => ({
+        ...prev,
+        completed: prev.completed + 1
+      }));
+      setStreak(prev => prev ? {
+        ...prev,
+        current_streak: prev.current_streak + 1,
+        total_events_completed: prev.total_events_completed + 1
+      } : { current_streak: 1, longest_streak: 1, total_events_completed: 1 });
+      toast({
+        title: "Nice work! 🎉",
+        description: "Event marked as complete.",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("scheduled_events")
@@ -329,7 +387,7 @@ const Dashboard = () => {
 
   const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  if (loading) {
+  if (loading && !isDemoMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -337,10 +395,10 @@ const Dashboard = () => {
     );
   }
 
-  if (!user) return null;
+  if (!user && !isDemoMode) return null;
 
   return (
-    <div className="min-h-screen bg-secondary/30">
+    <div className={`min-h-screen bg-secondary/30 ${isDemoMode ? "pt-10" : ""}`}>
       <Navbar />
       
       <main className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4">

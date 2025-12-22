@@ -34,6 +34,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDemo } from "@/contexts/DemoContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
@@ -53,6 +54,7 @@ interface Task {
 const Tasks = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { isDemoMode, demoTasks, addDemoTask, updateDemoTask, deleteDemoTask } = useDemo();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -67,13 +69,27 @@ const Tasks = () => {
     due_date: "",
   });
 
+  // Allow access in demo mode
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !isDemoMode) {
       navigate("/login");
-    } else if (user) {
+    } else if (user && !isDemoMode) {
       fetchTasks();
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isDemoMode]);
+
+  // Load demo tasks
+  useEffect(() => {
+    if (isDemoMode) {
+      const formattedTasks = demoTasks.map(t => ({
+        ...t,
+        priority: t.priority || "medium",
+        created_at: new Date().toISOString()
+      }));
+      setTasks(formattedTasks);
+      setIsLoading(false);
+    }
+  }, [isDemoMode, demoTasks]);
 
   const fetchTasks = useCallback(async () => {
     if (!user) return;
@@ -93,12 +109,33 @@ const Tasks = () => {
   }, [user]);
 
   const handleRefresh = useCallback(async () => {
+    if (isDemoMode) {
+      toast({ title: "Demo Refreshed!" });
+      return;
+    }
     await fetchTasks();
     toast({ title: "Refreshed!" });
-  }, [fetchTasks]);
+  }, [fetchTasks, isDemoMode]);
 
   const handleCreateTask = async () => {
-    if (!user || !newTask.title.trim()) return;
+    if (!newTask.title.trim()) return;
+
+    // Handle demo mode
+    if (isDemoMode) {
+      addDemoTask({
+        title: newTask.title.trim(),
+        description: newTask.description.trim() || null,
+        priority: newTask.priority,
+        due_date: newTask.due_date || null,
+        is_completed: false,
+      });
+      toast({ title: "Task created! ✅" });
+      setNewTask({ title: "", description: "", priority: "medium", due_date: "" });
+      setDialogOpen(false);
+      return;
+    }
+
+    if (!user) return;
 
     const { error } = await supabase.from("tasks").insert({
       user_id: user.id,
@@ -119,6 +156,15 @@ const Tasks = () => {
   };
 
   const toggleTaskCompletion = async (task: Task) => {
+    // Handle demo mode
+    if (isDemoMode) {
+      updateDemoTask(task.id, { is_completed: !task.is_completed });
+      if (!task.is_completed) {
+        toast({ title: "Task completed! 🎉" });
+      }
+      return;
+    }
+
     const { error } = await supabase
       .from("tasks")
       .update({ 
@@ -138,6 +184,13 @@ const Tasks = () => {
   };
 
   const deleteTask = async (id: string) => {
+    // Handle demo mode
+    if (isDemoMode) {
+      deleteDemoTask(id);
+      toast({ title: "Task deleted" });
+      return;
+    }
+
     const { error } = await supabase.from("tasks").delete().eq("id", id);
     
     if (error) {
@@ -178,7 +231,7 @@ const Tasks = () => {
   const completedCount = tasks.filter(t => t.is_completed).length;
   const pendingCount = tasks.filter(t => !t.is_completed).length;
 
-  if (loading || isLoading) {
+  if ((loading || isLoading) && !isDemoMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -186,10 +239,10 @@ const Tasks = () => {
     );
   }
 
-  if (!user) return null;
+  if (!user && !isDemoMode) return null;
 
   return (
-    <div className="min-h-screen bg-secondary/30">
+    <div className={`min-h-screen bg-secondary/30 ${isDemoMode ? "pt-10" : ""}`}>
       <Navbar />
       
       <main className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4">
