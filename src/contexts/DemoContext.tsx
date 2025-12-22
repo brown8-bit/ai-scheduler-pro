@@ -69,8 +69,12 @@ interface DemoContextType {
   demoStats: DemoStats;
   demoHabits: DemoHabit[];
   demoDisplayName: string;
+  isTourActive: boolean;
+  currentTourStep: number;
   startDemo: () => void;
   endDemo: () => void;
+  setTourActive: (active: boolean) => void;
+  setCurrentTourStep: (step: number) => void;
   addDemoEvent: (event: Omit<DemoEvent, "id">) => void;
   updateDemoEvent: (id: string, updates: Partial<DemoEvent>) => void;
   deleteDemoEvent: (id: string) => void;
@@ -253,6 +257,8 @@ export const DemoProvider = ({ children }: { children: ReactNode }) => {
   const [demoStats, setDemoStats] = useState<DemoStats>(DEFAULT_STATS);
   const [demoHabits, setDemoHabits] = useState<DemoHabit[]>([]);
   const [demoDisplayName, setDemoDisplayName] = useState("Demo Creator");
+  const [isTourActive, setIsTourActive] = useState(false);
+  const [currentTourStep, setCurrentTourStep] = useState(0);
 
   // Initialize from localStorage
   useEffect(() => {
@@ -328,20 +334,32 @@ export const DemoProvider = ({ children }: { children: ReactNode }) => {
     setDemoHabits(sampleData.habits);
     setDemoDisplayName(sampleData.displayName);
     setIsDemoMode(true);
+    setIsTourActive(true);
+    setCurrentTourStep(0);
     setDemoTimeRemaining(DEMO_DURATION_MS / 1000);
     localStorage.setItem(DEMO_START_KEY, Date.now().toString());
     localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(sampleData));
     
     toast({
       title: "Welcome to Schedulr! 🎉",
-      description: "Explore everything free for 30 minutes. Your progress saves if you sign up!",
+      description: "Let's take a quick tour to show you around.",
     });
   }, []);
 
   const endDemo = useCallback(() => {
     setIsDemoMode(false);
+    setIsTourActive(false);
+    setCurrentTourStep(0);
     setDemoTimeRemaining(0);
     localStorage.removeItem(DEMO_START_KEY);
+  }, []);
+
+  const setTourActive = useCallback((active: boolean) => {
+    setIsTourActive(active);
+  }, []);
+
+  const handleSetCurrentTourStep = useCallback((step: number) => {
+    setCurrentTourStep(step);
   }, []);
 
   const clearDemoData = useCallback(() => {
@@ -480,8 +498,12 @@ export const DemoProvider = ({ children }: { children: ReactNode }) => {
         demoStats,
         demoHabits,
         demoDisplayName,
+        isTourActive,
+        currentTourStep,
         startDemo,
         endDemo,
+        setTourActive,
+        setCurrentTourStep: handleSetCurrentTourStep,
         addDemoEvent,
         updateDemoEvent,
         deleteDemoEvent,

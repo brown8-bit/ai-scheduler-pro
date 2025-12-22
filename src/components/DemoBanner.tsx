@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Timer, Sparkles, X, Zap, Trophy, Flame } from "lucide-react";
+import { Timer, Sparkles, X } from "lucide-react";
 import { useDemo } from "@/contexts/DemoContext";
 
 export const DemoBanner = () => {
-  const { isDemoMode, demoTimeRemaining, demoStats, endDemo } = useDemo();
+  const { isDemoMode, demoTimeRemaining, endDemo } = useDemo();
 
   if (!isDemoMode) return null;
 
@@ -29,24 +29,8 @@ export const DemoBanner = () => {
           </span>
         </div>
 
-        {/* Stats - visible on larger screens */}
-        <div className="hidden md:flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Zap className="w-3.5 h-3.5 text-yellow-300" />
-            <span>{demoStats.totalXP} XP</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Trophy className="w-3.5 h-3.5 text-yellow-300" />
-            <span>Lvl {demoStats.currentLevel}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Flame className="w-3.5 h-3.5 text-orange-300" />
-            <span>{demoStats.currentStreak} day streak</span>
-          </div>
-        </div>
-
         {/* Message */}
-        <span className="hidden lg:inline">
+        <span className="hidden sm:inline">
           {isLowTime 
             ? "⚡ Demo ending soon! Sign up to keep your progress" 
             : "✨ Exploring Schedulr — sign up to save your work!"}

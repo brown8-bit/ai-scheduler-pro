@@ -12,6 +12,7 @@ import { DemoProvider } from "@/contexts/DemoContext";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 import DemoBanner from "@/components/DemoBanner";
+import GuidedTour from "@/components/GuidedTour";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 
 // Regular imports for most pages (no loading animation)
@@ -53,6 +54,7 @@ import Messages from "./pages/Messages";
 import Discover from "./pages/Discover";
 import DemoFocusBlocks from "./pages/DemoFocusBlocks";
 import DemoAIScheduling from "./pages/DemoAIScheduling";
+import FocusBlocks from "./pages/FocusBlocks";
 import NotFound from "./pages/NotFound";
 
 // Only lazy load Chat page to show Scheddy loader
@@ -78,6 +80,7 @@ const App = () => (
               <InstallPromptBanner />
               <BrowserRouter>
                 <DemoBanner />
+                <GuidedTour />
                 <VisitorTracker />
             <Routes>
               <Route path="/" element={<Index />} />
@@ -125,6 +128,7 @@ const App = () => (
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/discover" element={<Discover />} />
+              <Route path="/focus-blocks" element={<FocusBlocks />} />
               <Route path="/demo/focus-blocks" element={<DemoFocusBlocks />} />
               <Route path="/demo/ai-scheduling" element={<DemoAIScheduling />} />
                 <Route path="*" element={<NotFound />} />
