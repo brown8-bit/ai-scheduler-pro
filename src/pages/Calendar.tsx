@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, isSameDay } from "date-fns";
-import { CalendarDays, Clock, CheckCircle2, Plus, Trash2, Sparkles, AlertTriangle } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle2, Plus, Trash2, Sparkles, AlertTriangle, Pencil } from "lucide-react";
 import AddEventModal from "@/components/AddEventModal";
+import EditEventModal from "@/components/EditEventModal";
 import CalendarExport from "@/components/CalendarExport";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { toast } from "@/hooks/use-toast";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
   Dialog,
   DialogContent,
@@ -56,6 +58,9 @@ interface ScheduledEvent {
   description: string | null;
   category: string | null;
   is_completed: boolean | null;
+  is_recurring?: boolean | null;
+  recurrence_pattern?: string | null;
+  reminder?: boolean | null;
   hasConflict?: boolean;
 }
 
@@ -141,6 +146,8 @@ const CalendarPage = () => {
   const [guestEvents, setGuestEvents] = useState<ScheduledEvent[]>([]);
   const [guestCredits, setGuestCredits] = useState(() => getGuestCredits());
   const [loading, setLoading] = useState(true);
+  const [editingEvent, setEditingEvent] = useState<ScheduledEvent | null>(null);
+  const { scheduleEventReminder, isEnabled: notificationsEnabled, requestPermission } = useNotifications();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -172,6 +179,18 @@ const CalendarPage = () => {
       // Detect conflicts
       const eventsWithConflicts = detectConflicts(data);
       setEvents(eventsWithConflicts);
+      
+      // Schedule push notifications for events with reminders
+      if (notificationsEnabled) {
+        eventsWithConflicts.forEach((event) => {
+          if (event.reminder && !event.is_completed) {
+            const eventDate = new Date(event.event_date);
+            if (eventDate > new Date()) {
+              scheduleEventReminder(event.title, eventDate, 60); // 1 hour before
+            }
+          }
+        });
+      }
     }
     setLoading(false);
   };
@@ -524,14 +543,26 @@ const CalendarPage = () => {
                           </Badge>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDeleteEvent(event)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        {!isGuest && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => setEditingEvent(event)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDeleteEvent(event)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -539,6 +570,16 @@ const CalendarPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Edit Event Modal */}
+        {editingEvent && (
+          <EditEventModal
+            event={editingEvent}
+            open={!!editingEvent}
+            onOpenChange={(open) => !open && setEditingEvent(null)}
+            onEventUpdated={fetchEvents}
+          />
+        )}
       </main>
     </div>
   );

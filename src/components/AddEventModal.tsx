@@ -164,10 +164,17 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEvent
       return;
     }
 
-    // Combine date and time
+    // Combine date and time - preserve exact local time
     const [hours, minutes] = time.split(":").map(Number);
-    const eventDate = new Date(date);
-    eventDate.setHours(hours, minutes, 0, 0);
+    
+    // Create date with exact year, month, day, hour, minute to avoid timezone shifts
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    const eventDate = new Date(year, month, day, hours, minutes, 0, 0);
+    
+    console.log("Creating event with local time:", eventDate.toLocaleString());
+    console.log("ISO string being saved:", eventDate.toISOString());
 
     // Check for conflicts if not forcing creation
     if (!forceCreate) {
