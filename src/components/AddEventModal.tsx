@@ -39,6 +39,8 @@ interface AddEventModalProps {
   selectedDate?: Date;
   onEventAdded: () => void;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const EVENT_CATEGORIES = [
@@ -60,8 +62,18 @@ const CONFIRMATION_PHRASES = [
   "Nailed it! 🚀",
 ];
 
-const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger }: AddEventModalProps) => {
-  const [open, setOpen] = useState(false);
+const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger, open: controlledOpen, onOpenChange }: AddEventModalProps) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Support both controlled and uncontrolled modes
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

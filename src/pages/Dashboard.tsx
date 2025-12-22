@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { useDemo } from "@/contexts/DemoContext";
+import { useKeyboardShortcutsContext } from "@/components/KeyboardShortcutsProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from "date-fns";
@@ -92,6 +93,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { isDemoMode, demoEvents, demoStats, updateDemoEvent } = useDemo();
+  const { setNewEventHandler } = useKeyboardShortcutsContext();
   const [events, setEvents] = useState<ScheduledEvent[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingSlot, setBookingSlot] = useState<BookingSlot | null>(null);
@@ -105,6 +107,11 @@ const Dashboard = () => {
     thisWeek: 0,
     todayCount: 0
   });
+
+  // Register keyboard shortcut for new event - navigate to calendar
+  useEffect(() => {
+    setNewEventHandler(() => navigate("/calendar"));
+  }, [setNewEventHandler, navigate]);
 
   // Allow access in demo mode without login
   useEffect(() => {

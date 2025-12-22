@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -6,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format, isSameDay } from "date-fns";
+import { format, isSameDay, addMonths, subMonths } from "date-fns";
 import { CalendarDays, Clock, CheckCircle2, Plus, Trash2, Sparkles, AlertTriangle, Pencil } from "lucide-react";
 import AddEventModal from "@/components/AddEventModal";
 import EditEventModal from "@/components/EditEventModal";
@@ -14,6 +14,7 @@ import CalendarExport from "@/components/CalendarExport";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { toast } from "@/hooks/use-toast";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useKeyboardShortcutsContext } from "@/components/KeyboardShortcutsProvider";
 import {
   Dialog,
   DialogContent,
@@ -142,12 +143,48 @@ const CalendarPage = () => {
   const [user, setUser] = useState<any>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [events, setEvents] = useState<ScheduledEvent[]>([]);
   const [guestEvents, setGuestEvents] = useState<ScheduledEvent[]>([]);
   const [guestCredits, setGuestCredits] = useState(() => getGuestCredits());
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<ScheduledEvent | null>(null);
+  const [addEventOpen, setAddEventOpen] = useState(false);
   const { scheduleEventReminder, isEnabled: notificationsEnabled, requestPermission } = useNotifications();
+  const { setCalendarHandlers, setNewEventHandler } = useKeyboardShortcutsContext();
+
+  // Keyboard shortcuts for calendar navigation
+  const goToPreviousMonth = useCallback(() => {
+    setCalendarMonth(prev => subMonths(prev, 1));
+  }, []);
+
+  const goToNextMonth = useCallback(() => {
+    setCalendarMonth(prev => addMonths(prev, 1));
+  }, []);
+
+  const goToToday = useCallback(() => {
+    const today = new Date();
+    setSelectedDate(today);
+    setCalendarMonth(today);
+  }, []);
+
+  const openNewEventModal = useCallback(() => {
+    setAddEventOpen(true);
+  }, []);
+
+  // Register keyboard shortcut handlers
+  useEffect(() => {
+    setCalendarHandlers({
+      onPrevious: goToPreviousMonth,
+      onNext: goToNextMonth,
+      onToday: goToToday,
+    });
+    setNewEventHandler(openNewEventModal);
+
+    return () => {
+      setCalendarHandlers({});
+    };
+  }, [setCalendarHandlers, setNewEventHandler, goToPreviousMonth, goToNextMonth, goToToday, openNewEventModal]);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -385,6 +422,8 @@ const CalendarPage = () => {
                 userId={user.id} 
                 selectedDate={selectedDate}
                 onEventAdded={fetchEvents}
+                open={addEventOpen}
+                onOpenChange={setAddEventOpen}
               />
             )}
             {isGuest && (
@@ -406,6 +445,8 @@ const CalendarPage = () => {
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
+                month={calendarMonth}
+                onMonthChange={setCalendarMonth}
                 className="rounded-md border mx-auto pointer-events-auto"
                 modifiers={{
                   hasEvent: datesWithEvents,
