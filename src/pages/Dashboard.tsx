@@ -41,6 +41,7 @@ import scheddyModern from "@/assets/scheddy-modern.png";
 import { ReferralCard } from "@/components/ReferralCard";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { AISuggestions } from "@/components/AISuggestions";
+import EventsListModal from "@/components/EventsListModal";
 
 interface ScheduledEvent {
   id: string;
@@ -84,6 +85,8 @@ interface UserStreak {
   total_events_completed: number;
 }
 
+type EventsFilterType = "all" | "completed" | "thisWeek";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
@@ -92,6 +95,8 @@ const Dashboard = () => {
   const [bookingSlot, setBookingSlot] = useState<BookingSlot | null>(null);
   const [streak, setStreak] = useState<UserStreak | null>(null);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsModalOpen, setEventsModalOpen] = useState(false);
+  const [eventsModalFilter, setEventsModalFilter] = useState<EventsFilterType>("all");
   const [stats, setStats] = useState({
     total: 0,
     completed: 0,
@@ -403,7 +408,10 @@ const Dashboard = () => {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <div className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg transition-shadow">
+            <button 
+              onClick={() => { setEventsModalFilter("all"); setEventsModalOpen(true); }}
+              className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg hover:border-primary/30 transition-all text-left cursor-pointer"
+            >
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
                   <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
@@ -413,8 +421,11 @@ const Dashboard = () => {
                   <p className="text-xs sm:text-sm text-muted-foreground truncate">Total Events</p>
                 </div>
               </div>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg transition-shadow">
+            </button>
+            <button 
+              onClick={() => { setEventsModalFilter("completed"); setEventsModalOpen(true); }}
+              className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg hover:border-green-500/30 transition-all text-left cursor-pointer"
+            >
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
                   <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -424,8 +435,11 @@ const Dashboard = () => {
                   <p className="text-xs sm:text-sm text-muted-foreground truncate">Completed</p>
                 </div>
               </div>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg transition-shadow">
+            </button>
+            <button 
+              onClick={() => { setEventsModalFilter("thisWeek"); setEventsModalOpen(true); }}
+              className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg hover:border-blue-500/30 transition-all text-left cursor-pointer"
+            >
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
                   <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -435,7 +449,7 @@ const Dashboard = () => {
                   <p className="text-xs sm:text-sm text-muted-foreground truncate">This Week</p>
                 </div>
               </div>
-            </div>
+            </button>
             <div className="bg-card rounded-xl border border-border p-3 sm:p-5 shadow-card hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
@@ -738,6 +752,12 @@ const Dashboard = () => {
           </div>
         </PullToRefresh>
       </main>
+
+      <EventsListModal 
+        open={eventsModalOpen} 
+        onOpenChange={setEventsModalOpen}
+        initialFilter={eventsModalFilter}
+      />
     </div>
   );
 };
