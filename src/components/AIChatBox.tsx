@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Send, User, Loader2, Camera, ImageIcon, X, Sparkles, LogIn, Mic, MicOff, RotateCcw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useDemo } from "@/contexts/DemoContext";
 import { Link } from "react-router-dom";
 import scheddyAvatar from "@/assets/scheddy-modern.png";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -98,6 +99,7 @@ interface AIChatBoxProps {
 
 const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const { user } = useAuth();
+  const { isDemoMode } = useDemo();
   const { quickActions } = useQuickActions();
   const [input, setInput] = useState("");
   const [statusPhrase] = useState(() => 
@@ -204,8 +206,9 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
   const handleSend = async () => {
     if ((!input.trim() && !attachedImage) || isLoading) return;
 
-    // Check guest demo prompts
-    if (!user && guestPromptsRemaining <= 0) {
+    // In demo mode, users get unlimited prompts
+    // For regular guests (non-demo), check guest prompt limits
+    if (!user && !isDemoMode && guestPromptsRemaining <= 0) {
       toast({
         title: "Demo complete!",
         description: "Sign up for free to continue using Scheddy!",
@@ -229,8 +232,8 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
     clearAttachment();
     setIsLoading(true);
 
-    // Increment guest prompts used before sending
-    if (!user) {
+    // Increment guest prompts used before sending (only for non-demo guests)
+    if (!user && !isDemoMode) {
       incrementGuestPrompts();
       setGuestPromptsRemaining(getRemainingGuestPrompts());
     }
@@ -287,8 +290,8 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
         });
       }
 
-      // Show signup prompt when guest prompts are low or exhausted
-      if (!user && guestPromptsRemaining <= 1) {
+      // Show signup prompt when guest prompts are low or exhausted (not in demo mode)
+      if (!user && !isDemoMode && guestPromptsRemaining <= 1) {
         setShowSignupPrompt(true);
       }
 
@@ -335,12 +338,31 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
 
   
 
-  const isLowPrompts = !user && guestPromptsRemaining > 0 && guestPromptsRemaining <= 2;
-  const isGuestMode = !user;
+  const isLowPrompts = !user && !isDemoMode && guestPromptsRemaining > 0 && guestPromptsRemaining <= 2;
+  const isGuestMode = !user && !isDemoMode;
 
   return (
     <div className="w-full max-w-3xl bg-card rounded-2xl shadow-card border border-border overflow-hidden">
-      {/* Guest Demo Mode Banner */}
+      {/* Demo Mode Banner - Full Demo Access */}
+      {!user && isDemoMode && (
+        <div className="px-3 py-2 border-b flex items-center justify-between gap-2 bg-emerald-500/10 border-emerald-500/20">
+          <div className="flex items-center gap-2">
+            <div className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+              Full Demo
+            </div>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400">
+              Unlimited prompts — try everything!
+            </p>
+          </div>
+          <Link to="/register">
+            <Button size="sm" variant="outline" className="text-xs h-7">
+              Sign up to save
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* Guest Demo Mode Banner (limited prompts when not in full demo) */}
       {isGuestMode && guestPromptsRemaining > 0 && (
         <div className={`px-3 py-2 border-b flex items-center justify-between gap-2 ${
           isLowPrompts 
@@ -377,7 +399,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
             <div className="min-w-0">
               <h3 className="font-semibold text-sm sm:text-base">Scheddy</h3>
               <p className={`text-xs sm:text-sm truncate ${isLowPrompts ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
-                {user ? statusPhrase : (guestPromptsRemaining > 0 ? `Try ${guestPromptsRemaining} prompts free` : "Demo complete")}
+                {user ? statusPhrase : (isDemoMode ? "Full demo access ✨" : (guestPromptsRemaining > 0 ? `Try ${guestPromptsRemaining} prompts free` : "Demo complete"))}
               </p>
             </div>
           </div>
@@ -393,7 +415,7 @@ const AIChatBox = ({ onEventCreated }: AIChatBoxProps) => {
                 Reset Demo
               </Button>
             )}
-            {!user && !isLowPrompts && guestPromptsRemaining > 0 && (
+            {!user && !isDemoMode && !isLowPrompts && guestPromptsRemaining > 0 && (
               <Link to="/register">
                 <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                   <LogIn className="w-3.5 h-3.5" />
