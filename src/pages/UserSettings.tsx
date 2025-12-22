@@ -31,11 +31,14 @@ import {
   Link2,
   BarChart3,
   Zap,
-  Target
+  Target,
+  MapPin,
+  Play
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { useDemo } from "@/contexts/DemoContext";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import NotificationToggle from "@/components/NotificationToggle";
@@ -62,6 +65,7 @@ const UserSettings = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { setTourActive, setCurrentTourStep } = useDemo();
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -821,6 +825,35 @@ const UserSettings = () => {
                   checked={isDarkMode} 
                   onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} 
                 />
+              </div>
+            </div>
+
+            {/* Retake Tour */}
+            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                Feature Tour
+              </h2>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Want a refresher on all the features? Take the guided tour again to discover tips and tricks you might have missed.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full gap-2"
+                  onClick={() => {
+                    setCurrentTourStep(0);
+                    setTourActive(true);
+                    navigate('/dashboard');
+                    toast({
+                      title: "Tour started! 🎯",
+                      description: "Let's explore all the features together.",
+                    });
+                  }}
+                >
+                  <Play className="w-4 h-4" />
+                  Retake Feature Tour
+                </Button>
               </div>
             </div>
 
