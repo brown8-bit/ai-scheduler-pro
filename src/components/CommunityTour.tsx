@@ -128,7 +128,7 @@ export const CommunityTour = ({ onComplete, isOpen }: CommunityTourProps) => {
   const step = tourSteps[currentStep];
   const isLastStep = currentStep === tourSteps.length - 1;
 
-  // Calculate tooltip position
+  // Calculate tooltip position - mobile-friendly
   const getTooltipStyle = () => {
     if (!targetRect) {
       return {
@@ -138,9 +138,20 @@ export const CommunityTour = ({ onComplete, isOpen }: CommunityTourProps) => {
       };
     }
 
-    const padding = 16;
-    const tooltipWidth = 320;
+    const padding = 12;
+    const isMobile = window.innerWidth < 640;
+    const tooltipWidth = isMobile ? Math.min(300, window.innerWidth - 24) : 320;
     const tooltipHeight = 200;
+
+    // On mobile, always position at bottom of screen
+    if (isMobile) {
+      return {
+        bottom: `${padding}px`,
+        left: `${padding}px`,
+        right: `${padding}px`,
+        width: 'auto',
+      };
+    }
 
     switch (step.position) {
       case "bottom":
@@ -196,7 +207,7 @@ export const CommunityTour = ({ onComplete, isOpen }: CommunityTourProps) => {
       {/* Tour tooltip */}
       <Card
         className={cn(
-          "fixed z-[102] w-80 p-4 shadow-2xl border-primary/20 bg-card",
+          "fixed z-[102] w-[calc(100%-24px)] sm:w-80 p-3 sm:p-4 shadow-2xl border-primary/20 bg-card",
           "animate-scale-in"
         )}
         style={getTooltipStyle()}
@@ -247,27 +258,28 @@ export const CommunityTour = ({ onComplete, isOpen }: CommunityTourProps) => {
             variant="ghost"
             size="sm"
             onClick={handleSkip}
-            className="text-muted-foreground"
+            className="text-muted-foreground text-xs touch-manipulation"
           >
-            Skip tour
+            Skip
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {currentStep > 0 && (
-              <Button variant="outline" size="sm" onClick={handlePrev}>
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Back
+              <Button variant="outline" size="sm" onClick={handlePrev} className="touch-manipulation h-8 px-2 sm:px-3">
+                <ChevronLeft className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Back</span>
               </Button>
             )}
-            <Button size="sm" onClick={handleNext}>
+            <Button size="sm" onClick={handleNext} className="touch-manipulation h-8 px-2 sm:px-3">
               {isLastStep ? (
                 <>
-                  <Sparkles className="h-4 w-4 mr-1" />
-                  Get Started
+                  <Sparkles className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Get Started</span>
+                  <span className="sm:hidden">Done</span>
                 </>
               ) : (
                 <>
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-4 w-4 sm:ml-1" />
                 </>
               )}
             </Button>
@@ -275,7 +287,7 @@ export const CommunityTour = ({ onComplete, isOpen }: CommunityTourProps) => {
         </div>
 
         {/* Step counter */}
-        <p className="text-xs text-muted-foreground text-center mt-3">
+        <p className="text-xs text-muted-foreground text-center mt-2 sm:mt-3">
           Step {currentStep + 1} of {tourSteps.length}
         </p>
       </Card>

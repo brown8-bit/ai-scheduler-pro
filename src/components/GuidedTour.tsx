@@ -242,13 +242,13 @@ export const GuidedTour = () => {
     return (
       <button
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-20 right-4 z-[70] p-3 rounded-full bg-primary shadow-lg hover:scale-110 transition-transform group"
+        className="fixed bottom-24 sm:bottom-20 right-4 z-[70] p-3 rounded-full bg-primary shadow-lg hover:scale-110 active:scale-95 transition-transform group touch-manipulation"
       >
         <div className="relative">
           <MapPin className="w-5 h-5 text-primary-foreground" />
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
         </div>
-        <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded bg-popover text-popover-foreground text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg border">
+        <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded bg-popover text-popover-foreground text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg border hidden sm:block">
           Continue tour
         </span>
       </button>
@@ -256,8 +256,8 @@ export const GuidedTour = () => {
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-[420px] z-[70] animate-slide-up">
-      <div className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed bottom-24 sm:bottom-20 left-2 right-2 sm:left-auto sm:right-4 sm:w-[400px] z-[70] animate-slide-up max-h-[70vh] overflow-hidden">
+      <div className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden max-h-full flex flex-col">
         {/* Header with gradient */}
         <div className="relative bg-gradient-to-r from-primary via-primary to-primary/80 px-4 py-3">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30" />
@@ -283,7 +283,7 @@ export const GuidedTour = () => {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsMinimized(true)}
-                className="p-2 rounded-lg hover:bg-primary-foreground/10 transition-colors"
+                className="p-2 rounded-lg hover:bg-primary-foreground/10 transition-colors touch-manipulation"
                 aria-label="Minimize tour"
                 title="Minimize"
               >
@@ -291,7 +291,7 @@ export const GuidedTour = () => {
               </button>
               <button
                 onClick={handleSkip}
-                className="p-2 rounded-lg hover:bg-primary-foreground/10 transition-colors"
+                className="p-2 rounded-lg hover:bg-primary-foreground/10 transition-colors touch-manipulation"
                 aria-label="Close tour"
                 title="End tour"
               >
@@ -301,8 +301,8 @@ export const GuidedTour = () => {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-4 space-y-3">
+        {/* Content - scrollable on mobile */}
+        <div className="p-3 sm:p-4 space-y-3 overflow-y-auto flex-1">
           <p className="text-sm text-foreground leading-relaxed">{currentStep?.description}</p>
           
           {/* Helpful tip */}
@@ -375,24 +375,24 @@ export const GuidedTour = () => {
         </div>
 
         {/* Navigation */}
-        <div className="px-4 pb-4 flex items-center justify-between gap-2">
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 flex items-center justify-between gap-2 shrink-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={handlePrev}
             disabled={isFirstStep}
-            className="gap-1"
+            className="gap-1 touch-manipulation"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back
+            <span className="hidden xs:inline">Back</span>
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleSkip}
-              className="text-muted-foreground text-xs"
+              className="text-muted-foreground text-xs touch-manipulation hidden sm:inline-flex"
             >
               {!user ? "Explore freely" : "End tour"}
             </Button>
@@ -401,15 +401,15 @@ export const GuidedTour = () => {
           <Button
             size="sm"
             onClick={handleNext}
-            className="gap-1"
+            className="gap-1 touch-manipulation"
           >
-            {isLastStep ? (user ? "Finish" : "Get Started") : "Next"}
+            {isLastStep ? (user ? "Finish" : "Start") : "Next"}
             {!isLastStep && <ChevronRight className="w-4 h-4" />}
           </Button>
         </div>
 
-        {/* Freedom reminder */}
-        <div className="px-4 pb-3">
+        {/* Freedom reminder - hidden on mobile */}
+        <div className="px-4 pb-3 hidden sm:block shrink-0">
           <p className="text-[10px] text-center text-muted-foreground/60">
             Feel free to explore! The tour will wait for you. 🚀
           </p>
