@@ -51,6 +51,8 @@ import Grades from "./pages/Grades";
 import Referrals from "./pages/Referrals";
 import Messages from "./pages/Messages";
 import Discover from "./pages/Discover";
+import DemoFocusBlocks from "./pages/DemoFocusBlocks";
+import DemoAIScheduling from "./pages/DemoAIScheduling";
 import NotFound from "./pages/NotFound";
 
 // Only lazy load Chat page to show Scheddy loader
@@ -123,6 +125,8 @@ const App = () => (
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/discover" element={<Discover />} />
+              <Route path="/demo/focus-blocks" element={<DemoFocusBlocks />} />
+              <Route path="/demo/ai-scheduling" element={<DemoAIScheduling />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

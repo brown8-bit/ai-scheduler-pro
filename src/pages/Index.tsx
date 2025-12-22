@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2, Rocket, Target, Lock, Brain, Play, BarChart3 } from "lucide-react";
+import { Calendar, MessageSquare, Clock, Zap, Shield, Sparkles, Trophy, Flame, Star, Timer, Gift, Crown, Loader2, Rocket, Target, Lock, Brain, Play, BarChart3, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import CountdownTimer from "@/components/CountdownTimer";
 import { useAuth } from "@/hooks/useAuth";
 import { useDemo } from "@/contexts/DemoContext";
 import scheddyModern from "@/assets/scheddy-modern.png";
 import WaitlistModal from "@/components/WaitlistModal";
+import AnimatedHero from "@/components/AnimatedHero";
 interface Offer {
   id: string;
   title: string;
@@ -267,6 +268,13 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Animated Hero Showcase */}
+      {!user && (
+        <section className="py-8 sm:py-12 px-4 -mt-8">
+          <AnimatedHero />
+        </section>
+      )}
+
       {/* Demo Preview Screenshots */}
       {!user && (
         <section className="py-12 sm:py-16 px-4">
@@ -298,7 +306,7 @@ const Index = () => {
               </div>
 
               {/* Demo Preview 2 - AI Chat */}
-              <div className="group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <Link to="/demo/ai-scheduling" className="group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <div className="aspect-video bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 flex items-center justify-center">
                   <div className="text-center p-6">
                     <div className="w-16 h-16 rounded-xl bg-blue-500 flex items-center justify-center mx-auto mb-4">
@@ -309,14 +317,14 @@ const Index = () => {
                   </div>
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-6">
-                  <Button size="sm" onClick={handleStartDemo} className="gap-1">
-                    <Play className="w-3 h-3" /> Try it
+                  <Button size="sm" className="gap-1">
+                    <ArrowRight className="w-3 h-3" /> Preview
                   </Button>
                 </div>
-              </div>
+              </Link>
 
               {/* Demo Preview 3 - Focus Blocks */}
-              <div className="group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <Link to="/demo/focus-blocks" className="group relative rounded-2xl overflow-hidden border border-border bg-card shadow-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <div className="aspect-video bg-gradient-to-br from-orange-500/10 via-red-500/10 to-pink-500/10 flex items-center justify-center">
                   <div className="text-center p-6">
                     <div className="w-16 h-16 rounded-xl bg-orange-500 flex items-center justify-center mx-auto mb-4">
@@ -327,11 +335,11 @@ const Index = () => {
                   </div>
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-6">
-                  <Button size="sm" onClick={handleStartDemo} className="gap-1">
-                    <Play className="w-3 h-3" /> Try it
+                  <Button size="sm" className="gap-1">
+                    <ArrowRight className="w-3 h-3" /> Preview
                   </Button>
                 </div>
-              </div>
+              </Link>
             </div>
 
             {/* CTA below previews */}
@@ -343,7 +351,7 @@ const Index = () => {
                 onClick={handleStartDemo}
               >
                 <Sparkles className="w-4 h-4" />
-                Start Exploring Now
+                Start Full Demo
               </Button>
             </div>
           </div>
