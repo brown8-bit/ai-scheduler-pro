@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Lock, ArrowLeft, Gift, Sparkles, CheckCircle, FileText } from "lucide-react";
+import { Calendar, Mail, Lock, ArrowLeft, Gift, Sparkles, CheckCircle, FileText, ChevronDown, Shield, UserCheck, Database, Clock, HelpCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useDemo } from "@/contexts/DemoContext";
@@ -11,6 +11,7 @@ import PasswordInput, { validatePassword } from "@/components/PasswordInput";
 import OTPVerification from "@/components/OTPVerification";
 import TwoFactorSetup from "@/components/TwoFactorSetup";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
 
@@ -28,6 +29,7 @@ const Register = () => {
   const [step, setStep] = useState<RegistrationStep>("email");
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [termsExpanded, setTermsExpanded] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -284,6 +286,77 @@ const Register = () => {
                       Cancel anytime, export your data
                     </p>
                   </div>
+
+                  {/* Expandable Full Terms Summary */}
+                  <Collapsible open={termsExpanded} onOpenChange={setTermsExpanded} className="mt-3 pl-8">
+                    <CollapsibleTrigger className="flex items-center gap-2 text-xs text-primary hover:text-primary/80 font-medium transition-colors">
+                      <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${termsExpanded ? "rotate-180" : ""}`} />
+                      {termsExpanded ? "Hide details" : "Read more about our terms"}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-3 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                      <div className="p-3 rounded-lg bg-background/50 border border-border/50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="w-4 h-4 text-primary" />
+                          <h4 className="text-xs font-semibold">Data Security</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          All your data is encrypted using industry-standard AES-256 encryption. 
+                          We use secure HTTPS connections and never store passwords in plain text.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 rounded-lg bg-background/50 border border-border/50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <UserCheck className="w-4 h-4 text-primary" />
+                          <h4 className="text-xs font-semibold">Your Privacy Rights</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          You have full control over your data. Request access, correction, or deletion 
+                          at any time. We never sell or share your personal information with third parties for marketing.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 rounded-lg bg-background/50 border border-border/50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Database className="w-4 h-4 text-primary" />
+                          <h4 className="text-xs font-semibold">Data Usage</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          We only collect data necessary to provide our service. Your calendar events, 
+                          tasks, and schedules are stored securely and used solely to power your experience.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 rounded-lg bg-background/50 border border-border/50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="w-4 h-4 text-primary" />
+                          <h4 className="text-xs font-semibold">Account & Cancellation</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Cancel your subscription anytime with no penalties. Export all your data in 
+                          standard formats before leaving. Free tier available indefinitely.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 rounded-lg bg-background/50 border border-border/50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <HelpCircle className="w-4 h-4 text-primary" />
+                          <h4 className="text-xs font-semibold">Support & Updates</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          We'll notify you of any significant changes to these terms. Our support team 
+                          is available to answer any questions about how we handle your data.
+                        </p>
+                      </div>
+                      
+                      <p className="text-xs text-muted-foreground text-center pt-2 border-t border-border/50">
+                        For complete details, read the full{" "}
+                        <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms</Link>
+                        {" "}and{" "}
+                        <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>
+                      </p>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
 
                 <Button
