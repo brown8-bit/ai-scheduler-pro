@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Lock, ArrowLeft, Gift } from "lucide-react";
+import { Calendar, Mail, Lock, ArrowLeft, Gift, Sparkles, CheckCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import PasswordInput, { validatePassword } from "@/components/PasswordInput";
+import OTPVerification from "@/components/OTPVerification";
+import TwoFactorSetup from "@/components/TwoFactorSetup";
 
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
-const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" });
+
+type RegistrationStep = "email" | "verify" | "password" | "complete";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -18,14 +22,21 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState<RegistrationStep>("email");
+  const [show2FASetup, setShow2FASetup] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
-      navigate("/dashboard");
+      // If user is logged in and we're past verification, show 2FA setup option
+      if (step === "complete") {
+        setShow2FASetup(true);
+      } else {
+        navigate("/dashboard");
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, step]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const emailResult = emailSchema.safeParse(email);
@@ -38,11 +49,47 @@ const Register = () => {
       return;
     }
 
-    const passwordResult = passwordSchema.safeParse(password);
-    if (!passwordResult.success) {
+    setIsLoading(true);
+
+    try {
+      // Send OTP to email
+      const { data, error } = await supabase.functions.invoke("email-otp", {
+        body: { email, action: "send" },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        setStep("verify");
+        toast({
+          title: "Code Sent! 📧",
+          description: "Check your email for the verification code.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error sending OTP:", error);
       toast({
-        title: "Invalid Password",
-        description: passwordResult.error.errors[0].message,
+        title: "Failed to Send",
+        description: error.message || "Could not send verification code.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailVerified = () => {
+    setStep("password");
+  };
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      toast({
+        title: "Password Requirements",
+        description: "Please meet all password requirements.",
         variant: "destructive",
       });
       return;
@@ -66,11 +113,6 @@ const Register = () => {
       return;
     }
 
-    toast({
-      title: "Account created! 🎉",
-      description: "Welcome to Schedulr. Let's get started!",
-    });
-
     // Process referral if there's a referral code
     if (referralCode) {
       try {
@@ -88,10 +130,23 @@ const Register = () => {
       }
     }
 
-    navigate("/dashboard");
+    toast({
+      title: "Account created! 🎉",
+      description: "Welcome to Schedulr!",
+    });
+    
+    setStep("complete");
     setIsLoading(false);
   };
 
+  const handle2FAComplete = () => {
+    setShow2FASetup(false);
+    navigate("/dashboard");
+  };
+
+  const handleSkip2FA = () => {
+    navigate("/dashboard");
+  };
 
   if (loading) {
     return (
@@ -120,9 +175,16 @@ const Register = () => {
                 <Calendar className="w-6 h-6 text-primary-foreground" />
               </div>
             </Link>
-            <h1 className="mt-4 text-2xl font-bold">Create an account</h1>
-            <p className="mt-2 text-muted-foreground">Start your free trial today</p>
-            {referralCode && (
+            <h1 className="mt-4 text-2xl font-bold">
+              {step === "complete" ? "Welcome to Schedulr! 🎉" : "Create an account"}
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              {step === "email" && "Enter your email to get started"}
+              {step === "verify" && "Verify your email address"}
+              {step === "password" && "Set a secure password"}
+              {step === "complete" && "Your account is ready"}
+            </p>
+            {referralCode && step === "email" && (
               <div className="mt-3 inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm">
                 <Gift className="h-4 w-4" />
                 Referred by a friend!
@@ -130,58 +192,138 @@ const Register = () => {
             )}
           </div>
 
+          {/* Progress Steps */}
+          <div className="flex items-center justify-center gap-2 mb-6">
+            {["email", "verify", "password"].map((s) => {
+              const stepOrder = ["email", "verify", "password", "complete"];
+              const currentIndex = stepOrder.indexOf(step);
+              const sIndex = stepOrder.indexOf(s);
+              const isPast = currentIndex > sIndex;
+              const isCurrent = step === s;
+              
+              return (
+                <div
+                  key={s}
+                  className={`h-2 rounded-full transition-all ${
+                    isPast
+                      ? "w-8 bg-primary"
+                      : isCurrent
+                      ? "w-8 bg-primary/50"
+                      : "w-4 bg-muted"
+                  }`}
+                />
+              );
+            })}
+          </div>
+
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-card p-8 rounded-2xl shadow-card border border-border">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  />
+          <div className="bg-card p-8 rounded-2xl shadow-card border border-border">
+            {step === "email" && (
+              <form onSubmit={handleSendOTP} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="hero"
+                  size="lg"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Sending code..." : "Continue"}
+                </Button>
+
+                <p className="text-center text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link to="/login" className="text-primary font-medium hover:underline">
+                    Sign in
+                  </Link>
+                </p>
+              </form>
+            )}
+
+            {step === "verify" && (
+              <OTPVerification
+                email={email}
+                onVerified={handleEmailVerified}
+                onBack={() => setStep("email")}
+              />
+            )}
+
+            {step === "password" && (
+              <form onSubmit={handleCreateAccount} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Create Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground z-10" />
+                    <PasswordInput
+                      value={password}
+                      onChange={setPassword}
+                      showRequirements
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="hero"
+                  size="lg"
+                  className="w-full"
+                  disabled={isLoading || !validatePassword(password).valid}
+                >
+                  {isLoading ? "Creating account..." : "Create Account"}
+                </Button>
+              </form>
+            )}
+
+            {step === "complete" && (
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
+                <p className="text-muted-foreground">
+                  Would you like to enable two-factor authentication for extra security?
+                </p>
+                <div className="space-y-2">
+                  <Button
+                    variant="hero"
+                    className="w-full"
+                    onClick={() => setShow2FASetup(true)}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Set Up 2FA
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    onClick={handleSkip2FA}
+                  >
+                    Skip for now
+                  </Button>
                 </div>
               </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Must be at least 6 characters</p>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              variant="hero"
-              size="lg"
-              className="w-full mt-6"
-              disabled={isLoading}
-            >
-              {isLoading ? "Creating account..." : "Create Account"}
-            </Button>
-
-            <p className="mt-6 text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link to="/login" className="text-primary font-medium hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </form>
+            )}
+          </div>
         </div>
       </div>
+
+      <TwoFactorSetup
+        open={show2FASetup}
+        onOpenChange={setShow2FASetup}
+        onComplete={handle2FAComplete}
+      />
     </div>
   );
 };
