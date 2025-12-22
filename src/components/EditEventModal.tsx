@@ -228,12 +228,13 @@ const EditEventModal = ({ event, open, onOpenChange, onEventUpdated }: EditEvent
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Date *</Label>
-              <Popover>
+              <Popover modal={true}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
+                    type="button"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal touch-manipulation",
                       !date && "text-muted-foreground"
                     )}
                   >
@@ -241,13 +242,14 @@ const EditEventModal = ({ event, open, onOpenChange, onEventUpdated }: EditEvent
                     {date ? format(date, "MMM d, yyyy") : "Pick date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 pointer-events-auto" align="start" side="bottom" avoidCollisions={true}>
                   <Calendar
                     mode="single"
                     selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
+                    onSelect={(newDate) => {
+                      setDate(newDate);
+                    }}
+                    className="p-3 pointer-events-auto touch-manipulation"
                   />
                 </PopoverContent>
               </Popover>
