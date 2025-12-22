@@ -119,11 +119,20 @@ const Register = () => {
       return;
     }
 
-    // Process referral if there's a referral code
-    if (referralCode) {
-      try {
-        const { data: { user: newUser } } = await supabase.auth.getUser();
-        if (newUser) {
+    // Get the newly created user and record terms acceptance
+    try {
+      const { data: { user: newUser } } = await supabase.auth.getUser();
+      if (newUser) {
+        // Record terms acceptance for compliance
+        await supabase.from("terms_acceptances").insert({
+          user_id: newUser.id,
+          terms_version: "1.0",
+          privacy_version: "1.0",
+          user_agent: navigator.userAgent,
+        });
+
+        // Process referral if there's a referral code
+        if (referralCode) {
           await supabase.functions.invoke("process-referral", {
             body: { 
               referral_code: referralCode, 
@@ -131,9 +140,9 @@ const Register = () => {
             },
           });
         }
-      } catch (error) {
-        console.error("Error processing referral:", error);
       }
+    } catch (error) {
+      console.error("Error recording terms acceptance or processing referral:", error);
     }
 
     toast({
