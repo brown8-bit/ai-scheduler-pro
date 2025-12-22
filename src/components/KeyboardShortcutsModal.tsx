@@ -5,6 +5,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Keyboard, Command } from "lucide-react";
+import shortcutNavigation from "@/assets/shortcut-navigation.png";
+import shortcutCalendar from "@/assets/shortcut-calendar.png";
+import shortcutSearch from "@/assets/shortcut-search.png";
 
 interface KeyboardShortcutsModalProps {
   open: boolean;
@@ -47,10 +50,28 @@ const shortcuts = [
   },
 ];
 
+const demoImages = [
+  {
+    src: shortcutNavigation,
+    alt: "Navigation shortcuts demo",
+    caption: "Quick navigation with G+D, G+C, G+T",
+  },
+  {
+    src: shortcutCalendar,
+    alt: "Calendar navigation demo",
+    caption: "Navigate calendar with arrow keys",
+  },
+  {
+    src: shortcutSearch,
+    alt: "Quick search demo",
+    caption: "Command palette with ⌘/Ctrl+K",
+  },
+];
+
 const KeyboardShortcutsModal = ({ open, onOpenChange }: KeyboardShortcutsModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Keyboard className="w-5 h-5 text-primary" />
@@ -96,6 +117,29 @@ const KeyboardShortcutsModal = ({ open, onOpenChange }: KeyboardShortcutsModalPr
               </div>
             </div>
           ))}
+
+          {/* Demo Screenshots */}
+          <div className="pt-4 border-t border-border">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">
+              Visual Guide
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              {demoImages.map((image, index) => (
+                <div key={index} className="space-y-1.5">
+                  <div className="rounded-lg overflow-hidden border border-border bg-muted/30">
+                    <img 
+                      src={image.src} 
+                      alt={image.alt}
+                      className="w-full h-auto object-cover aspect-video"
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center leading-tight">
+                    {image.caption}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div className="pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground text-center">
