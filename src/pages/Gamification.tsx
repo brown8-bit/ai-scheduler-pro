@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,6 +52,7 @@ const Gamification = () => {
   const [userPoints, setUserPoints] = useState<UserPoints | null>(null);
   const [loading, setLoading] = useState(true);
   const [previousUnlockedCount, setPreviousUnlockedCount] = useState<number | null>(null);
+  const [gamificationDisabled, setGamificationDisabled] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -65,10 +67,11 @@ const Gamification = () => {
         .from("profiles")
         .select("gamification_enabled")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
       
       if (profile && profile.gamification_enabled === false) {
-        navigate("/dashboard");
+        setGamificationDisabled(true);
+        setLoading(false);
         return;
       }
       
@@ -91,7 +94,7 @@ const Gamification = () => {
       .from("user_points")
       .select("total_xp, current_level")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
     
     if (data) {
       setUserPoints(data);
@@ -325,6 +328,17 @@ const Gamification = () => {
     return Math.min(progress, 100);
   };
 
+  const achievements = getAchievements();
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  
+  // Fire confetti when a new achievement is unlocked - must be before any conditional returns
+  useEffect(() => {
+    if (previousUnlockedCount !== null && unlockedCount > previousUnlockedCount) {
+      fireAchievementConfetti();
+    }
+    setPreviousUnlockedCount(unlockedCount);
+  }, [unlockedCount, previousUnlockedCount, fireAchievementConfetti]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -333,16 +347,33 @@ const Gamification = () => {
     );
   }
 
-  const achievements = getAchievements();
-  const unlockedCount = achievements.filter((a) => a.unlocked).length;
-  
-  // Fire confetti when a new achievement is unlocked
-  useEffect(() => {
-    if (previousUnlockedCount !== null && unlockedCount > previousUnlockedCount) {
-      fireAchievementConfetti();
-    }
-    setPreviousUnlockedCount(unlockedCount);
-  }, [unlockedCount, previousUnlockedCount, fireAchievementConfetti]);
+  // Show friendly message when gamification is disabled
+  if (gamificationDisabled) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-24 pb-8">
+          <div className="max-w-md mx-auto text-center">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
+              <Trophy className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h1 className="text-2xl font-bold mb-3">Motivation Mode Disabled</h1>
+            <p className="text-muted-foreground mb-6">
+              Achievements and leaderboards are turned off. Enable motivation mode in settings to track your progress and compete with others!
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button variant="outline" onClick={() => navigate(-1)}>
+                Go Back
+              </Button>
+              <Button onClick={() => navigate("/settings")}>
+                Open Settings
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
   
   // User rank is now based on their position relative to their total_events_completed
   const userRank = leaderboard.findIndex(u => u.total_events_completed <= (streakData?.total_events_completed || 0)) + 1 || leaderboard.length + 1;
@@ -350,7 +381,7 @@ const Gamification = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-8 pb-8">
+      <main className="container mx-auto px-3 sm:px-4 pt-20 sm:pt-24 pb-8">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
             <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
