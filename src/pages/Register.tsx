@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Mail, Lock, ArrowLeft, Gift, Sparkles, CheckCircle } from "lucide-react";
+import { Calendar, Mail, Lock, ArrowLeft, Gift, Sparkles, CheckCircle, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useDemo } from "@/contexts/DemoContext";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import PasswordInput, { validatePassword } from "@/components/PasswordInput";
 import OTPVerification from "@/components/OTPVerification";
 import TwoFactorSetup from "@/components/TwoFactorSetup";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const emailSchema = z.string().trim().email({ message: "Please enter a valid email address" });
 
@@ -19,11 +21,13 @@ const Register = () => {
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get("ref");
   const { signUp, user, loading } = useAuth();
+  const { setTourActive, setCurrentTourStep } = useDemo();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<RegistrationStep>("email");
   const [show2FASetup, setShow2FASetup] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -141,10 +145,16 @@ const Register = () => {
 
   const handle2FAComplete = () => {
     setShow2FASetup(false);
+    // Start the full tour for new users
+    setCurrentTourStep(0);
+    setTourActive(true);
     navigate("/dashboard");
   };
 
   const handleSkip2FA = () => {
+    // Start the full tour for new users
+    setCurrentTourStep(0);
+    setTourActive(true);
     navigate("/dashboard");
   };
 
@@ -234,15 +244,42 @@ const Register = () => {
                   </div>
                 </div>
 
+                {/* Terms Agreement */}
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                  <Checkbox
+                    id="terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+                    I agree to the{" "}
+                    <Link to="/terms" target="_blank" className="text-primary font-medium hover:underline">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link to="/privacy" target="_blank" className="text-primary font-medium hover:underline">
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
+
                 <Button
                   type="submit"
                   variant="hero"
                   size="lg"
                   className="w-full"
-                  disabled={isLoading}
+                  disabled={isLoading || !agreedToTerms}
                 >
                   {isLoading ? "Sending code..." : "Continue"}
                 </Button>
+
+                {!agreedToTerms && (
+                  <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <FileText className="w-3 h-3" />
+                    Please agree to the terms to continue
+                  </p>
+                )}
 
                 <p className="text-center text-sm text-muted-foreground">
                   Already have an account?{" "}
