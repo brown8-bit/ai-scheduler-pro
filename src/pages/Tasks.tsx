@@ -36,7 +36,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import NotificationToggle from "@/components/NotificationToggle";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -371,7 +371,7 @@ const Tasks = () => {
                           {task.due_date && (
                             <span className="flex items-center gap-1 text-muted-foreground">
                               <Calendar className="w-3 h-3" />
-                              {format(new Date(task.due_date), "MMM d, yyyy")}
+                              {format(parseISO(task.due_date), "MMM d, yyyy")}
                             </span>
                           )}
                         </div>
