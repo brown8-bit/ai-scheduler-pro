@@ -50,3 +50,6 @@ verify_jwt = true
 
 [functions.create-holiday-checkout]
 verify_jwt = true
+
+[functions.email-otp]
+verify_jwt = false
