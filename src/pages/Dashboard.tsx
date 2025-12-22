@@ -91,7 +91,7 @@ type EventsFilterType = "all" | "completed" | "thisWeek";
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { isDemoMode, demoEvents, updateDemoEvent } = useDemo();
+  const { isDemoMode, demoEvents, demoStats, updateDemoEvent } = useDemo();
   const [events, setEvents] = useState<ScheduledEvent[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingSlot, setBookingSlot] = useState<BookingSlot | null>(null);
@@ -139,10 +139,14 @@ const Dashboard = () => {
         .slice(0, 5);
       
       setEvents(upcomingEvents as ScheduledEvent[]);
-      setStreak({ current_streak: 3, longest_streak: 7, total_events_completed: 12 });
+      setStreak({ 
+        current_streak: demoStats.currentStreak, 
+        longest_streak: demoStats.longestStreak, 
+        total_events_completed: demoStats.eventsCompleted 
+      });
       setEventsLoading(false);
     }
-  }, [isDemoMode, demoEvents]);
+  }, [isDemoMode, demoEvents, demoStats]);
 
   useEffect(() => {
     if (user && !isDemoMode) {
