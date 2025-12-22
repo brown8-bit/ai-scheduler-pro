@@ -245,23 +245,45 @@ const Register = () => {
                 </div>
 
                 {/* Terms Agreement */}
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border">
-                  <Checkbox
-                    id="terms"
-                    checked={agreedToTerms}
-                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                    className="mt-0.5"
-                  />
-                  <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
-                    I agree to the{" "}
-                    <Link to="/terms" target="_blank" className="text-primary font-medium hover:underline">
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link to="/privacy" target="_blank" className="text-primary font-medium hover:underline">
-                      Privacy Policy
-                    </Link>
-                  </label>
+                <div className={`p-4 rounded-xl border-2 transition-all ${
+                  agreedToTerms 
+                    ? "border-primary bg-primary/5" 
+                    : "border-amber-500/50 bg-amber-500/5"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="terms"
+                      checked={agreedToTerms}
+                      onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                      className="mt-0.5 h-5 w-5"
+                    />
+                    <label htmlFor="terms" className="text-sm font-medium leading-relaxed cursor-pointer">
+                      I agree to the{" "}
+                      <Link to="/terms" target="_blank" className="text-primary hover:underline">
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link to="/privacy" target="_blank" className="text-primary hover:underline">
+                        Privacy Policy
+                      </Link>
+                    </label>
+                  </div>
+                  
+                  {/* Quick Summary */}
+                  <div className="mt-3 pl-8 space-y-1.5">
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      <CheckCircle className="w-3 h-3 text-green-500 shrink-0" />
+                      Your data is encrypted and secure
+                    </p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      <CheckCircle className="w-3 h-3 text-green-500 shrink-0" />
+                      We never sell your personal information
+                    </p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      <CheckCircle className="w-3 h-3 text-green-500 shrink-0" />
+                      Cancel anytime, export your data
+                    </p>
+                  </div>
                 </div>
 
                 <Button
