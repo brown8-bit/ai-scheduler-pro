@@ -149,35 +149,36 @@ const DemoFocusBlocks = () => {
       
       {/* Demo Banner */}
       {!isDemoMode && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-gradient-to-r from-primary via-purple-500 to-cyan-500 text-white py-2 px-4">
-          <div className="container mx-auto flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-sm font-medium">
-              ✨ You're previewing Focus Blocks — Start a full demo to unlock all features!
+        <div className="fixed top-16 left-0 right-0 z-40 bg-gradient-to-r from-primary via-purple-500 to-cyan-500 text-white py-2 px-3 sm:px-4">
+          <div className="container mx-auto flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
+            <p className="text-xs sm:text-sm font-medium">
+              ✨ Previewing Focus Blocks — Start a full demo to unlock all features!
             </p>
-            <Button size="sm" variant="secondary" onClick={handleStartFullDemo} className="gap-1">
-              Start Full Demo <ArrowRight className="w-3 h-3" />
+            <Button size="sm" variant="secondary" onClick={handleStartFullDemo} className="gap-1 text-xs touch-manipulation">
+              Start Demo <ArrowRight className="w-3 h-3" />
             </Button>
           </div>
         </div>
       )}
 
-      <main className={`container mx-auto px-4 py-8 ${isDemoMode ? 'pt-24' : 'pt-32'}`}>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+      <main className={`container mx-auto px-3 sm:px-4 py-6 sm:py-8 ${isDemoMode ? 'pt-20 sm:pt-24' : 'pt-28 sm:pt-32'}`}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <Focus className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
+              <Focus className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               Focus Time Blocks
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">
               Protect your deep work time from interruptions 🧘
             </p>
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 touch-manipulation">
                 <Plus className="h-4 w-4" />
-                New Focus Block
+                <span className="hidden xs:inline">New Focus Block</span>
+                <span className="xs:hidden">Add</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -216,14 +217,14 @@ const DemoFocusBlocks = () => {
                 </div>
                 <div>
                   <Label>Days of Week</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
                     {DAYS.map((day) => (
                       <label
                         key={day.value}
-                        className={`flex items-center justify-center w-12 h-10 rounded-md border cursor-pointer transition-colors ${
+                        className={`flex items-center justify-center w-10 h-9 sm:w-12 sm:h-10 rounded-md border cursor-pointer transition-colors touch-manipulation ${
                           formData.days_of_week.includes(day.value)
                             ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background border-border hover:bg-muted"
+                            : "bg-background border-border hover:bg-muted active:bg-muted"
                         }`}
                       >
                         <Checkbox
@@ -231,12 +232,12 @@ const DemoFocusBlocks = () => {
                           onCheckedChange={() => toggleDay(day.value)}
                           className="sr-only"
                         />
-                        <span className="text-sm font-medium">{day.label}</span>
+                        <span className="text-xs sm:text-sm font-medium">{day.label}</span>
                       </label>
                     ))}
                   </div>
                 </div>
-                <Button onClick={handleCreate} className="w-full" disabled={!formData.title}>
+                <Button onClick={handleCreate} className="w-full touch-manipulation" disabled={!formData.title}>
                   Create Focus Block
                 </Button>
               </div>
@@ -245,28 +246,30 @@ const DemoFocusBlocks = () => {
         </div>
 
         {/* Today's Timeline */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Sun className="h-5 w-5 text-amber-500" />
+        <Card className="mb-6 sm:mb-8">
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Sun className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />
               Today's Focus Schedule
-              <span className="text-sm font-normal text-muted-foreground ml-2">
+              <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-2">
                 ({DAYS[today].label})
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             <div className="relative">
-              <div className="h-20 bg-muted/30 rounded-lg relative overflow-hidden border border-border">
-                <div className="absolute inset-0 flex">
-                  {TIMELINE_HOURS.map((hour) => (
-                    <div key={hour} className="flex-1 border-l border-border/50 first:border-l-0 relative">
-                      <span className="absolute -bottom-6 left-0 transform -translate-x-1/2 text-xs text-muted-foreground">
-                        {hour <= 12 ? `${hour}${hour < 12 ? 'a' : 'p'}` : `${hour - 12}p`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              {/* Timeline - horizontally scrollable on mobile */}
+              <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+                <div className="h-20 bg-muted/30 rounded-lg relative overflow-hidden border border-border min-w-[600px] sm:min-w-0">
+                  <div className="absolute inset-0 flex">
+                    {TIMELINE_HOURS.map((hour) => (
+                      <div key={hour} className="flex-1 border-l border-border/50 first:border-l-0 relative">
+                        <span className="absolute -bottom-6 left-0 transform -translate-x-1/2 text-xs text-muted-foreground">
+                          {hour <= 12 ? `${hour}${hour < 12 ? 'a' : 'p'}` : `${hour - 12}p`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
 
                 {todayBlocks.map((block, index) => {
                   const left = getBlockPosition(block.start_time);
@@ -295,11 +298,12 @@ const DemoFocusBlocks = () => {
                   </div>
                 )}
 
-                {todayBlocks.length === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-muted-foreground text-sm">No focus blocks scheduled for today</p>
-                  </div>
-                )}
+                  {todayBlocks.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <p className="text-muted-foreground text-xs sm:text-sm">No focus blocks scheduled for today</p>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="h-6" />
             </div>
@@ -326,32 +330,41 @@ const DemoFocusBlocks = () => {
         </Card>
 
         {/* All Focus Blocks */}
-        <h2 className="text-xl font-semibold mb-4 text-foreground">All Focus Blocks</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground">All Focus Blocks</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {focusBlocks.map((block) => (
             <Card key={block.id} className={`transition-all ${block.is_active ? "hover:shadow-lg" : "opacity-60"}`}>
-              <CardHeader className="flex flex-row items-start justify-between space-y-0">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                 <div>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Focus className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Focus className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     {block.title}
                   </CardTitle>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={block.is_active} onCheckedChange={(checked) => handleToggle(block.id, checked)} />
-                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(block.id)}>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Switch 
+                    checked={block.is_active} 
+                    onCheckedChange={(checked) => handleToggle(block.id, checked)} 
+                    className="touch-manipulation"
+                  />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-destructive hover:text-destructive touch-manipulation h-8 w-8" 
+                    onClick={() => handleDelete(block.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-muted-foreground">
+              <CardContent className="pt-0">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />
                     <span>{formatTime(block.start_time)} - {formatTime(block.end_time)}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>{getDaysLabel(block.days_of_week)}</span>
                   </div>
@@ -363,11 +376,11 @@ const DemoFocusBlocks = () => {
 
         {/* CTA for full demo */}
         {!isDemoMode && (
-          <div className="mt-12 text-center">
-            <Card className="p-8 bg-gradient-to-br from-primary/10 via-purple-500/10 to-cyan-500/10 border-primary/20">
-              <h3 className="text-2xl font-bold mb-2">Love Focus Blocks?</h3>
-              <p className="text-muted-foreground mb-6">Start the full demo to explore AI scheduling, task management, and more!</p>
-              <Button size="lg" onClick={handleStartFullDemo} className="gap-2">
+          <div className="mt-8 sm:mt-12 text-center">
+            <Card className="p-5 sm:p-8 bg-gradient-to-br from-primary/10 via-purple-500/10 to-cyan-500/10 border-primary/20">
+              <h3 className="text-xl sm:text-2xl font-bold mb-2">Love Focus Blocks?</h3>
+              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">Start the full demo to explore AI scheduling, task management, and more!</p>
+              <Button size="lg" onClick={handleStartFullDemo} className="gap-2 touch-manipulation">
                 Start Full Demo <ArrowRight className="w-4 h-4" />
               </Button>
             </Card>

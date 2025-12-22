@@ -105,51 +105,51 @@ const DemoAIScheduling = () => {
       
       {/* Demo Banner */}
       {!isDemoMode && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white py-2 px-4">
-          <div className="container mx-auto flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-sm font-medium">
-              ✨ You're previewing AI Scheduling — Start a full demo to unlock all features!
+        <div className="fixed top-16 left-0 right-0 z-40 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white py-2 px-3 sm:px-4">
+          <div className="container mx-auto flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
+            <p className="text-xs sm:text-sm font-medium">
+              ✨ Previewing AI Scheduling — Start a full demo to unlock all features!
             </p>
-            <Button size="sm" variant="secondary" onClick={handleStartFullDemo} className="gap-1">
-              Start Full Demo <ArrowRight className="w-3 h-3" />
+            <Button size="sm" variant="secondary" onClick={handleStartFullDemo} className="gap-1 text-xs touch-manipulation">
+              Start Demo <ArrowRight className="w-3 h-3" />
             </Button>
           </div>
         </div>
       )}
 
-      <main className={`container mx-auto px-4 py-8 ${isDemoMode ? 'pt-24' : 'pt-32'} max-w-4xl`}>
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Sparkles className="h-8 w-8 text-primary" />
+      <main className={`container mx-auto px-3 sm:px-4 py-6 sm:py-8 ${isDemoMode ? 'pt-20 sm:pt-24' : 'pt-28 sm:pt-32'} max-w-4xl`}>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
+            <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             AI Scheduling Assistant
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             Chat with Scheddy to plan your perfect day ✨
           </p>
         </div>
 
         {/* Feature Pills */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm">
-            <Calendar className="w-3.5 h-3.5" />
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6">
+          <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-primary/10 text-primary text-xs sm:text-sm">
+            <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             Smart Scheduling
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm">
-            <Clock className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
+            <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             Time Blocking
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm">
-            <CheckCircle2 className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm">
+            <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             Task Prioritization
           </div>
         </div>
 
         {/* Chat Interface */}
-        <Card className="h-[500px] flex flex-col overflow-hidden">
+        <Card className="h-[60vh] sm:h-[500px] flex flex-col overflow-hidden">
           <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
               {messages.map((message) => (
-                <div key={message.id} className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}>
+                <div key={message.id} className={`flex gap-2 sm:gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}>
                   {/* Avatar */}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                     message.role === "assistant" 
@@ -164,24 +164,24 @@ const DemoAIScheduling = () => {
                   </div>
 
                   {/* Message */}
-                  <div className={`max-w-[80%] ${message.role === "user" ? "text-right" : ""}`}>
-                    <div className={`inline-block p-3 rounded-2xl ${
+                  <div className={`max-w-[85%] sm:max-w-[80%] ${message.role === "user" ? "text-right" : ""}`}>
+                    <div className={`inline-block p-2.5 sm:p-3 rounded-2xl ${
                       message.role === "assistant"
                         ? "bg-muted text-foreground rounded-tl-sm"
                         : "bg-primary text-primary-foreground rounded-tr-sm"
                     }`}>
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      <p className="text-xs sm:text-sm whitespace-pre-wrap">{message.content}</p>
                     </div>
 
                     {/* Suggestions */}
                     {message.suggestions && message.role === "assistant" && (
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      <div className="mt-2 sm:mt-3 flex flex-wrap gap-1.5 sm:gap-2">
                         {message.suggestions.map((suggestion, i) => (
                           <Button
                             key={i}
                             variant="outline"
                             size="sm"
-                            className="text-xs"
+                            className="text-xs h-8 px-2 sm:px-3 touch-manipulation"
                             onClick={() => handleSend(suggestion)}
                           >
                             {suggestion}
@@ -212,15 +212,15 @@ const DemoAIScheduling = () => {
           </ScrollArea>
 
           {/* Input */}
-          <div className="p-4 border-t border-border">
+          <div className="p-3 sm:p-4 border-t border-border">
             <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask Scheddy anything..."
-                className="flex-1"
+                className="flex-1 text-sm sm:text-base"
               />
-              <Button type="submit" size="icon" disabled={!input.trim() || isTyping}>
+              <Button type="submit" size="icon" disabled={!input.trim() || isTyping} className="touch-manipulation shrink-0">
                 <Send className="h-4 w-4" />
               </Button>
             </form>
@@ -229,11 +229,11 @@ const DemoAIScheduling = () => {
 
         {/* CTA for full demo */}
         {!isDemoMode && (
-          <div className="mt-8 text-center">
-            <Card className="p-8 bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 border-blue-500/20">
-              <h3 className="text-2xl font-bold mb-2">Experience the Full AI Power</h3>
-              <p className="text-muted-foreground mb-6">In the full demo, Scheddy can actually create events, manage your calendar, and sync with your tools!</p>
-              <Button size="lg" onClick={handleStartFullDemo} className="gap-2">
+          <div className="mt-6 sm:mt-8 text-center">
+            <Card className="p-5 sm:p-8 bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 border-blue-500/20">
+              <h3 className="text-xl sm:text-2xl font-bold mb-2">Experience the Full AI Power</h3>
+              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">In the full demo, Scheddy can actually create events, manage your calendar, and sync with your tools!</p>
+              <Button size="lg" onClick={handleStartFullDemo} className="gap-2 touch-manipulation">
                 Start Full Demo <ArrowRight className="w-4 h-4" />
               </Button>
             </Card>
