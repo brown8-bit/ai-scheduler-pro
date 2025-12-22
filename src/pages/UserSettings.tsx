@@ -33,7 +33,8 @@ import {
   Zap,
   Target,
   MapPin,
-  Play
+  Play,
+  Keyboard
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +46,7 @@ import NotificationToggle from "@/components/NotificationToggle";
 import ImageCropper from "@/components/ImageCropper";
 import CalendarConnections from "@/components/CalendarConnections";
 import QuickActionsSettings from "@/components/QuickActionsSettings";
+import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
 import { formatDistanceToNow } from "date-fns";
 
 interface ActivityNotification {
@@ -98,6 +100,7 @@ const UserSettings = () => {
   const [nameAvailable, setNameAvailable] = useState<boolean | null>(null);
   const [originalName, setOriginalName] = useState("");
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -856,6 +859,32 @@ const UserSettings = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Keyboard Shortcuts */}
+            <div className="bg-card rounded-xl border border-border p-6 shadow-card">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Keyboard className="w-5 h-5 text-primary" />
+                Keyboard Shortcuts
+              </h2>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Learn keyboard shortcuts to navigate and use the app faster. Press <kbd className="px-1.5 py-0.5 text-xs bg-muted border border-border rounded">?</kbd> anywhere to open.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full gap-2"
+                  onClick={() => setShortcutsModalOpen(true)}
+                >
+                  <Keyboard className="w-4 h-4" />
+                  View Shortcuts Guide
+                </Button>
+              </div>
+            </div>
+
+            <KeyboardShortcutsModal 
+              open={shortcutsModalOpen} 
+              onOpenChange={setShortcutsModalOpen} 
+            />
 
             {/* Gamification & Community - renamed to Progress Tracking when enabled */}
             <div className="bg-card rounded-xl border border-border p-6 shadow-card">
