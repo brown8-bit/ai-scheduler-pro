@@ -14,6 +14,7 @@ import ScheddyLoader from "@/components/ScheddyLoader";
 import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 import DemoBanner from "@/components/DemoBanner";
 import GuidedTour from "@/components/GuidedTour";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 
 // Regular imports for most pages (no loading animation)
@@ -79,6 +80,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <InstallPromptBanner />
+              <OfflineIndicator />
               <BrowserRouter>
                 <KeyboardShortcutsProvider>
                 <DemoBanner />
