@@ -44,7 +44,8 @@ import { ReferralCard } from "@/components/ReferralCard";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { AISuggestions } from "@/components/AISuggestions";
 import EventsListModal from "@/components/EventsListModal";
-
+import { CalendarHeatmap } from "@/components/CalendarHeatmap";
+import { SmartSchedulingLink } from "@/components/SmartSchedulingLink";
 interface ScheduledEvent {
   id: string;
   title: string;
@@ -537,6 +538,11 @@ const Dashboard = () => {
             <AISuggestions />
           </div>
 
+          {/* Calendar Heatmap */}
+          <div className="mb-6">
+            <CalendarHeatmap weeks={12} />
+          </div>
+
           {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - Events */}
@@ -618,42 +624,12 @@ const Dashboard = () => {
                 {/* Show booking slot settings if configured */}
                 {bookingSlot ? (
                   <div className="space-y-4">
-                    <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-medium">{bookingSlot.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {bookingSlot.duration_minutes} min • {bookingSlot.start_hour}:00 - {bookingSlot.end_hour}:00
-                          </p>
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          bookingSlot.is_active 
-                            ? 'bg-green-500/10 text-green-600' 
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {bookingSlot.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      {bookingSlot.public_slug && (
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 text-xs text-muted-foreground truncate bg-background rounded px-2 py-1 border">
-                            {window.location.origin}/book/{bookingSlot.public_slug}
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/book/${bookingSlot.public_slug}`);
-                              toast({ title: "Link copied! 📋" });
-                            }}
-                          >
-                            <Link2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Recent Bookings */}
+                    {/* Smart Scheduling Link Component */}
+                    <SmartSchedulingLink 
+                      publicSlug={bookingSlot.public_slug} 
+                      title={bookingSlot.title}
+                      isActive={bookingSlot.is_active ?? true}
+                    />
                     {bookings.length > 0 ? (
                       <div>
                         <p className="text-sm font-medium text-muted-foreground mb-2">Recent Bookings</p>
