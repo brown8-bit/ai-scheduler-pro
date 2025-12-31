@@ -189,10 +189,10 @@ serve(async (req) => {
       );
     }
 
-    // Fetch the booking slot to get host_user_id
+    // Fetch the booking slot to get host_user_id and duration
     const { data: slotData, error: slotError } = await supabase
       .from('booking_slots')
-      .select('id, user_id, is_active, host_email, title')
+      .select('id, user_id, is_active, host_email, title, duration_minutes, location')
       .eq('id', sanitized.slot_id)
       .eq('is_active', true)
       .single();
@@ -255,6 +255,40 @@ serve(async (req) => {
     }
 
     console.log('Booking created successfully:', bookingData.id);
+
+    // Create Google Calendar event for the host (async, don't wait)
+    try {
+      const calendarEventPromise = fetch(`${supabaseUrl}/functions/v1/create-booking-calendar-event`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          bookingId: bookingData.id,
+          hostUserId: slotData.user_id,
+          guestName: sanitized.guest_name,
+          guestEmail: sanitized.guest_email,
+          bookingDate: sanitized.booking_date,
+          bookingTime: sanitized.booking_time,
+          meetingTitle: slotData.title,
+          durationMinutes: slotData.duration_minutes || 30,
+          location: slotData.location,
+          notes: sanitized.notes,
+        }),
+      });
+
+      // Don't await - let it run in background
+      calendarEventPromise.then(async (res) => {
+        const result = await res.json();
+        console.log('Calendar event creation result:', result);
+      }).catch((err) => {
+        console.error('Calendar event creation failed:', err);
+      });
+    } catch (calError) {
+      console.error('Error triggering calendar event creation:', calError);
+      // Don't fail the booking if calendar creation fails
+    }
 
     return new Response(
       JSON.stringify({ 
