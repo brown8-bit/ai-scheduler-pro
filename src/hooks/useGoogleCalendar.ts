@@ -112,13 +112,60 @@ export function useGoogleCalendar() {
     }
   }, [user, fetchConnections, fetchEvents]);
 
+  // Map OAuth error codes to user-friendly messages
+  const getOAuthErrorMessage = (error: string): { title: string; description: string } => {
+    const errorMessages: Record<string, { title: string; description: string }> = {
+      access_denied: {
+        title: "Access Denied",
+        description: "You declined the calendar permissions. Please try again and allow access to connect your calendar.",
+      },
+      invalid_scope: {
+        title: "Invalid Permissions",
+        description: "The requested calendar permissions are not available. Please contact support.",
+      },
+      invalid_client: {
+        title: "Configuration Error",
+        description: "Google Calendar integration is not properly configured. Please contact support.",
+      },
+      invalid_grant: {
+        title: "Authorization Expired",
+        description: "The authorization has expired. Please try connecting again.",
+      },
+      token_exchange_failed: {
+        title: "Connection Failed",
+        description: "Failed to complete the Google sign-in. Please try again or check your internet connection.",
+      },
+      missing_params: {
+        title: "Connection Interrupted",
+        description: "The connection process was interrupted. Please try again.",
+      },
+      invalid_state: {
+        title: "Security Error",
+        description: "The connection request could not be verified. Please try again.",
+      },
+      popup_blocked: {
+        title: "Popup Blocked",
+        description: "Please allow popups for this site to connect your Google Calendar.",
+      },
+      network_error: {
+        title: "Network Error",
+        description: "Unable to reach Google servers. Please check your internet connection and try again.",
+      },
+    };
+
+    return errorMessages[error] || {
+      title: "Connection Failed",
+      description: `Unable to connect to Google Calendar: ${error}. Please try again or contact support.`,
+    };
+  };
+
   // Listen for OAuth popup messages
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === "google-calendar-success") {
         toast({
-          title: "Calendar Connected!",
-          description: "Your Google Calendar has been successfully connected.",
+          title: "Calendar Connected! 🎉",
+          description: "Your Google Calendar has been successfully connected. Events will now sync automatically.",
         });
         fetchConnections();
         setConnecting(false);
@@ -126,9 +173,10 @@ export function useGoogleCalendar() {
         // Auto-sync after connection
         setTimeout(() => syncCalendar(), 1000);
       } else if (event.data?.type === "google-calendar-error") {
+        const errorInfo = getOAuthErrorMessage(event.data.error || "unknown");
         toast({
-          title: "Connection Failed",
-          description: event.data.error || "Failed to connect calendar.",
+          title: errorInfo.title,
+          description: errorInfo.description,
           variant: "destructive",
         });
         setConnecting(false);
@@ -147,8 +195,8 @@ export function useGoogleCalendar() {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         toast({
-          title: "Not authenticated",
-          description: "Please log in to connect your calendar.",
+          title: "Please Log In",
+          description: "You need to be logged in to connect your calendar.",
           variant: "destructive",
         });
         setConnecting(false);
@@ -159,24 +207,76 @@ export function useGoogleCalendar() {
         body: { redirectUrl: window.location.origin + "/settings" },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific edge function errors
+        if (error.message?.includes("not configured")) {
+          toast({
+            title: "Not Available",
+            description: "Google Calendar integration is not configured yet. Please contact support.",
+            variant: "destructive",
+          });
+        } else if (error.message?.includes("fetch")) {
+          toast({
+            title: "Network Error",
+            description: "Unable to connect to the server. Please check your internet connection.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        setConnecting(false);
+        return;
+      }
 
       if (data?.url) {
         const width = 500;
         const height = 600;
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
-        window.open(
+        
+        const popup = window.open(
           data.url,
           "google-oauth",
           `width=${width},height=${height},left=${left},top=${top},popup=1`
         );
+
+        // Check if popup was blocked
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+          const errorInfo = getOAuthErrorMessage("popup_blocked");
+          toast({
+            title: errorInfo.title,
+            description: errorInfo.description,
+            variant: "destructive",
+          });
+          setConnecting(false);
+          return;
+        }
+
+        // Monitor popup for closure without success message
+        const popupMonitor = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(popupMonitor);
+            // Give a brief moment for the success message to arrive
+            setTimeout(() => {
+              if (connecting) {
+                setConnecting(false);
+              }
+            }, 500);
+          }
+        }, 500);
+      } else {
+        toast({
+          title: "Connection Error",
+          description: "Unable to start Google sign-in. Please try again.",
+          variant: "destructive",
+        });
+        setConnecting(false);
       }
     } catch (error) {
       console.error("Connect error:", error);
       toast({
         title: "Connection Error",
-        description: "Failed to start OAuth flow.",
+        description: "Something went wrong while connecting to Google. Please try again.",
         variant: "destructive",
       });
       setConnecting(false);
