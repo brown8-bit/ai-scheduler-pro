@@ -11,10 +11,12 @@ import { CalendarDays, Clock, CheckCircle2, Plus, Trash2, Sparkles, AlertTriangl
 import AddEventModal from "@/components/AddEventModal";
 import EditEventModal from "@/components/EditEventModal";
 import CalendarExport from "@/components/CalendarExport";
+import SyncedEventsList from "@/components/SyncedEventsList";
 import ScheddyLoader from "@/components/ScheddyLoader";
 import { toast } from "@/hooks/use-toast";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useKeyboardShortcutsContext } from "@/components/KeyboardShortcutsProvider";
+import { useSyncedEvents } from "@/hooks/useSyncedEvents";
 import {
   Dialog,
   DialogContent,
@@ -152,6 +154,7 @@ const CalendarPage = () => {
   const [addEventOpen, setAddEventOpen] = useState(false);
   const { scheduleEventReminder, isEnabled: notificationsEnabled, requestPermission } = useNotifications();
   const { setCalendarHandlers, setNewEventHandler } = useKeyboardShortcutsContext();
+  const { syncedEvents, loading: syncedLoading, refetch: refetchSynced } = useSyncedEvents();
 
   // Keyboard shortcuts for calendar navigation
   const goToPreviousMonth = useCallback(() => {
@@ -345,8 +348,13 @@ const CalendarPage = () => {
   const eventsForSelectedDate = activeEvents.filter((event) =>
     selectedDate && isSameDay(new Date(event.event_date), selectedDate)
   );
+  const syncedEventsForSelectedDate = syncedEvents.filter((event) =>
+    selectedDate && isSameDay(new Date(event.start_time), selectedDate)
+  );
 
   const datesWithEvents = activeEvents.map((e) => new Date(e.event_date));
+  const datesWithSyncedEvents = syncedEvents.map((e) => new Date(e.start_time));
+  const allDatesWithEvents = [...datesWithEvents, ...datesWithSyncedEvents];
   
   // Get dates that have conflicts
   const datesWithConflicts = activeEvents
@@ -449,7 +457,7 @@ const CalendarPage = () => {
                 onMonthChange={setCalendarMonth}
                 className="rounded-md border mx-auto pointer-events-auto"
                 modifiers={{
-                  hasEvent: datesWithEvents,
+                  hasEvent: allDatesWithEvents,
                   hasConflict: datesWithConflicts,
                 }}
                 modifiersStyles={{
@@ -496,7 +504,7 @@ const CalendarPage = () => {
               )}
             </CardHeader>
             <CardContent>
-              {eventsForSelectedDate.length === 0 ? (
+              {eventsForSelectedDate.length === 0 && syncedEventsForSelectedDate.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No events scheduled for this day</p>
@@ -524,6 +532,11 @@ const CalendarPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Synced Events from Google Calendar */}
+                  {syncedEventsForSelectedDate.length > 0 && (
+                    <SyncedEventsList events={syncedEventsForSelectedDate} />
+                  )}
+
                   {/* Conflict summary */}
                   {eventsForSelectedDate.some(e => e.hasConflict) && (
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400">

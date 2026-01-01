@@ -195,7 +195,7 @@ serve(async (req) => {
 
     // Parse request body
     const body = await req.json().catch(() => ({}));
-    const { connectionId, syncDays = 30 } = body;
+    const { connectionId, syncDays = 30, action } = body;
 
     // Use service role for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -217,6 +217,30 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "No Google Calendar connection found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Handle listCalendars action
+    if (action === "listCalendars") {
+      const connection = connections[0];
+      const accessToken = await getValidAccessToken(
+        connection,
+        supabase,
+        googleClientId,
+        googleClientSecret
+      );
+
+      if (!accessToken) {
+        return new Response(
+          JSON.stringify({ error: "Failed to get access token" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const calendars = await getCalendarList(accessToken);
+      return new Response(
+        JSON.stringify({ calendars }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

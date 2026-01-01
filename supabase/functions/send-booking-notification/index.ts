@@ -15,6 +15,8 @@ interface BookingNotificationRequest {
   bookingTime: string;
   meetingTitle: string;
   notes?: string;
+  meetLink?: string;
+  duration?: number;
 }
 
 const sendEmail = async (to: string, subject: string, html: string) => {
@@ -48,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { hostEmail, guestName, guestEmail, bookingDate, bookingTime, meetingTitle, notes }: BookingNotificationRequest = await req.json();
+    const { hostEmail, guestName, guestEmail, bookingDate, bookingTime, meetingTitle, notes, meetLink, duration }: BookingNotificationRequest = await req.json();
     
     console.log(`Sending booking notification to host: ${hostEmail} and guest: ${guestEmail}`);
 
@@ -58,6 +60,16 @@ const handler = async (req: Request): Promise<Response> => {
       month: 'long',
       day: 'numeric'
     });
+
+    const meetLinkHtml = meetLink ? `
+      <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 16px; margin: 20px 0; border-radius: 8px;">
+        <p style="margin: 0 0 8px 0; color: #2e7d32; font-weight: bold;">📹 Google Meet Link</p>
+        <a href="${meetLink}" style="color: #1565c0; text-decoration: none; font-size: 14px;">${meetLink}</a>
+        <p style="margin: 8px 0 0 0; color: #666; font-size: 12px;">Click the link above to join the video call at the scheduled time.</p>
+      </div>
+    ` : '';
+
+    const durationText = duration ? ` (${duration} minutes)` : '';
 
     // Send email to host
     const hostEmailResponse = await sendEmail(
@@ -73,12 +85,13 @@ const handler = async (req: Request): Promise<Response> => {
               Great news! <strong>${guestName}</strong> has booked time with you.
             </p>
             <div style="background: #fef3c7; border-left: 4px solid #f97316; padding: 16px; margin: 20px 0; border-radius: 8px;">
-              <p style="margin: 0 0 8px 0; color: #92400e;"><strong>Meeting:</strong> ${meetingTitle}</p>
+              <p style="margin: 0 0 8px 0; color: #92400e;"><strong>Meeting:</strong> ${meetingTitle}${durationText}</p>
               <p style="margin: 0 0 8px 0; color: #92400e;"><strong>Date:</strong> ${formattedDate}</p>
               <p style="margin: 0 0 8px 0; color: #92400e;"><strong>Time:</strong> ${bookingTime}</p>
               <p style="margin: 0; color: #92400e;"><strong>Guest Email:</strong> ${guestEmail}</p>
               ${notes ? `<p style="margin: 8px 0 0 0; color: #92400e;"><strong>Notes:</strong> ${notes}</p>` : ''}
             </div>
+            ${meetLinkHtml}
             <p style="color: #6b7280; font-size: 14px;">Add this to your calendar and prepare for your meeting!</p>
           </div>
         </div>
@@ -87,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Host email sent:", hostEmailResponse);
 
-    // Send confirmation email to guest
+    // Send confirmation email to guest with Meet link
     const guestEmailResponse = await sendEmail(
       guestEmail,
       `Booking Confirmed: ${meetingTitle} on ${formattedDate}`,
@@ -100,10 +113,11 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="color: #374151; font-size: 16px; line-height: 1.6;">Hi <strong>${guestName}</strong>,</p>
             <p style="color: #374151; font-size: 16px; line-height: 1.6;">Your meeting has been successfully scheduled:</p>
             <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 16px; margin: 20px 0; border-radius: 8px;">
-              <p style="margin: 0 0 8px 0; color: #065f46;"><strong>Meeting:</strong> ${meetingTitle}</p>
+              <p style="margin: 0 0 8px 0; color: #065f46;"><strong>Meeting:</strong> ${meetingTitle}${durationText}</p>
               <p style="margin: 0 0 8px 0; color: #065f46;"><strong>Date:</strong> ${formattedDate}</p>
               <p style="margin: 0; color: #065f46;"><strong>Time:</strong> ${bookingTime}</p>
             </div>
+            ${meetLinkHtml}
             <p style="color: #6b7280; font-size: 14px;">We look forward to meeting with you!</p>
           </div>
         </div>

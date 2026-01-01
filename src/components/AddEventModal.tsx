@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, Plus, Users, MessageCircle, AlertTriangle, Sparkles, Zap } from "lucide-react";
+import { CalendarIcon, Clock, Plus, Users, MessageCircle, AlertTriangle, Sparkles, Zap, ExternalLink } from "lucide-react";
 import { useConflictDetection, ConflictingEvent, AlternativeSlot } from "@/hooks/useConflictDetection";
 import { useSmartScheduling, TimeSlotSuggestion } from "@/hooks/useSmartScheduling";
+import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -89,9 +90,13 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger, open: cont
   const [showConflictWarning, setShowConflictWarning] = useState(false);
   const [smartSuggestions, setSmartSuggestions] = useState<TimeSlotSuggestion[]>([]);
   const [showSmartSuggestions, setShowSmartSuggestions] = useState(false);
+  const [syncToGoogle, setSyncToGoogle] = useState(false);
   
   const { checkForConflicts, checking } = useConflictDetection();
   const { findBestTimeSlots, finding } = useSmartScheduling();
+  const { connections, createEvent } = useGoogleCalendar();
+  
+  const hasGoogleConnection = connections.length > 0;
 
   const resetForm = () => {
     setTitle("");
@@ -103,6 +108,7 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger, open: cont
     setRecurrencePattern("weekly");
     setReminder(false);
     setShareToCommunity(false);
+    setSyncToGoogle(false);
     setConflicts([]);
     setAlternatives([]);
     setShowConflictWarning(false);
@@ -215,6 +221,18 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger, open: cont
       });
 
       if (error) throw error;
+
+      // Sync to Google Calendar if enabled
+      if (syncToGoogle && hasGoogleConnection) {
+        const connection = connections[0];
+        const endDate = new Date(eventDate.getTime() + 60 * 60 * 1000); // 1 hour duration
+        await createEvent(connection.id, {
+          summary: title.trim(),
+          description: description.trim() || undefined,
+          start: eventDate.toISOString(),
+          end: endDate.toISOString(),
+        });
+      }
 
       // Share to community if checkbox is checked
       if (shareToCommunity) {
@@ -467,6 +485,27 @@ const AddEventModal = ({ userId, selectedDate, onEventAdded, trigger, open: cont
               </p>
             </div>
           </div>
+
+          {/* Sync to Google Calendar */}
+          {hasGoogleConnection && (
+            <div className="flex items-start space-x-3 py-3 px-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+              <Checkbox
+                id="sync-google"
+                checked={syncToGoogle}
+                onCheckedChange={(checked) => setSyncToGoogle(checked === true)}
+                className="mt-0.5"
+              />
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="sync-google" className="cursor-pointer flex items-center gap-2 text-sm font-medium">
+                  <ExternalLink className="w-4 h-4 text-blue-600" />
+                  Sync to Google Calendar
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Also create this event in your connected Google Calendar
+                </p>
+              </div>
+            </div>
+          )}
 
           {isRecurring && (
             <div className="space-y-2 pl-3 border-l-2 border-primary/30">
