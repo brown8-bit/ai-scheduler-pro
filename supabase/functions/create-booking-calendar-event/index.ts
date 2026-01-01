@@ -156,7 +156,7 @@ serve(async (req) => {
     // Get timezone from connection settings or default to UTC
     const timeZone = connection.settings?.timezone || "UTC";
 
-    // Create the Google Calendar event
+    // Create the Google Calendar event with Google Meet
     const googleEvent = {
       summary: `📅 ${meetingTitle} with ${guestName}`,
       description: `Booking from Schedulr\n\nGuest: ${guestName}\nEmail: ${guestEmail}${notes ? `\n\nNotes: ${notes}` : ""}`,
@@ -181,16 +181,27 @@ serve(async (req) => {
       location: location || undefined,
       transparency: "opaque",
       status: "confirmed",
+      // Add Google Meet conference
+      conferenceData: {
+        createRequest: {
+          requestId: `booking-${bookingId}-${Date.now()}`,
+          conferenceSolutionKey: {
+            type: "hangoutsMeet",
+          },
+        },
+      },
     };
 
-    console.log("Creating Google Calendar event:", JSON.stringify({
+    console.log("Creating Google Calendar event with Meet:", JSON.stringify({
       summary: googleEvent.summary,
       start: googleEvent.start,
       end: googleEvent.end,
+      hasConferenceData: true,
     }));
 
+    // Use conferenceDataVersion=1 to enable Google Meet link generation
     const response = await fetch(
-      "https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all",
+      "https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all&conferenceDataVersion=1",
       {
         method: "POST",
         headers: {
@@ -214,7 +225,11 @@ serve(async (req) => {
     }
 
     const createdEvent = await response.json();
-    console.log("Calendar event created:", createdEvent.id);
+    const meetLink = createdEvent.conferenceData?.entryPoints?.find(
+      (e: any) => e.entryPointType === "video"
+    )?.uri;
+    
+    console.log("Calendar event created:", createdEvent.id, "Meet link:", meetLink);
 
     // Also save to synced_events table
     await supabase.from("synced_events").insert({
@@ -226,20 +241,22 @@ serve(async (req) => {
       start_time: createdEvent.start.dateTime || createdEvent.start.date,
       end_time: createdEvent.end.dateTime || createdEvent.end.date,
       is_all_day: !createdEvent.start.dateTime,
-      location: createdEvent.location,
+      location: meetLink || createdEvent.location,
       status: createdEvent.status,
       is_busy: true,
       raw_data: createdEvent,
     });
 
-    // Update the booking with the calendar event ID
+    // Update the booking with the calendar event ID and meet link
     if (bookingId) {
+      const updateData: any = { status: "confirmed" };
+      if (meetLink) {
+        // Store meet link in notes or a dedicated field if available
+        updateData.notes = `${notes ? notes + "\n\n" : ""}📹 Google Meet: ${meetLink}`;
+      }
       await supabase
         .from("bookings")
-        .update({ 
-          status: "confirmed",
-          // Store the calendar event ID in notes if needed
-        })
+        .update(updateData)
         .eq("id", bookingId);
     }
 
@@ -248,6 +265,7 @@ serve(async (req) => {
         success: true, 
         eventId: createdEvent.id,
         eventLink: createdEvent.htmlLink,
+        meetLink: meetLink || null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
